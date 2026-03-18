@@ -1161,151 +1161,6 @@
         </table>
     </div>
 `,
-'HRM Setting': `
-    <div class="card">
-        <!-- Header -->
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 32px; border-bottom: 1px solid var(--border); padding-bottom: 20px;">
-            <div>
-                <h4 class="card-title" style="margin-bottom:4px;">⚙️ Global System Configuration</h4>
-                <p style="font-size: 0.8rem; color: var(--text-muted);">Define environment-wide rules, localization, and default employment parameters.</p>
-            </div>
-            <button class="btn-ghost" style="background: var(--primary); color: white; border: none; padding: 10px 24px; font-weight:600; box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);">
-                Save All Changes
-            </button>
-        </div>
-
-        <div class="grid-2" style="gap: 32px;">
-            
-            <!-- Left Column: Localization & Regional -->
-            <div style="display: flex; flex-direction: column; gap: 32px;">
-                
-                <section>
-                    <h5 style="font-size: 0.85rem; font-weight: 700; color: var(--text-main); margin-bottom: 16px; display:flex; align-items:center; gap:8px;">
-                        <i data-lucide="globe" size="16" style="color:var(--primary);"></i> Localization & Regional
-                    </h5>
-                    <div style="display: flex; flex-direction: column; gap: 16px; background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid var(--border);">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <label style="font-size:0.8rem; font-weight:500;">Functional Currency</label>
-                            <select style="padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border); font-size:0.75rem; width:140px;">
-                                <option>USD ($)</option>
-                                <option>EUR (€)</option>
-                                <option>GBP (£)</option>
-                            </select>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <label style="font-size:0.8rem; font-weight:500;">Primary Language</label>
-                            <select style="padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border); font-size:0.75rem; width:140px;">
-                                <option>English (US)</option>
-                                <option>Spanish</option>
-                                <option>French</option>
-                            </select>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <label style="font-size:0.8rem; font-weight:500;">Date Format</label>
-                            <select style="padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border); font-size:0.75rem; width:140px;">
-                                <option>DD/MM/YYYY</option>
-                                <option>MM/DD/YYYY</option>
-                                <option>YYYY-MM-DD</option>
-                            </select>
-                        </div>
-                    </div>
-                </section>
-
-                <section>
-                    <h5 style="font-size: 0.85rem; font-weight: 700; color: var(--text-main); margin-bottom: 16px; display:flex; align-items:center; gap:8px;">
-                        <i data-lucide="shield" size="16" style="color:var(--primary);"></i> Security & Access
-                    </h5>
-                    <div style="display: flex; flex-direction: column; gap: 16px; background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid var(--border);">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <div>
-                                <p style="font-size:0.8rem; font-weight:600; margin:0;">Two-Factor Authentication (2FA)</p>
-                                <p style="font-size:0.7rem; color:var(--text-muted); margin:0;">Enforce for all Admin accounts</p>
-                            </div>
-                            <input type="checkbox" checked style="width:18px; height:18px; accent-color:var(--primary);">
-                        </div>
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <div>
-                                <p style="font-size:0.8rem; font-weight:600; margin:0;">Session Timeout</p>
-                                <p style="font-size:0.7rem; color:var(--text-muted); margin:0;">Auto-log out after inactivity</p>
-                            </div>
-                            <select style="padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border); font-size:0.75rem; width:100px;">
-                                <option>30 mins</option>
-                                <option>1 hour</option>
-                                <option>4 hours</option>
-                            </select>
-                        </div>
-                    </div>
-                </section>
-            </div>
-
-            <!-- Right Column: Employment Policy Defaults -->
-            <div style="display: flex; flex-direction: column; gap: 32px;">
-                
-                <section>
-                    <h5 style="font-size: 0.85rem; font-weight: 700; color: var(--text-main); margin-bottom: 16px; display:flex; align-items:center; gap:8px;">
-                        <i data-lucide="briefcase" size="16" style="color:var(--primary);"></i> Default Employment Policies
-                    </h5>
-                    <div style="display: flex; flex-direction: column; gap: 16px; background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid var(--border);">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <label style="font-size:0.8rem; font-weight:500;">Standard Probation Period</label>
-                            <div style="display:flex; align-items:center; gap:8px;">
-                                <input type="number" value="90" style="padding: 6px; width: 60px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.75rem;">
-                                <span style="font-size:0.75rem; color:var(--text-muted);">Days</span>
-                            </div>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <label style="font-size:0.8rem; font-weight:500;">Notice Period (Standard)</label>
-                            <div style="display:flex; align-items:center; gap:8px;">
-                                <input type="number" value="30" style="padding: 6px; width: 60px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.75rem;">
-                                <span style="font-size:0.75rem; color:var(--text-muted);">Days</span>
-                            </div>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <label style="font-size:0.8rem; font-weight:500;">Standard Work Week</label>
-                            <div style="display:flex; align-items:center; gap:8px;">
-                                <input type="number" value="40" style="padding: 6px; width: 60px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.75rem;">
-                                <span style="font-size:0.75rem; color:var(--text-muted);">Hours</span>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <section>
-                    <h5 style="font-size: 0.85rem; font-weight: 700; color: var(--text-main); margin-bottom: 16px; display:flex; align-items:center; gap:8px;">
-                        <i data-lucide="bell" size="16" style="color:var(--primary);"></i> Automated Notifications
-                    </h5>
-                    <div style="display: flex; flex-direction: column; gap: 16px; background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid var(--border);">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <p style="font-size:0.8rem; font-weight:600; margin:0;">Email Notifications</p>
-                            <div style="width: 36px; height: 18px; background: var(--primary); border-radius: 20px; position: relative; cursor: pointer;">
-                                <div style="width: 14px; height: 14px; background: white; border-radius: 50%; position: absolute; right: 2px; top: 2px;"></div>
-                            </div>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <p style="font-size:0.8rem; font-weight:600; margin:0;">SMS Alerts (Emergency)</p>
-                            <div style="width: 36px; height: 18px; background: #cbd5e1; border-radius: 20px; position: relative; cursor: pointer;">
-                                <div style="width: 14px; height: 14px; background: white; border-radius: 50%; position: absolute; left: 2px; top: 2px;"></div>
-                            </div>
-                        </div>
-                        <div style="border-top: 1px solid var(--border); margin-top: 8px; padding-top: 12px;">
-                            <button class="btn-ghost" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; font-size:0.75rem;">
-                                <i data-lucide="mail" size="14"></i> Configure SMTP Server
-                            </button>
-                        </div>
-                    </div>
-                </section>
-            </div>
-        </div>
-
-        <!-- Footer Audit -->
-        <div style="margin-top: 40px; border-top: 1px solid var(--border); padding-top: 20px; text-align: center;">
-             <p style="font-size: 0.75rem; color: var(--text-muted);">
-                <i data-lucide="info" size="12" style="vertical-align:middle; margin-right:4px;"></i>
-                Changing global settings may trigger a system-wide recalculation of payroll and leave entitlements.
-             </p>
-        </div>
-    </div>
-`,  
                 'Experience Requests': `
                     <div class="card">
                         <h4 class="card-title">Experience Letters</h4>
@@ -1317,8 +1172,12 @@
                         <h4 class="card-title">Retirement Configuration</h4>
                         <p>Default retirement age: 65<br>Grace period: 6 months</p>
                     </div>`,
-                
-                    'Employee Type': `
+                'HRM Setting': `
+                    <div class="card">
+                        <h4 class="card-title">HRM Parameters</h4>
+                        <p>⚙️ probation period: 90 days<br>⚙️ notice period: 30 days</p>
+                    </div>`,
+                'Employee Type': `
                     <div class="card">
                         <h4 class="card-title">Employee Types</h4>
                         <span class="badge">Permanent</span> <span class="badge">Contract</span> <span class="badge">Intern</span> <span class="badge">Temporary</span>
@@ -1525,8 +1384,7 @@
             </tbody>
         </table>
     </div>
-`,
-'Severance Payable': `<div class="card"><h4 class="card-title">Severance Calculations</h4><p>Pending for 1 employee</p></div>`,
+`,'Severance Payable': `<div class="card"><h4 class="card-title">Severance Calculations</h4><p>Pending for 1 employee</p></div>`,
                 'Miscellaneous Settings': `<div class="card"><h4 class="card-title">Misc Settings</h4><p>Grievance procedure active</p></div>`,
                 // Report
                 'Summary Reports': `<div class="card"><h4 class="card-title">HR Summary</h4><p>Headcount, turnover, diversity</p></div>`,
