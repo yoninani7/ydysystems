@@ -424,6 +424,20 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
       </div>
     </div>
 
+     <div class="nav-group">
+      <div class="nav-trigger" onclick="toggleNav(this,'m-move')">
+        <div class="nav-trigger-left"><div class="nav-icon"><i data-lucide="arrow-right-left" size="15"></i></div>Employee Movement</div>
+        <i data-lucide="chevron-right" size="13" class="chevron"></i>
+      </div>
+      <div class="submenu" id="m-move">
+        <div class="sub-link" onclick="goPage('promotions',this)"><span class="sub-dot"></span>Promotions</div>
+        <div class="sub-link" onclick="goPage('transfers',this)"><span class="sub-dot"></span>Department Transfers</div>
+        <div class="sub-link" onclick="goPage('job-rotation',this)"><span class="sub-dot"></span>Job Rotation</div>
+        <div class="sub-link" onclick="goPage('salary-revisions',this)"><span class="sub-dot"></span>Salary Revisions</div>
+      </div>
+    </div>
+   
+    
     <!-- ── Operations section ── -->
     <div class="nav-label">Operations</div>
     <div class="nav-group">
@@ -524,22 +538,7 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
         <div class="sub-link" onclick="goPage('performance-reports',this)"><span class="sub-dot"></span>Performance Reports</div>
       </div>
     </div>
-
-    <!-- ── MOVEMENT & COMPLIANCE section ── -->
-    <div class="nav-label">Movement & Compliance</div>
-    <div class="nav-group">
-      <div class="nav-trigger" onclick="toggleNav(this,'m-move')">
-        <div class="nav-trigger-left"><div class="nav-icon"><i data-lucide="arrow-right-left" size="15"></i></div>Employee Movement</div>
-        <i data-lucide="chevron-right" size="13" class="chevron"></i>
-      </div>
-      <div class="submenu" id="m-move">
-        <div class="sub-link" onclick="goPage('promotions',this)"><span class="sub-dot"></span>Promotions</div>
-        <div class="sub-link" onclick="goPage('transfers',this)"><span class="sub-dot"></span>Department Transfers</div>
-        <div class="sub-link" onclick="goPage('job-rotation',this)"><span class="sub-dot"></span>Job Rotation</div>
-        <div class="sub-link" onclick="goPage('salary-revisions',this)"><span class="sub-dot"></span>Salary Revisions</div>
-      </div>
-    </div>
-   
+ 
 
     <!-- ── ANALYTICS & SYSTEM section ── -->
     <div class="nav-label">Analytics & System</div>
@@ -670,9 +669,7 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
 </div>
 
 <!-- ══════════════════════════════
-     [CHANGE 1] ORG CHART
-     Now data-driven: edit orgData in JS to add/remove nodes.
-     Supports unlimited depth. Zoom in/out with the buttons.
+    ORG CHART 
 ══════════════════════════════ -->
 <div class="page" id="p-org-chart">
   <div class="page-header">
@@ -1882,6 +1879,9 @@ const orgData = {
     {
       name: 'Susan Park', role: 'Chief Financial Officer', type: 'vp',
       children: [
+        { name: 'Mark Evans',  role: 'Finance Manager',    type: 'mgr', children: [] },
+        { name: 'Mark Evans',  role: 'Finance Manager',    type: 'mgr', children: [] },
+        { name: 'Mark Evans',  role: 'Finance Manager',    type: 'mgr', children: [] },
         { name: 'Mark Evans',  role: 'Finance Manager',    type: 'mgr', children: [] },
         { name: 'Tina Brooks', role: 'Accounting Manager', type: 'mgr', children: [] }
       ]
