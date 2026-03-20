@@ -335,9 +335,7 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
         <div class="sub-link" onclick="goPage('manpower-planning',this)"><span class="sub-dot"></span>Manpower Planning</div>
       </div>
     </div>
-
-    <!-- ── WORKFORCE ── -->
-    <div class="nav-label">Workforce</div>
+ 
 
     <div class="nav-group">
       <div class="nav-trigger" onclick="toggleNav(this,'m-emp')">
@@ -593,36 +591,33 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
 <div class="page" id="p-company-profile">
   <div class="page-header">
     <div><div class="page-title">Company Profile</div><div class="page-sub">Master organizational identity and legal information</div></div>
-    <div class="flex-row"><button class="btn btn-secondary"><i data-lucide="upload" size="13"></i>Import</button><button class="btn btn-primary"><i data-lucide="edit-3" size="13"></i>Edit Profile</button></div>
+    <div class="flex-row"> <button class="btn btn-primary"><i data-lucide="edit-3" size="13" style="width: 20px;"></i>Edit Profile</button></div>
   </div>
   <div class="grid-2">
     <div class="card"><div class="card-header"><div class="card-title">Legal & Registration</div><span class="badge badge-success">Verified</span></div>
     <div class="card-body">
       <div class="info-row"><span class="info-label">Legal Name</span><span class="info-val">HRM Enterprises Ltd.</span></div>
       <div class="info-row"><span class="info-label">Registration No.</span><span class="info-val">2010-US-98745</span></div>
-      <div class="info-row"><span class="info-label">Tax ID / EIN</span><span class="info-val">12-3456789</span></div>
-      <div class="info-row"><span class="info-label">Incorporated</span><span class="info-val">Oct 12, 2010</span></div>
-      <div class="info-row"><span class="info-label">Entity Type</span><span class="info-val">Private Limited</span></div>
-      <div class="info-row"><span class="info-label">Status</span><span class="badge badge-success">Active</span></div>
+      <div class="info-row"><span class="info-label">TIN No.</span><span class="info-val">1234567897</span></div>
+      <div class="info-row"><span class="info-label">Establishment date</span><span class="info-val">Oct 12, 2010</span></div>
+      <div class="info-row"><span class="info-label">Entity Type</span><span class="info-val">Private Limited</span></div> 
     </div></div>
     <div class="card"><div class="card-header"><div class="card-title">Operational Details</div></div>
-    <div class="card-body">
-      <div class="info-row"><span class="info-label">Industry</span><span class="info-val">Technology & Software</span></div>
-      <div class="info-row"><span class="info-label">Fiscal Year</span><span class="info-val">Jan 01 – Dec 31</span></div>
-      <div class="info-row"><span class="info-label">Currency</span><span class="info-val">USD ($)</span></div>
+    <div class="card-body"> 
+      <div class="info-row"><span class="info-label">Currency</span><span class="info-val">Ethiopian Birr (ETB)</span></div>
       <div class="info-row"><span class="info-label">Language</span><span class="info-val">English (US)</span></div>
       <div class="info-row"><span class="info-label">Branches</span><span class="info-val">12 Global Units</span></div>
-      <div class="info-row"><span class="info-label">Total Staff</span><span class="info-val">1,248</span></div>
+      <div class="info-row"><span class="info-label">Total Staff</span><span class="info-val">1,248 members</span></div>
     </div></div>
   </div>
   <div class="card mt-4"><div class="card-header"><div class="card-title">Contact Information</div></div>
   <div class="card-body form-grid fg-3">
-    <div class="form-group"><label>Corporate Email</label><input value="corporate@hrm.com"></div>
-    <div class="form-group"><label>Phone</label><input value="+1 (555) 012-3456"></div>
-    <div class="form-group"><label>Website</label><input value="https://hrmenterprises.com"></div>
-    <div class="form-group"><label>HQ Address</label><input value="123 Business Avenue, Suite 500"></div>
-    <div class="form-group"><label>City / State</label><input value="New York, NY 10001"></div>
-    <div class="form-group"><label>Country</label><input value="United States"></div>
+    <div class="form-group"><label>Corporate Email</label><input value="corporate@hrm.com"disabled></div>
+    <div class="form-group"><label>Phone</label><input value="(+251)967285600"disabled></div>
+    <div class="form-group"><label>Website</label><input value="https://hrmenterprises.com"disabled></div>
+    <div class="form-group"><label>HQ Address</label><input value="Ras Desta Street, Kirkos Sub-City, Woreda 01" disabled></div>
+    <div class="form-group"><label>City / State</label><input value="Addis Ababa"disabled></div>
+    <div class="form-group"><label>Country</label><input value="Ethiopia"disabled></div>
   </div></div>
 </div>
 
@@ -632,7 +627,7 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
 <div class="page" id="p-org-chart">
   <div class="page-header">
     <div><div class="page-title">Organization Chart</div><div class="page-sub">Live reporting structure and hierarchy</div></div>
-    <div class="flex-row"><button class="btn btn-secondary"><i data-lucide="download" size="13"></i>Export PDF</button><button class="btn btn-primary"><i data-lucide="plus" size="13"></i>Add Node</button></div>
+    <div class="flex-row"><button class="btn btn-secondary"><i data-lucide="download" size="13"></i>Export PDF</button> </div>
   </div>
   <div class="card"><div class="card-body" style="overflow-x:auto;">
     <div style="min-width:700px;text-align:center;padding:20px 0;">
@@ -646,8 +641,6 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
           <div class="oc-node vp"><div class="oc-name">Michael Chen</div><div class="oc-role">Chief Operating Officer</div></div>
           <div class="oc-line" style="height:22px;"></div>
           <div style="display:flex;gap:20px;">
-            <div class="oc-node mgr" style="min-width:140px;"><div class="oc-name">James Wilson</div><div class="oc-role">VP Sales</div></div>
-            <div class="oc-node mgr" style="min-width:140px;"><div class="oc-name">Linda Wu</div><div class="oc-role">VP Supply Chain</div></div>
             <div class="oc-node mgr" style="min-width:140px;"><div class="oc-name">James Wilson</div><div class="oc-role">VP Sales</div></div>
             <div class="oc-node mgr" style="min-width:140px;"><div class="oc-name">Linda Wu</div><div class="oc-role">VP Supply Chain</div></div>
           </div>
