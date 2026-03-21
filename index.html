@@ -389,8 +389,7 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
         <div class="sub-link" onclick="goPage('org-chart',this)"><span class="sub-dot"></span>Organization Chart</div>
         <div class="sub-link" onclick="goPage('departments',this)"><span class="sub-dot"></span>Departments</div>
         <div class="sub-link" onclick="goPage('job-positions',this)"><span class="sub-dot"></span>Job Positions</div>
-        <div class="sub-link" onclick="goPage('branch-offices',this)"><span class="sub-dot"></span>Branch Offices</div>
-        <div class="sub-link" onclick="goPage('manpower-planning',this)"><span class="sub-dot"></span>Manpower Mapping</div>
+        <div class="sub-link" onclick="goPage('branch-offices',this)"><span class="sub-dot"></span>Branch Offices</div> 
       </div>
     </div>
 
@@ -732,22 +731,7 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
   </div>
   <div id="tbl-branch-offices"></div>
 </div>
-
-<!-- ══════════════════════════════
-     MANPOWER PLANNING
-══════════════════════════════ -->
-<div class="page" id="p-manpower-planning">
-  <div class="page-header">
-    <div><div class="page-title">Manpower Mapping</div><div class="page-sub">Workforce forecast and gap analysis</div></div>
-    <button class="btn btn-primary"><i data-lucide="plus" size="13"></i>New Plan</button>
-  </div>
-  <div class="stats-row stats-3 mb-4">
-    <div class="stat-card"><div class="stat-label">Current Headcount</div><div class="stat-value">1,248</div></div>
-    <div class="stat-card"><div class="stat-label">Approved Headcount</div><div class="stat-value">1,320</div></div>
-    <div class="stat-card"><div class="stat-label">Gap to Fill</div><div class="stat-value" style="color:var(--danger);">72</div></div>
-  </div>
-  <div id="tbl-manpower-planning"></div>
-</div>
+ 
 
 <!-- ══════════════════════════════
      EMPLOYEE DIRECTORY
@@ -1973,8 +1957,6 @@ function initPage(id) {
       buildTable('tbl-job-positions', { columns:[{key:'code',label:'Code'},{key:'title',label:'Job Title'},{key:'dept',label:'Department'},{key:'grade',label:'Grade'},{key:'min',label:'Min Salary'},{key:'max',label:'Max Salary'},{key:'count',label:'Headcount'},{key:'_',label:'Actions',render:()=>actions}], rows: gen(28, i => ({ code:`JP${String(i+1).padStart(3,'0')}`, title:['Software Engineer','Sales Manager','HR Business Partner','Finance Analyst','Product Manager','UX Designer','DevOps Engineer','Data Scientist','Legal Counsel','Support Lead'][i%10], dept:rand(depts), grade:['L1','L2','L3','L4','M1','M2','S1','S2'][i%8], min:fmtMoney(randInt(40,80)*1000), max:fmtMoney(randInt(80,150)*1000), count:randInt(2,40) })) }); break;
     case 'branch-offices':
       buildTable('tbl-branch-offices', { columns:[{key:'code',label:'Code'},{key:'name',label:'Branch Name'},{key:'city',label:'City'},{key:'country',label:'Country'},{key:'manager',label:'Branch Manager'},{key:'emp',label:'Staff'},{key:'status',label:'Status'},{key:'_',label:'Actions',render:()=>actions}], rows: gen(12, i => ({ code:`BR${String(i+1).padStart(2,'0')}`, name:['HQ','North','South','East','West','APAC','EMEA','LATAM','Canada','Australia','UK','Singapore'][i]+' Office', city:['New York','Chicago','Atlanta','Boston','San Jose','Singapore','London','São Paulo','Toronto','Sydney','Manchester','Tokyo'][i], country:['USA','USA','USA','USA','USA','Singapore','UK','Brazil','Canada','Australia','UK','Japan'][i], manager:names[i%names.length], emp:randInt(30,320), status:statuses.active })) }); break;
-    case 'manpower-planning':
-      buildTable('tbl-manpower-planning', { columns:[{key:'dept',label:'Department'},{key:'current',label:'Current'},{key:'approved',label:'Approved HC'},{key:'gap',label:'Gap'},{key:'budget',label:'Budget (Annual)'},{key:'status',label:'Status'},{key:'_',label:'Actions',render:()=>actions}], rows: gen(10, i => ({ dept:depts[i], current:randInt(60,320), approved:randInt(80,350), gap:randInt(0,40), budget:fmtMoney(randInt(400,2000)*1000), status:i%3===0?statuses.pending:statuses.approved })) }); break;
     case 'employee-directory':
       buildTable('tbl-employees', { columns:[{key:'id',label:'Emp ID'},{key:'name',label:'Name'},{key:'dept',label:'Department'},{key:'position',label:'Position'},{key:'type',label:'Type'},{key:'email',label:'Email'},{key:'phone',label:'Phone'},{key:'hire',label:'Hire Date'},{key:'status',label:'Status'},{key:'_',label:'Actions',render:()=>actions}], rows: gen(60, i => ({ id:`E${String(i+1).padStart(4,'0')}`, name:names[i%names.length], dept:rand(depts), position:['Engineer','Manager','Analyst','Director','Specialist'][i%5], type:i%4===0?'Contract':'Permanent', email:`${names[i%names.length].toLowerCase().replace(' ','.')}@hrm.com`, phone:`+1 555 ${String(randInt(1000,9999))}`, hire:`${['Jan','Feb','Mar','Apr','May','Jun'][i%6]} ${randInt(1,28)}, ${randInt(2018,2025)}`, status:i%8===0?statuses.inactive:statuses.active })) }); break;
     case 'employment-types':
@@ -1986,7 +1968,7 @@ function initPage(id) {
     case 'document-vault':
       buildTable('tbl-documents', { columns:[{key:'id',label:'Doc ID'},{key:'emp',label:'Employee'},{key:'type',label:'Document Type'},{key:'file',label:'Filename'},{key:'uploaded',label:'Uploaded'},{key:'expiry',label:'Expiry'},{key:'status',label:'Status'},{key:'_',label:'Actions',render:()=>actions}], rows: gen(35, i => ({ id:`DOC-${String(i+1).padStart(4,'0')}`, emp:names[i%names.length], type:['National ID','Passport','Academic Certificate','Employment Contract','NDA','Tax Form W-4','I-9 Verification'][i%7], file:`doc_${i+1}.pdf`, uploaded:`${['Jan','Feb','Mar'][i%3]} ${randInt(1,28)}, 2026`, expiry:i%3===0?`Dec 31, ${randInt(2026,2030)}`:'No Expiry', status:i%7===0?'<span class="badge badge-warning">Expiring Soon</span>':statuses.active })) }); break;
     case 'asset-tracking':
-      buildTable('tbl-assets', { columns:[{key:'id',label:'Asset ID'},{key:'asset',label:'Asset Name'},{key:'cat',label:'Category'},{key:'serial',label:'Serial No.'},{key:'emp',label:'Assigned To'},{key:'dept',label:'Dept'},{key:'issued',label:'Issued Date'},{key:'value',label:'Value'},{key:'_',label:'Actions',render:()=>actions}], rows: gen(30, i => ({ id:`AST-${String(i+1).padStart(3,'0')}`, asset:['MacBook Pro 16"','iPhone 14 Pro','Dell Monitor 27"','Office Chair','Access Card','Company Car','iPad Air','Laptop Stand'][i%8], cat:['Hardware','Mobile','Hardware','Furniture','Security','Vehicle','Hardware','Accessories'][i%8], serial:`SN${randInt(100000,999999)}`, emp:names[i%names.length], dept:rand(depts), issued:`${['Jan','Feb','Mar','Dec'][i%4]} ${randInt(1,28)}, ${randInt(2022,2026)}`, value:fmtMoney(randInt(200,4000)) })) }); break;
+      buildTable('tbl-assets', { columns:[{key:'id',label:'Asset ID'},{key:'asset',label:'Asset Name'},{key:'cat',label:'Category'},{key:'serial',label:'Serial No.'},{key:'emp',label:'Assigned To'},{key:'dept',label:'Dept'},{key:'issued',label:'Issued Date'} ,{key:'_',label:'Actions',render:()=>actions}], rows: gen(30, i => ({ id:`AST-${String(i+1).padStart(3,'0')}`, asset:['MacBook Pro 16"','iPhone 14 Pro','Dell Monitor 27"','Office Chair','Access Card','Company Car','iPad Air','Laptop Stand'][i%8], cat:['Hardware','Mobile','Hardware','Furniture','Security','Vehicle','Hardware','Accessories'][i%8], serial:`SN${randInt(100000,999999)}`, emp:names[i%names.length], dept:rand(depts), issued:`${['Jan','Feb','Mar','Dec'][i%4]} ${randInt(1,28)}, ${randInt(2022,2026)}`, value:fmtMoney(randInt(200,4000)) })) }); break;
     case 'job-vacancies':
       buildTable('tbl-vacancies', { columns:[{key:'ref',label:'Ref #'},{key:'title',label:'Position'},{key:'dept',label:'Dept'},{key:'location',label:'Location'},{key:'type',label:'Type'},{key:'posted',label:'Posted'},{key:'deadline',label:'Deadline'},{key:'apps',label:'Applicants'},{key:'status',label:'Status'},{key:'_',label:'Actions',render:()=>actions}], rows: gen(23, i => ({ ref:`VAC-${String(i+1).padStart(3,'0')}`, title:['Senior Dev','Sales Rep','HR Coordinator','Finance Analyst','UX Designer','DevOps','QA Engineer','Data Analyst','Legal Counsel','Support Specialist'][i%10], dept:rand(depts), location:['Remote','New York','Hybrid','Atlanta','London'][i%5], type:['Full-Time','Contract','Part-Time'][i%3], posted:`Mar ${randInt(1,18)}, 2026`, deadline:`Apr ${randInt(5,30)}, 2026`, apps:randInt(5,80), status:[statuses.open,statuses.hold,statuses.filled][i%3] })) }); break;
     case 'candidates':
