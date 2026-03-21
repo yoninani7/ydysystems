@@ -1566,57 +1566,7 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
     </div></div>
   </div>
 
-  <!-- Row 4: Integrations + Backup & Retention -->
-  <div class="grid-2">
-    <!-- Third-party system integrations and API key management -->
-    <div class="card"><div class="card-header"><div class="card-title"><i data-lucide="plug" size="14" style="margin-right:6px;color:var(--primary);vertical-align:middle;"></i>System Integrations</div></div><div class="card-body">
-      <div class="form-grid fg-2" style="margin-bottom:16px;">
-        <div class="form-group"><label>Biometric Device URL</label><input placeholder="https://biometric.internal/api"></div>
-        <div class="form-group"><label>Bank API Endpoint</label><input placeholder="https://bank.api/v2/transfers"></div>
-        <div class="form-group"><label>Self-Service Portal URL</label><input value="https://portal.hrm.com"></div>
-        <div class="form-group"><label>API Rate Limit (req/min)</label><input type="number" value="60"></div>
-      </div>
-      <div class="toggle-wrap">
-        <div><div class="toggle-label">Enable External API Access</div><div class="toggle-sub">Allow third-party apps to connect via REST API</div></div>
-        <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
-      </div>
-      <div class="toggle-wrap">
-        <div><div class="toggle-label">Biometric Auto-Sync</div><div class="toggle-sub">Pull attendance from biometric devices on schedule</div></div>
-        <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
-      </div>
-      <div class="toggle-wrap">
-        <div><div class="toggle-label">Bank Transfer Integration</div><div class="toggle-sub">Direct bank file submission via API</div></div>
-        <label class="toggle"><input type="checkbox"><span class="toggle-slider"></span></label>
-      </div>
-      <!-- Read-only API key display (monospace) -->
-      <div class="form-group mt-3"><label>API Key (read-only)</label><input value="sk_live_xxxx-xxxx-xxxx-xxxx" style="font-family:monospace;font-size:.75rem;" readonly></div>
-    </div></div>
-
-    <!-- Backup schedule, storage, and encryption settings -->
-    <div class="card"><div class="card-header"><div class="card-title"><i data-lucide="hard-drive" size="14" style="margin-right:6px;color:var(--primary);vertical-align:middle;"></i>Backup & Data Retention</div></div><div class="card-body">
-      <div class="form-grid fg-2" style="margin-bottom:16px;">
-        <div class="form-group"><label>Backup Frequency</label><select><option>Daily</option><option>Every 12 Hours</option><option>Weekly</option><option>Monthly</option></select></div>
-        <div class="form-group"><label>Retention Period (days)</label><input type="number" value="365"></div>
-        <div class="form-group"><label>Storage Location</label><select><option>AWS S3</option><option>Google Cloud</option><option>Azure Blob</option><option>Local Server</option></select></div>
-        <div class="form-group"><label>Export Format</label><select><option>JSON + CSV</option><option>SQL Dump</option><option>XML</option></select></div>
-        <!-- These fields are read-only status indicators -->
-        <div class="form-group"><label>Last Successful Backup</label><input value="Mar 20, 2026 — 02:00 AM" disabled></div>
-        <div class="form-group"><label>Next Scheduled Backup</label><input value="Mar 21, 2026 — 02:00 AM" disabled></div>
-      </div>
-      <div class="toggle-wrap">
-        <div><div class="toggle-label">Automatic Backup</div><div class="toggle-sub">System backs up on the configured schedule</div></div>
-        <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
-      </div>
-      <div class="toggle-wrap">
-        <div><div class="toggle-label">Backup Encryption (AES-256)</div><div class="toggle-sub">Encrypt all backup files before storage</div></div>
-        <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
-      </div>
-      <div class="flex-row mt-3">
-        <button class="btn btn-secondary btn-sm"><i data-lucide="download" size="12"></i>Download Latest Backup</button>
-        <button class="btn btn-secondary btn-sm"><i data-lucide="refresh-cw" size="12"></i>Run Backup Now</button>
-      </div>
-    </div></div>
-  </div>
+  
 </div>
 
   </div><!-- /content-area -->
