@@ -653,121 +653,219 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
     display: flex;
     align-items: center;
     justify-content: space-between;
-}
-/* ── SPLIT-PANE ASSET WORKSPACE ── */
-.asset-workspace {
-    display: grid;
-    grid-template-columns: 380px 1fr;
-    gap: 0;
-    background: var(--surface);
+} 
+/* REFINED COMMAND CENTER STREAM */
+
+/* Search Bar with Internal Button */
+.as-search-wrapper {
+    display: flex;
+    align-items: center;
+    background: #fff;
+    padding: 4px 4px 4px 14px;
+    border-radius: 10px;
     border: 1px solid var(--border);
-    border-radius: 12px;
-    height: calc(100vh - 180px);
-    overflow: hidden;
+    width: 460px;
     box-shadow: var(--shadow);
 }
-
-/* Left List */
-.asset-list-pane {
-    border-right: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    background: #f8fafc;
-}
-.asset-list-header {
-    padding: 15px;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface);
-}
-.asset-items-container {
+.as-search-icon { color: var(--muted); flex-shrink: 0; }
+.as-search-input {
+    border: none;
+    background: transparent;
+    padding: 8px 12px;
+    font-size: 0.8rem;
+    outline: none;
     flex: 1;
-    overflow-y: auto;
+    font-family: inherit;
+    color: var(--text);
 }
-.asset-entry {
-    padding: 12px 15px;
-    border-bottom: 1px solid var(--border);
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: var(--surface);
-}
-.asset-entry:hover { background: #f1f5f9; }
-.asset-entry.active {
-    background: var(--primary-light);
-    border-left: 4px solid var(--primary);
+.as-add-btn {
+    height: 32px;
+    padding: 0 12px;
+    white-space: nowrap;
 }
 
-/* Right Detail Pane */
-.asset-detail-pane {
-    padding: 30px;
-    overflow-y: auto;
-    background: var(--surface);
-}
-
-/* Asset Passport UI */
-.passport-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 25px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid var(--border);
-}
-.tag-badge {
-    font-family: 'JetBrains Mono', monospace;
-    background: #0f172a;
-    color: white;
-    padding: 4px 10px;
-    border-radius: 4px;
-    font-size: 0.7rem;
-}
-
-.passport-grid {
+/* Recalibrated Grid (7 Columns) */
+.as-stream-header, .asset-stripe {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 24px;
+    grid-template-columns: 110px 1.4fr 1fr 1fr 1fr 1.2fr 120px;
+    align-items: center;
 }
 
-.spec-box {
-    background: #f8fafc;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 16px;
-}
-.spec-title {
+.as-stream-header {
+    padding: 12px 0;
     font-size: 0.65rem;
-    font-weight: 800;
+    font-weight: 700;
     color: var(--muted);
     text-transform: uppercase;
-    margin-bottom: 12px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
+    letter-spacing: 0.05em;
 }
 
-/* Tiny status timeline */
-.asset-history {
-    margin-top: 20px;
-    border-left: 2px solid var(--border);
-    padding-left: 20px;
-    margin-left: 10px;
+.asset-stream { display: flex; flex-direction: column; gap: 4px; }
+
+.asset-stripe {
+    background: var(--surface);
+    padding: 14px 0;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.history-item {
+
+/* Fancy Slide Effect */
+.asset-stripe:hover {
+    background: #fcfdfe;
+    border-color: var(--primary);
+    transform: translateX(6px);
+    box-shadow: -6px 0 0 var(--primary), var(--shadow-md);
+}
+
+.as-id { font-size: 0.75rem; font-weight: 600; color: var(--muted); padding-left: 16px; }
+.as-name { font-size: 0.8rem; font-weight: 700; color: var(--text); }
+.as-custodian-prev { font-size: 0.78rem; font-weight: 500; color: var(--muted); opacity: 0.7; }
+.as-custodian-curr { font-size: 0.78rem; font-weight: 600; color: var(--text); }
+.as-ref-text { font-size: 0.75rem; color: var(--muted); font-family: inherit; }
+.as-location-text { font-size: 0.75rem; color: var(--muted); }
+
+.as-actions { display: flex; gap: 8px; justify-content: flex-end; padding-right: 16px; }
+
+.as-icon-btn {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--border);
+    background: #fff;
+    color: var(--muted);
+    transition: all 0.15s;
+}
+
+/* Specific button styles */
+.as-icon-btn:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+.as-icon-btn.edit-btn:hover { background: var(--text); color: #fff; border-color: var(--text); }
+/* SEARCHABLE SELECT STYLES */
+.searchable-select {
     position: relative;
-    padding-bottom: 15px;
+    display: flex;
+    align-items: center;
 }
-.history-item::before {
-    content: '';
+.searchable-select input {
+    padding-right: 35px !important; /* Space for chevron */
+    cursor: text;
+}
+.select-chevron {
     position: absolute;
-    left: -25px;
-    top: 4px;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--border);
-    border: 2px solid var(--surface);
+    right: 12px;
+    color: var(--muted);
+    pointer-events: none;
+}
+.select-dropdown {
+    position: absolute;
+    top: calc(100% + 5px);
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    display: none; /* Hidden by default */
+}
+.select-dropdown.open {
+    display: block;
+    animation: fadeInScale 0.15s ease-out;
+}
+.select-item {
+    padding: 10px 14px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background 0.15s;
+    border-bottom: 1px solid #f1f5f9;
+}
+.select-item:last-child { border-bottom: none; }
+.select-item:hover {
+    background: var(--primary-light);
+    color: var(--primary);
+    font-weight: 600;
+}
+.select-item.no-results {
+    color: var(--muted);
+    font-style: italic;
+    pointer-events: none;
+}
+
+@keyframes fadeInScale {
+    from { opacity: 0; transform: translateY(-10px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+/* TYPABLE COMBOBOX STYLES */
+.as-combo-container {
+    position: relative;
+    width: 100%;
+}
+
+.as-combo-results {
+    position: absolute;
+    top: calc(100% + 5px);
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+    max-height: 180px;
+    overflow-y: auto;
+    z-index: 9999;
+    display: none; /* Hidden until focus/type */
+}
+
+/* Show when active */
+.as-combo-results.active { display: block; }
+
+.as-res-item {
+    padding: 10px 14px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--text);
+    border-bottom: 1px solid #f8fafc;
+    transition: all 0.15s;
+}
+
+.as-res-item:last-child { border-bottom: none; }
+
+.as-res-item:hover {
+    background: var(--primary-light);
+    color: var(--primary);
+    padding-left: 18px; /* Subtle slide in effect */
+}
+
+.as-res-no-match {
+    padding: 12px;
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-align: center;
+    font-style: italic;
+}
+/* REASSIGN MODAL SPECIFICS */
+.info-tile {
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    padding: 10px 14px;
+    border-radius: 8px;
+}
+.tile-label {
+    display: block;
+    font-size: 0.62rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--muted);
+    letter-spacing: 0.03em;
+    margin-bottom: 4px;
+}
+.tile-val {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text);
 }
 </style>
 </head>
@@ -1325,41 +1423,40 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
      ASSET TRACKING
 ══════════════════════════════ -->
 <div class="page" id="p-asset-tracking">
-  <div class="page-header">
+  <div class="page-header" style="margin-bottom: 24px;">
     <div>
-      <div class="page-title">Asset Lifecycle Manager</div>
-      <div class="page-sub">Centralized registry for hardware assignment and tracking</div>
+      <div class="page-title" style="letter-spacing: -0.02em; font-weight: 800;">Asset Registry</div>
+      <div class="page-sub">Centralized inventory and resource assignment</div>
     </div>
-    <div class="flex-row">
-      <button class="btn btn-primary"><i data-lucide="plus" size="14"></i> Provision New Asset</button>
+    
+    <div class="as-search-wrapper">
+        <i data-lucide="search" size="15" class="as-search-icon"></i>
+        <input type="text" placeholder="Search by name, ID or custodian..." class="as-search-input" id="as-search-filter">
+        <button class="btn btn-primary btn-sm as-add-btn">
+            <i data-lucide="plus" size="14"></i> Add New
+        </button>
     </div>
   </div>
 
-  <div class="asset-workspace">
-    <!-- LEFT SIDE: High Density List -->
-    <div class="asset-list-pane">
-      <div class="asset-list-header">
-        <div class="search-bar">
-          <i data-lucide="search" size="14" class="search-icon"></i>
-          <input placeholder="Filter by Tag or Holder...">
-        </div>
-      </div>
-      <div class="asset-items-container" id="asset-sidebar-list">
-        <!-- JS will populate high-density entries here -->
-      </div>
-    </div>
+  <!-- Header with 7 Columns -->
+  <div class="as-stream-header">
+      <div style="padding-left:16px;">System ID</div>
+      <div>Asset Name</div>
+      <div>Current Custodian</div>
+      <div>Prev. Custodian</div>
+      <div>Serial / Ref</div>
+      <div>Location</div>
+      <div style="text-align:right; padding-right:16px;">Commands</div>
+  </div>
 
-    <!-- RIGHT SIDE: Asset Passport Detail -->
-    <div class="asset-detail-pane" id="asset-detail-view">
-       <!-- Click an asset to see details -->
-       <div style="text-align:center; padding-top:100px; color:var(--muted);">
-          <i data-lucide="mouse-pointer-2" size="48" style="opacity:0.2; margin-bottom:15px;"></i>
-          <p>Select an asset from the list to view its passport</p>
-       </div>
-    </div>
+  <div id="asset-stream-container" class="asset-stream">
+    <!-- Rows go here -->
+  </div>
+
+  <div id="as-pagination" class="pagination" style="margin-top: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px;">
+    <!-- Pagination info and buttons -->
   </div>
 </div>
-
 <!-- ══════════════════════════════
      JOB VACANCIES
 ══════════════════════════════ -->
@@ -2174,7 +2271,119 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
     </div>
   </div>
 </div>
+ 
+<!-- ═══════════════════════════════════════
+     MODAL: REGISTER NEW ASSET (PRO SEARCH)
+═══════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-add-asset" onclick="closeAssetModal(event)">
+  <div class="modal-box" style="max-width: 460px; overflow: visible;">
+    <div class="modal-header">
+      <div>
+        <div style="font-size:1.1rem; font-weight:800;">Register New Asset</div>
+        <div style="font-size:.75rem; color:var(--muted); margin-top:3px;">Assign inventory to the system registry</div>
+      </div>
+      <button class="icon-btn" onclick="closeAssetModal()"><i data-lucide="x" size="15"></i></button>
+    </div>
 
+    <div class="modal-body" style="overflow: visible;">
+      <div class="form-grid">
+        <!-- Name Input -->
+        <div class="form-group">
+          <label>Asset Name</label>
+          <input type="text" id="as-new-name" placeholder="e.g. MacBook Pro 14">
+        </div>
+        
+        <!-- TYPABLE SEARCH: Custodian -->
+        <div class="form-group" style="position: relative;">
+          <label>Custodian</label>
+          <div class="as-combo-container">
+            <input type="text" id="as-input-custodian" 
+                   placeholder="Type name to search..." 
+                   onfocus="showAsDrop('as-drop-custodian')" 
+                   oninput="filterAsDrop('as-input-custodian', 'as-drop-custodian')">
+            <div class="as-combo-results" id="as-drop-custodian"></div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Serial / Reference</label>
+          <input type="text" id="as-new-serial" placeholder="e.g. SN-88293-X">
+        </div>
+
+        <!-- TYPABLE SEARCH: Location -->
+        <div class="form-group" style="position: relative;">
+          <label>Location / Branch</label>
+          <div class="as-combo-container">
+            <input type="text" id="as-input-location" 
+                   placeholder="Type branch name..." 
+                   onfocus="showAsDrop('as-drop-location')" 
+                   oninput="filterAsDrop('as-input-location', 'as-drop-location')">
+            <div class="as-combo-results" id="as-drop-location"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeAssetModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveNewAsset()">Save Asset</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     MODAL: REASSIGN ASSET
+═══════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-reassign-asset" onclick="closeReassignModal(event)">
+  <div class="modal-box" style="max-width: 440px; overflow: visible;">
+    <div class="modal-header">
+      <div>
+        <div style="font-size:1.1rem; font-weight:800;">Reassign Asset</div>
+        <div style="font-size:.75rem; color:var(--muted); margin-top:3px;">Transfer ownership to another employee</div>
+      </div>
+      <button class="icon-btn" onclick="closeReassignModal()"><i data-lucide="x" size="15"></i></button>
+    </div>
+
+    <div class="modal-body" style="overflow: visible;">
+      <div class="flex-col" style="gap: 16px;">
+        
+        <!-- Read-Only Info Tiles -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="info-tile">
+                <label class="tile-label">Asset to Transfer</label>
+                <div id="reassign-display-name" class="tile-val">---</div>
+            </div>
+            <div class="info-tile">
+                <label class="tile-label">Current Custodian</label>
+                <div id="reassign-display-curr" class="tile-val">---</div>
+            </div>
+        </div>
+
+        <div class="divider" style="margin: 8px 0;"></div>
+
+        <!-- Typable Search: New Custodian -->
+        <div class="form-group" style="position: relative;">
+          <label style="font-weight: 700; color: var(--primary);">Select New Custodian</label>
+          <div class="as-combo-container">
+            <input type="text" id="as-input-reassign" 
+                   placeholder="Search for new owner..." 
+                   onfocus="showAsDrop('as-drop-reassign')" 
+                   oninput="filterAsDrop('as-input-reassign', 'as-drop-reassign')">
+            <div class="as-combo-results" id="as-drop-reassign"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeReassignModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveReassignment()" style="background: var(--primary);">
+          <i data-lucide="check-circle" size="14"></i> Save Changes
+      </button>
+    </div>
+  </div>
+</div>
 <script>
 // ══════════════════════════════════════════
 // RENDER LUCIDE ICONS — must run after DOM is ready
@@ -2523,100 +2732,95 @@ case 'employee-directory':
       buildTable('tbl-contract-renewals', { columns:[{key:'id',label:'Emp ID'},{key:'name',label:'Employee'},{key:'dept',label:'Dept'},{key:'type',label:'Contract Type'},{key:'start',label:'Start'},{key:'expiry',label:'Expiry'},{key:'days',label:'Days to Expiry'},{key:'status',label:'Status'},{key:'_',label:'Actions',render:()=>actions}], rows: gen(18, i => ({ id:`E${String(i+50).padStart(4,'0')}`, name:names[i%names.length], dept:rand(depts), type:'Fixed-Term', start:`Apr ${randInt(1,28)}, 2025`, expiry:`Apr ${randInt(1,28)}, 2026`, days:randInt(-5,90), status:i<3?'<span class="badge badge-danger">Critical</span>':i<8?'<span class="badge badge-warning">Due Soon</span>':'<span class="badge badge-success">Active</span>' })) }); break;
     case 'document-vault':
       buildTable('tbl-documents', { columns:[{key:'id',label:'Doc ID'},{key:'emp',label:'Employee'},{key:'type',label:'Document Type'},{key:'file',label:'Filename'},{key:'uploaded',label:'Uploaded'} ,{key:'_',label:'Actions',render:()=>actions}], rows: gen(35, i => ({ id:`DOC-${String(i+1).padStart(4,'0')}`, emp:names[i%names.length], type:['National ID','Passport','Academic Certificate','Employment Contract','NDA','Tax Form W-4','I-9 Verification'][i%7], file:`doc_${i+1}.pdf`, uploaded:`${['Jan','Feb','Mar'][i%3]} ${randInt(1,28)}, 2026`, expiry:i%3===0?`Dec 31, ${randInt(2026,2030)}`:'No Expiry', status:i%7===0?'<span class="badge badge-warning">Expiring Soon</span>':statuses.active })) }); break;
-   case 'asset-tracking':
-    const sidebar = document.getElementById('asset-sidebar-list');
-    const detail = document.getElementById('asset-detail-view');
-    if (!sidebar) break;
+case 'asset-tracking':
+  const streamContainer = document.getElementById('asset-stream-container');
+  const paginator = document.getElementById('as-pagination');
+  
+  // Link the Add New button to the modal
+  const addBtn = document.querySelector('.as-add-btn');
+  if (addBtn) addBtn.onclick = openAssetModal;
 
-    const assetData = gen(15, i => ({
-        id: `YDY-${2000 + i}`,
-        name: rand(['MacBook Pro M3', 'Dell Latitude 5420', 'iPhone 15 Pro', 'ErgoChair Pro', 'Cisco Router', 'Logitech MX Master']),
-        cat: rand(['Hardware', 'Peripheral', 'Furniture', 'Network']),
-        holder: names[i % names.length],
-        dept: rand(depts),
-        status: rand(['Assigned', 'In Storage', 'Maintenance']),
-        serial: `SN-99283-${randInt(100, 999)}`,
-        value: randInt(150, 2500),
-        purchase: `Oct 12, 2024`
-    }));
+  if (!streamContainer || streamContainer.dataset.init) break;
+  streamContainer.dataset.init = 'true';
 
-    // Function to render the Right Detail Pane
-    window.showAssetDetail = (index) => {
-        const item = assetData[index];
+  // Modal Dropdown Population
+  const custodianSelect = document.getElementById('as-new-custodian');
+  const locationSelect = document.getElementById('as-new-location');
+  const nameOptions = names.map(n => `<option value="${n}">${n}</option>`).join('');
+  if(custodianSelect) custodianSelect.innerHTML += nameOptions;
+  if(locationSelect) locationSelect.innerHTML += nameOptions;
+
+  // Mock Data with Previous Custodian
+  const allAssets = gen(50, i => ({
+      id: `AST-${2000 + i}`,
+      name: i % 4 === 0 ? 'MacBook Pro 16"' : 
+            i % 4 === 1 ? 'Toyota Hilux Fleet' : 
+            i % 4 === 2 ? 'Executive Desk' : 'DSLR Camera Kit',
+      prevUser: names[(i + 5) % names.length], // Random previous user
+      user: names[i % names.length],           // Current user
+      serial: `SN-${randInt(10000, 99999)}`,
+      location: ['Headquarters', 'Satellite Office', 'Warehouse A', 'North Branch'][i % 4]
+  }));
+
+  let currentAsPage = 1;
+  const asPerPage = 8;
+
+  function renderAssetPage(page) {
+      const start = (page - 1) * asPerPage;
+      const end = start + asPerPage;
+      const slice = allAssets.slice(start, end);
+
+    /* Inside your renderAssetPage function */
+streamContainer.innerHTML = slice.map(a => `
+    <div class="asset-stripe">
+        <!-- Theme Fonts Applied -->
+        <div class="as-id" style="font-family: inherit;">${a.id}</div>
+        <div class="as-name" style="font-family: inherit;">${a.name}</div>
         
-        // Highlight active sidebar item
-        document.querySelectorAll('.asset-entry').forEach(el => el.classList.remove('active'));
-        document.getElementById(`entry-${index}`).classList.add('active');
+        <!-- Standard Column: Current Custodian (Plain Text) -->
+        <div class="as-custodian-curr">${a.user}</div>
 
-        detail.innerHTML = `
-            <div class="passport-header">
-                <div>
-                    <div class="tag-badge">TAG: ${item.id}</div>
-                    <h2 style="margin-top:8px; font-size:1.4rem; font-weight:800;">${item.name}</h2>
-                    <div class="flex-row" style="margin-top:5px;">
-                        <span class="badge badge-primary">${item.cat}</span>
-                        <span class="badge ${item.status === 'Assigned' ? 'badge-success' : 'badge-warning'}">${item.status}</span>
-                    </div>
-                </div>
-                <div class="flex-row">
-                    <button class="btn btn-secondary btn-sm"><i data-lucide="printer" size="14"></i> Label</button>
-                    <button class="btn btn-secondary btn-sm"><i data-lucide="refresh-cw" size="14"></i> Transfer</button>
-                    <button class="btn btn-danger btn-sm">Retire</button>
-                </div>
-            </div>
-
-            <div class="passport-grid">
-                <div class="spec-box">
-                    <div class="spec-title"><i data-lucide="user" size="14"></i> Current Assignment</div>
-                    <div class="info-row"><span class="info-label">Custodian</span><span class="info-val">${item.holder}</span></div>
-                    <div class="info-row"><span class="info-label">Department</span><span class="info-val">${item.dept}</span></div>
-                    <div class="info-row"><span class="info-label">Location</span><span class="info-val">Main Office - Floor 4</span></div>
-                </div>
-
-                <div class="spec-box">
-                    <div class="spec-title"><i data-lucide="cpu" size="14"></i> Technical Specs</div>
-                    <div class="info-row"><span class="info-label">Serial Number</span><span class="info-val" style="font-family:monospace;">${item.serial}</span></div>
-                    <div class="info-row"><span class="info-label">Purchase Date</span><span class="info-val">${item.purchase}</span></div>
-                    <div class="info-row"><span class="info-label">Warranty Exp.</span><span class="info-val">Oct 12, 2026</span></div>
-                </div>
-            </div>
-
-            <div class="section-label" style="margin-top:30px;">Lifecycle History</div>
-            <div class="asset-history">
-                <div class="history-item">
-                    <div style="font-size:0.75rem; font-weight:700;">Assigned to ${item.holder}</div>
-                    <div style="font-size:0.65rem; color:var(--muted);">March 10, 2026 • By Admin</div>
-                </div>
-                <div class="history-item">
-                    <div style="font-size:0.75rem; font-weight:700;">Routine Maintenance Check</div>
-                    <div style="font-size:0.65rem; color:var(--muted);">Jan 15, 2026 • Passed</div>
-                </div>
-                <div class="history-item">
-                    <div style="font-size:0.75rem; font-weight:700;">Asset Registered</div>
-                    <div style="font-size:0.65rem; color:var(--muted);">${item.purchase} • System Inbound</div>
-                </div>
-            </div>
-        `;
-        lucide.createIcons();
-    };
-
-    // Render Sidebar List
-    sidebar.innerHTML = assetData.map((item, i) => `
-        <div class="asset-entry" id="entry-${i}" onclick="showAssetDetail(${i})">
-            <div class="avatar-sm avatar" style="background:#fff; border:1px solid var(--border);">
-                <i data-lucide="${item.cat === 'Hardware' ? 'monitor' : item.cat === 'Network' ? 'wifi' : 'package'}" size="14"></i>
-            </div>
-            <div style="flex:1;">
-                <div style="font-size:0.78rem; font-weight:700; color:var(--text);">${item.name}</div>
-                <div style="font-size:0.65rem; color:var(--muted);">${item.id} • ${item.holder}</div>
-            </div>
-            <div class="status-dot" style="width:8px; height:8px; border-radius:50%; background:${item.status === 'Assigned' ? 'var(--success)' : 'var(--warning)'}"></div>
+        <!-- New Column: Prev Custodian -->
+        <div class="as-custodian-prev" style="color: var(--muted); opacity: 0.6;">${a.prevUser}</div>
+        
+        
+        <div class="as-ref-text">${a.serial}</div>
+        <div class="as-location-text">${a.location}</div>
+         
+<div class="as-actions">
+    <button class="as-icon-btn edit-btn" title="Edit Asset">
+        <i data-lucide="settings-2" size="14"></i>
+    </button>
+    
+    <!-- Shuffle Icon now calls openReassignModal with asset data -->
+    <button class="as-icon-btn" title="Reassign Asset" 
+            onclick="openReassignModal('${a.name}', '${a.user}')">
+        <i data-lucide="shuffle" size="14"></i>
+    </button>
+</div>
+    </div>
+`).join('');
+      const totalPages = Math.ceil(allAssets.length / asPerPage);
+      paginator.innerHTML = `
+        <span class="pagination-info">Showing ${start + 1}–${Math.min(end, allAssets.length)} of ${allAssets.length} assets</span>
+        <div class="pagination-btns">
+            <button class="pg-btn" ${page === 1 ? 'disabled' : ''} id="as-prev">‹</button>
+            ${Array.from({length: totalPages}, (_, i) => `<button class="pg-btn ${i+1 === page ? 'active' : ''}" data-page="${i+1}">${i+1}</button>`).join('')}
+            <button class="pg-btn" ${page === totalPages ? 'disabled' : ''} id="as-next">›</button>
         </div>
-    `).join('');
+      `;
+      lucide.createIcons();
+      
+      document.getElementById('as-prev')?.addEventListener('click', () => { if(currentAsPage > 1) renderAssetPage(--currentAsPage); });
+      document.getElementById('as-next')?.addEventListener('click', () => { if(currentAsPage < totalPages) renderAssetPage(++currentAsPage); });
+      paginator.querySelectorAll('.pg-btn[data-page]').forEach(btn => {
+          btn.onclick = (e) => { currentAsPage = parseInt(e.target.dataset.page); renderAssetPage(currentAsPage); };
+      });
+  }
 
-    lucide.createIcons();
-    break;
-     case 'job-vacancies':
+  renderAssetPage(currentAsPage);
+  break; 
+  case 'job-vacancies':
       buildTable('tbl-vacancies', { columns:[{key:'ref',label:'Ref #'},{key:'title',label:'Position'},{key:'dept',label:'Dept'},{key:'location',label:'Location'},{key:'type',label:'Type'},{key:'posted',label:'Posted'},{key:'deadline',label:'Deadline'},{key:'apps',label:'Applicants'},{key:'status',label:'Status'},{key:'_',label:'Actions',render:()=>actions}], rows: gen(23, i => ({ ref:`VAC-${String(i+1).padStart(3,'0')}`, title:['Senior Dev','Sales Rep','HR Coordinator','Finance Analyst','UX Designer','DevOps','QA Engineer','Data Analyst','Legal Counsel','Support Specialist'][i%10], dept:rand(depts), location:['Remote','New York','Hybrid','Atlanta','London'][i%5], type:['Full-Time','Contract','Part-Time'][i%3], posted:`Mar ${randInt(1,18)}, 2026`, deadline:`Apr ${randInt(5,30)}, 2026`, apps:randInt(5,80), status:[statuses.open,statuses.hold,statuses.filled][i%3] })) }); break;
     case 'candidates':
       buildTable('tbl-candidates', { columns:[{key:'id',label:'Ref'},{key:'name',label:'Candidate'},{key:'position',label:'Applied For'},{key:'source',label:'Source'},{key:'applied',label:'Applied'},{key:'stage',label:'Stage'},{key:'score',label:'Score'},{key:'_',label:'Actions',render:()=>actions}], rows: gen(45, i => ({ id:`APP-${String(i+1).padStart(4,'0')}`, name:names[i%names.length], position:['Senior Dev','Sales Rep','HR Coordinator','Finance Analyst'][i%4], source:['LinkedIn','Indeed','Referral','Career Site','Agency'][i%5], applied:`Mar ${randInt(1,18)}, 2026`, stage:['Applied','Screening','Interview','Assessment','Offer','Hired'][i%6], score:randInt(60,100)+'%' })) }); break;
@@ -3085,6 +3289,187 @@ initPage = function(id) {
     originalInitPage(id);
     if (id === 'document-vault') initVaultMatrix();
 };
+/* Open Asset Modal */
+function openAssetModal() {
+  document.getElementById('modal-add-asset').classList.add('open');
+}
+
+/* Close Asset Modal */
+function closeAssetModal(e) {
+  if (!e || e.target === e.currentTarget) {
+    document.getElementById('modal-add-asset').classList.remove('open');
+  }
+}
+
+/* Save Action */
+function saveNewAsset() {
+  const name = document.getElementById('as-new-name').value;
+  const custodian = document.getElementById('as-new-custodian').value;
+  
+  if(!name || !custodian) {
+      alert("Please fill in the required fields.");
+      return;
+  }
+  
+  alert(`Asset "${name}" assigned to ${custodian} has been saved.`);
+  closeAssetModal();
+}
+/* --- Searchable Select Logic --- */
+
+// 1. Filter results as user types
+function filterDrop(inputId, dropId) {
+    const query = document.getElementById(inputId).value.toLowerCase();
+    const dropdown = document.getElementById(dropId);
+    const items = dropdown.querySelectorAll('.select-item');
+    let hasResults = false;
+
+    items.forEach(item => {
+        if (item.textContent.toLowerCase().includes(query)) {
+            item.style.display = 'block';
+            hasResults = true;
+        } else {
+            item.style.display = 'none';
+        }
+    });
+
+    // Toggle "No results" message
+    let noRes = dropdown.querySelector('.no-results');
+    if (!hasResults) {
+        if (!noRes) {
+            noRes = document.createElement('div');
+            noRes.className = 'select-item no-results';
+            noRes.textContent = 'No matches found';
+            dropdown.appendChild(noRes);
+        }
+    } else if (noRes) {
+        noRes.remove();
+    }
+}
+
+// 2. Toggle visibility
+function toggleDrop(id, state) {
+    const el = document.getElementById(id);
+    if (state) el.classList.add('open');
+    else setTimeout(() => el.classList.remove('open'), 200); // Timeout to allow click selection
+}
+
+// 3. Select an item
+function selectItem(inputId, valId, dropId, value) {
+    document.getElementById(inputId).value = value;
+    document.getElementById(valId).value = value;
+    document.getElementById(dropId).classList.remove('open');
+}
+
+// 4. Update the Registry Initialization to populate these custom lists
+const originalAssetTracking = initPage; 
+// In your case 'asset-tracking' block:
+/* Inside case 'asset-tracking': */
+const dropC = document.getElementById('drop-custodian');
+const dropL = document.getElementById('drop-location');
+
+if (dropC && !dropC.innerHTML.trim()) {
+    const listHtml = names.map(n => `
+        <div class="select-item" onclick="selectItem('as-search-custodian', 'as-val-custodian', 'drop-custodian', '${n}')">${n}</div>
+    `).join('');
+    dropC.innerHTML = listHtml;
+    dropL.innerHTML = listHtml; // Using same names for location branches per your request
+}
+
+// Add Close On Click Outside
+window.addEventListener('click', (e) => {
+    if (!e.target.closest('.searchable-select')) {
+        document.querySelectorAll('.select-dropdown').forEach(d => d.classList.remove('open'));
+    }
+});
+/* --- Asset Registry Combo Logic --- */
+
+// 1. Show the dropdown results
+function showAsDrop(id) {
+    const drop = document.getElementById(id);
+    // Populate if empty
+    if (!drop.innerHTML.trim()) {
+        populateAsDrop(id);
+    }
+    drop.classList.add('active');
+}
+
+// 2. Populate results from global names array
+function populateAsDrop(id) {
+    const drop = document.getElementById(id);
+    const inputId = id.replace('as-drop-', 'as-input-');
+    
+    drop.innerHTML = names.map(name => `
+        <div class="as-res-item" onclick="selectAsItem('${inputId}', '${id}', '${name}')">${name}</div>
+    `).join('');
+}
+
+// 3. Filter as the user types
+function filterAsDrop(inputId, dropId) {
+    const val = document.getElementById(inputId).value.toLowerCase();
+    const drop = document.getElementById(dropId);
+    const items = drop.querySelectorAll('.as-res-item');
+    let matches = 0;
+
+    items.forEach(item => {
+        if (item.textContent.toLowerCase().includes(val)) {
+            item.style.display = 'block';
+            matches++;
+        } else {
+            item.style.display = 'none';
+        }
+    });
+
+    drop.classList.add('active');
+}
+
+// 4. Select the item and fill the input
+function selectAsItem(inputId, dropId, name) {
+    document.getElementById(inputId).value = name;
+    document.getElementById(dropId).classList.remove('active');
+}
+
+// 5. Close dropdown when clicking outside
+window.addEventListener('mousedown', (e) => {
+    if (!e.target.closest('.as-combo-container')) {
+        document.querySelectorAll('.as-combo-results').forEach(d => d.classList.remove('active'));
+    }
+});
+/* Open Reassign Modal */
+function openReassignModal(assetName, currentCustodian) {
+    // Fill the display tiles
+    document.getElementById('reassign-display-name').textContent = assetName;
+    document.getElementById('reassign-display-curr').textContent = currentCustodian;
+    
+    // Clear previous search input
+    document.getElementById('as-input-reassign').value = "";
+    
+    // Show the modal
+    document.getElementById('modal-reassign-asset').classList.add('open');
+    
+    // Ensure icons are created (if any in modal)
+    lucide.createIcons();
+}
+
+/* Close Reassign Modal */
+function closeReassignModal(e) {
+    if (!e || e.target === e.currentTarget) {
+        document.getElementById('modal-reassign-asset').classList.remove('open');
+    }
+}
+
+/* Save the Changes */
+function saveReassignment() {
+    const newOwner = document.getElementById('as-input-reassign').value;
+    const asset = document.getElementById('reassign-display-name').textContent;
+    
+    if (!newOwner) {
+        alert("Please select a new custodian.");
+        return;
+    }
+
+    alert(`Reassignment Successful: ${asset} has been transferred to ${newOwner}.`);
+    closeReassignModal();
+}
 </script>
 </body>
 </html>
