@@ -8,7 +8,8 @@
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>/* ── CSS CUSTOM PROPERTIES (design tokens) ── */
-:root { --primary: #15b201; --primary-light: #ecfbe9; --primary-dark: #118e01; --sidebar-w: 268px; --header-h: 60px; --bg: #f1f5f9; --surface: #ffffff; --border: #e2e8f0; --text: #0f172a; --muted: #64748b; --success: #16a34a; --success-bg: #dcfce7; --warning: #d97706; --warning-bg: #fef3c7; --danger: #dc2626; --danger-bg: #fee2e2; --info: #0891b2; --info-bg: #cffafe; --radius: 10px; --shadow: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.05); --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -1px rgba(0,0,0,0.05); }
+:root { --primary: #15b201; --primary-light: #f1fcf0;  
+  --primary-dark: #0f8a00; --sidebar-w: 268px; --header-h: 60px; --bg: #f1f5f9; --surface: #ffffff; --border: #e2e8f0; --text: #0f172a; --muted: #64748b; --success: #16a34a; --success-bg: #dcfce7; --warning: #d97706; --warning-bg: #fef3c7; --danger: #dc2626; --danger-bg: #fee2e2; --info: #0891b2; --info-bg: #cffafe; --radius: 10px; --shadow: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.05); --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -1px rgba(0,0,0,0.05); }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); display: flex; min-height: 100vh; overflow: hidden; }
 
@@ -241,6 +242,28 @@ input[type="checkbox"] { accent-color: var(--primary); width: 15px; height: 15px
 
 /* ── RESPONSIVE ── */
 @media(max-width:1100px) { .stats-4 { grid-template-columns: repeat(2, 1fr); } .grid-4 { grid-template-columns: repeat(2, 1fr); } .grid-3 { grid-template-columns: 1fr 1fr; } }
+/* Enhanced Edit Button for Company Profile */
+.btn-edit-glass {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(4px);
+    padding: 10px 18px;
+    font-size: 0.75rem;
+    letter-spacing: 0.02em;
+    transition: all 0.2s ease;
+}
+
+.btn-edit-glass:hover {
+    background: rgba(255, 255, 255, 0.377);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.btn-edit-glass i {
+    margin-right: 4px;
+}
 </style>
 </head>
 <body>
@@ -468,15 +491,25 @@ input[type="checkbox"] { accent-color: var(--primary); width: 15px; height: 15px
 <!-- ══════════════════════════════
      DASHBOARD PAGE
 ══════════════════════════════ -->
-<div class="page active" id="p-dashboard">
-  <div class="page-header">
-    <div><div class="page-title">Welcome, YDY </div><div class="page-sub">Here's what's happening today — March 20, 2026</div></div>
-  </div>
+<div class="page active" id="p-dashboard"> 
+        <div class="brand-strip">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <div style="background: rgba(255,255,255,0.2); padding: 10px; border-radius: 8px;">
+                    <i data-lucide="crown" size="28"></i>
+                </div>
+                <div>
+                    <h1 style="font-size: 1.2rem; font-weight: 800; line-height: 1;"> Welcome, YDY</h1>
+                    <p style="font-size: 0.7rem; opacity: 0.8; margin-top: 4px;">Here's what's happening today — March 20, 2026</p>
+                </div>
+            </div>
+            <div style="text-align: right;">  
+            </div>
+        </div><br>
   <!-- Row 1 stat cards -->
   <div class="stats-row stats-4">
-    <div class="stat-card"><div class="stat-flex"><div><div class="stat-label">Total Employees</div><div class="stat-value">1,248</div></div><div class="stat-icon-wrap" style="background:#eff6ff;color:#2563eb;"><i data-lucide="users" size="20"></i></div></div></div>
+    <div class="stat-card"><div class="stat-flex"><div><div class="stat-label">Total Employees</div><div class="stat-value">1,248</div></div><div class="stat-icon-wrap" style="background:#eff6ff;color:#15b201;"><i data-lucide="users" size="20"></i></div></div></div>
     <div class="stat-card"><div class="stat-flex"><div><div class="stat-label">On Leave Today</div><div class="stat-value">47</div></div><div class="stat-icon-wrap" style="background:#fef3c7;color:#d97706;"><i data-lucide="umbrella" size="20"></i></div></div></div>
-    <div class="stat-card"><div class="stat-flex"><div><div class="stat-label">Open Positions</div><div class="stat-value">23</div></div><div class="stat-icon-wrap" style="background:#dcfce7;color:#16a34a;"><i data-lucide="briefcase" size="20"></i></div></div></div>
+    <div class="stat-card"><div class="stat-flex"><div><div class="stat-label">Open Positions</div><div class="stat-value">23</div></div><div class="stat-icon-wrap" style="background:#dcfce7;color:#2563eb;"><i data-lucide="briefcase" size="20"></i></div></div></div>
     <div class="stat-card"><div class="stat-flex"><div><div class="stat-label">Pending Approvals</div><div class="stat-value">18</div></div><div class="stat-icon-wrap" style="background:#fee2e2;color:#dc2626;"><i data-lucide="clock" size="20"></i></div></div></div>
   </div>
   <!-- Row 2 stat cards -->
@@ -496,10 +529,8 @@ input[type="checkbox"] { accent-color: var(--primary); width: 15px; height: 15px
 <!-- ══════════════════════════════
      COMPANY PROFILE
 ══════════════════════════════ --> 
-<div class="page" id="p-company-profile">
-    
-    <div class="bento-grid">
-        
+<div class="page" id="p-company-profile"> 
+    <div class="bento-grid"> 
         <!-- ROW 1: BRAND STRIP -->
         <div class="brand-strip">
             <div style="display: flex; align-items: center; gap: 16px;">
@@ -512,14 +543,13 @@ input[type="checkbox"] { accent-color: var(--primary); width: 15px; height: 15px
                 </div>
             </div>
             <div style="text-align: right;"> 
-               
-            <button class="btn btn-primary btn-sm" style="font-size: 16px; " ><i data-lucide="edit-3" size="14"></i> Edit Profile</button>
-        
+            <button class="btn btn-edit-glass" onclick="openEditCompanyModal()">
+    <i data-lucide="pencil-line" size="14"></i>
+    <span>Edit Company Profile</span>
+</button>
             </div>
         </div>
-        
-       
-
+         
         <!-- ROW 2: CORE LEGAL (Span 5) -->
         <div class="bento-card" style="grid-column: span 5;">
             <div class="bento-header">
@@ -1392,6 +1422,59 @@ input[type="checkbox"] { accent-color: var(--primary); width: 15px; height: 15px
     </div>
   </div>
 </div>
+
+<!-- ═══════════════════════════════════════
+     MODAL: EDIT COMPANY PROFILE
+═══════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-edit-company" onclick="closeEditCompanyModal(event)">
+  <div class="modal-box" style="max-width: 800px;">
+    <div class="modal-header">
+      <div>
+        <div style="font-size:1.1rem; font-weight:800; color:var(--text);">Update Company Information</div>
+        <div style="font-size:.75rem; color:var(--muted); margin-top:3px;">Modify legal, system, and contact master data</div>
+      </div>
+      <button class="icon-btn" onclick="closeEditCompanyModal()"><i data-lucide="x" size="15"></i></button>
+    </div>
+
+    <div class="modal-body">
+      <div class="form-grid fg-2">
+        <!-- Legal Identity Section -->
+        <div style="grid-column: span 2;"><div class="section-label" style="margin-top:0;">Legal & Statutory</div></div>
+        <div class="form-group"><label>Legal Name</label><input type="text" id="edit-legal-name" value="HRM Enterprises PLC"></div>
+        <div class="form-group"><label>Entity Type</label><input type="text" id="edit-entity-type" value="Private Limited"></div>
+        <div class="form-group"><label>TIN Number</label><input type="text" id="edit-tin" value="0019283746"></div>
+        <div class="form-group"><label>VAT Reg.</label><input type="text" id="edit-vat" value="9928374-VAT-01"></div>
+
+        <!-- System Locales -->
+        <div style="grid-column: span 2;"><div class="section-label">System Locales</div></div>
+        <div class="form-group">
+            <label>Reporting Currency</label>
+            <select id="edit-currency"><option>ETB (Birr)</option><option>USD ($)</option><option>EUR (€)</option></select>
+        </div>
+        <div class="form-group">
+            <label>Work Week</label>
+            <input type="text" id="edit-workweek" value="Mon — Fri">
+        </div>
+
+        <!-- Communication -->
+        <div style="grid-column: span 2;"><div class="section-label">Communication & Address</div></div>
+        <div class="form-group"><label>Corporate Email</label><input type="email" id="edit-email" value="corp@hrm.com"></div>
+        <div class="form-group"><label>Phone Number</label><input type="text" id="edit-phone" value="+251 11 667 89"></div>
+        <div class="form-group" style="grid-column: span 2;">
+            <label>Head Office Address</label>
+            <textarea id="edit-address" style="min-height: 60px;">Ras Desta Damtew St, Kirkos Sub-City, Woreda 01, Addis Ababa, Ethiopia</textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeEditCompanyModal()">Discard Changes</button>
+      <button class="btn btn-primary" onclick="saveCompanyProfile()">
+          <i data-lucide="save" size="14"></i> Update Profile
+      </button>
+    </div>
+  </div>
+</div>
 <script>
 // ══════════════════════════════════════════
 // RENDER LUCIDE ICONS — must run after DOM is ready
@@ -1882,11 +1965,11 @@ function initDashboard() {
 
   /* Doughnut — employee composition by contract type */
   const c1 = document.getElementById('chart-composition');
-  if (c1) new Chart(c1, { type:'doughnut', data:{ labels:['Permanent','Fixed-Term','Part-Time','Intern'], datasets:[{ data:[912,248,55,33], backgroundColor:['#2563eb','#16a34a','#d97706','#64748b'], borderWidth:0, cutout:'72%' }] }, options:{ maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, font:{ size:10 } } } } } });
+  if (c1) new Chart(c1, { type:'doughnut', data:{ labels:['Permanent','Contract','Part-Time','Intern'], datasets:[{ data:[912,248,55,33], backgroundColor:['#15b201','#fff200','#d97706','#ff0000'], borderWidth:0, cutout:'72%' }] }, options:{ maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, font:{ size:10 } } } } } });
 
   /* Bar — headcount by department */
   const c2 = document.getElementById('chart-dept');
-  if (c2) new Chart(c2, { type:'bar', data:{ labels:['Engineering','Sales','HR','Finance','Marketing','Ops'], datasets:[{ label:'Headcount', data:[320,210,45,88,95,490], backgroundColor:'#2563eb', borderRadius:4 }] }, options:{ maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true, grid:{ color:'#f1f5f9' } }, x:{ grid:{ display:false } } } } });
+  if (c2) new Chart(c2, { type:'bar', data:{ labels:['Engineering','Sales','HR','Finance','Marketing','Ops'], datasets:[{ label:'Headcount', data:[320,210,45,88,95,490], backgroundColor:'#15b201', borderRadius:4 }] }, options:{ maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true, grid:{ color:'#f1f5f9' } }, x:{ grid:{ display:false } } } } });
 }
 
 // ══════════════════════════════════════════
@@ -1906,7 +1989,7 @@ function initAnalytics() {
 
     /* [CHANGE 3] Regular bar chart — headcount by age group (was polarArea) */
     const c5 = document.getElementById('chart-age');
-    if (c5) new Chart(c5, { type:'bar', data:{ labels:['18–25','26–35','36–45','46–55','55+'], datasets:[{ label:'Employees', data:[180,420,380,200,68], backgroundColor:['#2563eb','#16a34a','#d97706','#dc2626','#64748b'], borderRadius:4 }] }, options:{ maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true, grid:{ color:'#f1f5f9' } }, x:{ grid:{ display:false } } } } });
+    if (c5) new Chart(c5, { type:'bar', data:{ labels:['18–25','26–35','36–45','46–55','55+'], datasets:[{ label:'Employees', data:[180,420,380,200,68], backgroundColor:['#15b201','#16a34a','#d97706','#dc2626','#64748b'], borderRadius:4 }] }, options:{ maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true, grid:{ color:'#f1f5f9' } }, x:{ grid:{ display:false } } } } });
   }, 100);
 }
              
@@ -2123,6 +2206,43 @@ function saveReassignment() {
     alert(`Reassignment Successful: ${asset} has been transferred to ${newOwner}.`);
     closeReassignModal();
 } 
+/* Open Company Edit Modal */
+function openEditCompanyModal() {
+    document.getElementById('modal-edit-company').classList.add('open');
+    if(window.lucide) lucide.createIcons();
+}
+
+/* Close Company Edit Modal */
+function closeEditCompanyModal(e) {
+    if (!e || e.target === e.currentTarget) {
+        document.getElementById('modal-edit-company').classList.remove('open');
+    }
+}
+
+/* Save Company Data (Simulation) */
+function saveCompanyProfile() {
+    // In a real app, you would collect values using document.getElementById('...').value
+    // and send them to your backend.
+    
+    const newName = document.getElementById('edit-legal-name').value;
+    
+    // Simulate UI feedback
+    const btn = document.querySelector('#modal-edit-company .btn-primary');
+    const originalContent = btn.innerHTML;
+    
+    btn.innerHTML = `<i data-lucide="loader-2" class="spin" size="14"></i> Saving...`;
+    lucide.createIcons();
+
+    setTimeout(() => {
+        alert("Success: Company master data has been updated.");
+        btn.innerHTML = originalContent;
+        lucide.createIcons();
+        closeEditCompanyModal();
+        
+        // Optionally update the UI values on the page immediately
+        // document.querySelector('.brand-strip h1').textContent = newName;
+    }, 800);
+}
 </script>
 </body>
 </html>
