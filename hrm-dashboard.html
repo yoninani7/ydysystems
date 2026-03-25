@@ -33,36 +33,181 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); colo
 }
 .sidebar-overlay.visible { opacity: 1; }
 
-/* ── SIDEBAR ── */
+/* -- UPDATED SIDEBAR BASE -- */
 .sidebar {
-  width: var(--sidebar-w); background: var(--surface);
-  border-right: 1px solid var(--border); display: flex; flex-direction: column;
-  position: fixed; height: 100vh; z-index: 200;
-  transition: transform var(--transition), width var(--transition), box-shadow var(--transition);
+  width: var(--sidebar-w); 
+  background: var(--surface);
+  border-right: 1px solid var(--border); 
+  display: flex; 
+  flex-direction: column;
+  position: fixed; 
+  height: 100vh; 
+  z-index: 200;
+  transition: width var(--transition), transform var(--transition);
+  /* CRITICAL: Only hide overflow when expanded, allow it when collapsed */
+  overflow: visible; 
+}
+
+.sidebar.collapsed { 
+  width: 78px;
+  overflow: visible !important; 
+}
+
+/* Ensure the scroll area doesn't trap the popups */
+.sidebar.collapsed .sidebar-scroll {
+  overflow: visible !important;
+}
+/* Expanded State Spacing */
+.nav-trigger, .dash-link {
+  display: flex;
+  align-items: center;
+  padding: 10px 14px; /* Increased horizontal padding */
+  margin: 2px 8px;    /* Give items some "breathing room" from the edges */
+  gap: 12px;          /* Clean gap between icon and text */
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.nav-trigger-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   overflow: hidden;
 }
-/* Collapsed state — desktop: icon-only rail */
-.sidebar.collapsed { width: 68px; }
-.sidebar.collapsed .sidebar-brand-text,
-.sidebar.collapsed .nav-label,
-.sidebar.collapsed .nav-trigger-left span,
-.sidebar.collapsed .chevron,
-.sidebar.collapsed .sub-link span:not(.sub-dot),
-.sidebar.collapsed .submenu { display: none !important; }
-.sidebar.collapsed .nav-trigger { justify-content: center; padding: 9px; }
-.sidebar.collapsed .nav-trigger-left { gap: 0; }
-.sidebar.collapsed .nav-icon { width: 36px; height: 36px; border-radius: 8px; }
-.sidebar.collapsed .dash-link { justify-content: center; padding: 9px; }
-.sidebar.collapsed .dash-link span { display: none; }
 
-/* Mobile hidden state */
-@media (max-width: 768px) {
-  .sidebar { transform: translateX(-100%); width: var(--sidebar-w) !important; box-shadow: none; }
-  .sidebar.mobile-open { transform: translateX(0); box-shadow: 0 20px 60px rgba(0,0,0,.25); }
-  .sidebar-overlay { display: block; pointer-events: none; }
-  .sidebar-overlay.visible { pointer-events: all; }
+.nav-icon {
+  width: 32px;        /* Standardized size */
+  height: 32px;
+  display: flex;      /* Center the actual icon inside the box */
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: #f1f5f9;
+  flex-shrink: 0;     /* Prevent icon from squishing */
 }
 
+/* Collapsed (Rail) State Spacing */
+.sidebar.collapsed { width: 78px; } /* Slightly wider for better icon centering */
+
+.sidebar.collapsed .nav-trigger,
+.sidebar.collapsed .dash-link {
+  justify-content: center;
+  padding: 10px 0;
+  margin: 4px 0; 
+  gap: 0;
+}
+
+.sidebar.collapsed .nav-trigger-left { gap: 0; }
+
+.sidebar.collapsed .nav-icon {
+  width: 42px;
+  height: 42px;
+}
+
+/* Hide text precisely when collapsed */
+.sidebar.collapsed .sidebar-brand-text,
+.sidebar.collapsed .nav-label,
+.sidebar.collapsed span,
+.sidebar.collapsed .chevron {
+  display: none !important;
+}
+/* ── FLYOUT MENUS FOR COLLAPSED STATE ── */
+
+@media (min-width: 769px) {
+  /* 1. The Container for the group */
+  .sidebar.collapsed .nav-group {
+    position: relative;
+  }
+
+  /* 2. Create an invisible 'Bridge' so the mouse never 'leaves' the element while moving to the menu */
+  .sidebar.collapsed .nav-group::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: -20px;
+    width: 25px;
+    height: 100%;
+    z-index: 10;
+    display: none;
+  }
+  .sidebar.collapsed .nav-group:hover::after { display: block;   z-index: 5;}
+
+  /* 3. The Popup Submenu */
+  .sidebar.collapsed .nav-group:hover .submenu {
+    display: flex !important;
+    flex-direction: column;  z-index: 9999; 
+    max-height: none; /* Reset the accordion height */
+    position: absolute;
+    left: 70px; /* Positions it right next to the rail */
+    top: 0;
+    width: 230px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--primary); /* Theme Accent */
+    border-radius: 0 12px 12px 12px;
+    box-shadow: 15px 10px 40px rgba(0,0,0,0.15);
+    padding: 12px 8px;
+    z-index: 9999;
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(5px);
+    transition: transform 0.2s ease, opacity 0.2s ease;
+  }
+
+  /* 4. Show category titles on hover */
+  .sidebar.collapsed .nav-group:hover .nav-trigger-left span {
+    display: block !important;
+    position: absolute;
+    left: 10px;
+    top: -25px;
+    background: var(--text);
+    color: white;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    white-space: nowrap;
+    box-shadow: var(--shadow-md);
+  }
+
+  /* 5. Style the sub-links inside the popup */
+  .sidebar.collapsed .nav-group:hover .sub-link {
+    display: flex !important;
+    padding: 10px 12px !important;
+    margin: 1px 0;
+    border-radius: 6px;
+    color: var(--muted);
+  }
+
+  .sidebar.collapsed .nav-group:hover .sub-link:hover {
+    background: var(--primary-light);
+    color: var(--primary);
+  }
+
+  .sidebar.collapsed .nav-group:hover .sub-link span {
+    display: block !important; /* Forces text to show in popup */
+    font-size: 0.8rem;
+  }
+
+  .sidebar.collapsed .nav-group:hover .sub-dot {
+    display: block !important;
+    background: var(--border);
+  }
+}
+
+/* Fix for the Dash Link (Dashboard) specifically */
+.sidebar.collapsed .nav-group:hover .dash-link span {
+  display: block !important;
+  position: absolute;
+  left: 72px;
+  background: var(--text);
+  color: white;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+}
 .sidebar-brand { height: var(--header-h); padding: 0 16px; display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: .95rem; color: var(--primary); border-bottom: 1px solid var(--border); letter-spacing: -.01em; flex-shrink: 0; white-space: nowrap; overflow: hidden; }
 .brand-icon { width: 32px; height: 32px; background: var(--primary); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; }
 .sidebar-brand-text { overflow: hidden; white-space: nowrap; transition: opacity var(--transition), width var(--transition); }
@@ -92,7 +237,7 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); colo
 
 /* ── MAIN LAYOUT ── */
 .main { flex: 1; margin-left: var(--sidebar-w); display: flex; flex-direction: column; height: 100vh; overflow: hidden; transition: margin-left var(--transition); }
-.main.sidebar-collapsed { margin-left: 68px; }
+.main.sidebar-collapsed { margin-left: 78px; }
 @media (max-width: 768px) { .main { margin-left: 0 !important; } }
 
 /* ── TOPBAR ── */
@@ -324,6 +469,16 @@ input[type="checkbox"] { accent-color: var(--primary); width: 15px; height: 15px
 /* Spin animation for save feedback */
 @keyframes spin { to { transform: rotate(360deg); } }
 .spin { animation: spin 0.8s linear infinite; }
+/* Keeps the parent category highlighted when a child is active */
+.nav-trigger.parent-active {
+  color: var(--primary);
+  background: var(--primary-light);
+}
+
+.nav-trigger.parent-active .nav-icon {
+  background: var(--primary);
+  color: white;
+}
 </style>
 </head>
 <body>
@@ -1287,27 +1442,70 @@ window.addEventListener('resize', () => {
   }
 });
 
-// ══ NAVIGATION ══
+// ══ NAVIGATION ══ 
 function toggleNav(el, id) {
+  if (sidebarCollapsed && !isMobile()) {
+    toggleSidebar();
+    return;
+  }
+
   const sub = document.getElementById(id);
   const isOpen = sub.classList.contains('open');
-  document.querySelectorAll('.submenu').forEach(s => s.classList.remove('open'));
-  document.querySelectorAll('.nav-trigger').forEach(t => t.classList.remove('open'));
-  if (!isOpen) { sub.classList.add('open'); el.classList.add('open'); }
+
+  // Close other menus EXCEPT the one we are clicking
+  document.querySelectorAll('.submenu').forEach(s => {
+    if (s !== sub) s.classList.remove('open');
+  });
+  document.querySelectorAll('.nav-trigger').forEach(t => {
+    if (t !== el) t.classList.remove('open');
+  });
+
+  // Toggle the current one
+  sub.classList.toggle('open', !isOpen);
+  el.classList.toggle('open', !isOpen);
 }
 
 function goPage(id, el) {
+  // 1. Switch the Page visibility
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const pg = document.getElementById('p-' + id);
   if (pg) pg.classList.add('active');
+
+  // 2. Update Breadcrumb Title
   document.getElementById('page-title').textContent = el ? el.textContent.trim() : 'Dashboard';
-  document.querySelectorAll('.sub-link,.dash-link').forEach(l => l.classList.remove('active'));
-  if (el) el.classList.add('active');
+
+  // 3. Handle Link Highlighting
+  document.querySelectorAll('.sub-link, .dash-link').forEach(l => l.classList.remove('active'));
+  
+  if (el) {
+    el.classList.add('active');
+
+    // 4. FIND THE PARENT CATEGORY
+    // Check if this link is inside a submenu
+    const parentSubmenu = el.closest('.submenu');
+    
+    if (parentSubmenu) {
+      // Keep the submenu visualy expanded
+      parentSubmenu.classList.add('open');
+      
+      // Find the trigger (the "Category" button) associated with this submenu
+      // We look for the nav-trigger that has the onclick matching this submenu's ID
+      const trigger = document.querySelector(`.nav-trigger[onclick*="${parentSubmenu.id}"]`);
+      if (trigger) {
+        trigger.classList.add('open');
+        // Add a special class for CSS styling if you want the parent to stay green
+        trigger.classList.add('parent-active'); 
+      }
+    } else {
+      // If it's a top-level link (like Dashboard), close other menus
+      document.querySelectorAll('.submenu').forEach(s => s.classList.remove('open'));
+      document.querySelectorAll('.nav-trigger').forEach(t => t.classList.remove('open', 'parent-active'));
+    }
+  }
+
   initPage(id);
-  // Auto-close on mobile after nav
   if (isMobile()) closeMobileSidebar();
 }
-
 // ══ PAGINATED TABLE BUILDER ══
 function buildTable(containerId, { columns, rows, perPage = 8 }) {
   const container = document.getElementById(containerId);
