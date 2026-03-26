@@ -348,7 +348,7 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
   background: var(--primary);
   background: linear-gradient(135deg, #15b201 0%, #0f8a00 100%);
   border-radius: 20px;
-  padding: 32px;
+  padding: 20px;
   color: white;
   margin-bottom: 24px;
   display: flex;
@@ -399,11 +399,121 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
   border-color: rgba(255, 255, 255, 0.5);
 }
 
-/* Bento Grid System */
+/* FIX: Prevent chart from stretching to match activity height */
 .bento-container {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+ grid-template-columns: 1fr 1fr 0.75fr 1.25fr; 
   gap: 20px;
+  align-items: start;
+}
+
+/* NEW: Compact & "Watchworthy" Pulse Feed */
+.activity-side-wrap {
+  grid-column: span 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  max-height: 420px; /* Fixed compact height */
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.pulse-header {
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fafafa;
+}
+
+.pulse-label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Glowing Live Dot */
+.live-indicator {
+  width: 8px;
+  height: 8px;
+  background: var(--primary);
+  border-radius: 50%;
+  position: relative;
+}
+.live-indicator::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid var(--primary);
+  animation: pulse-ring 1.5s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.3); opacity: 1; }
+  80%, 100% { transform: scale(1.5); opacity: 0; }
+}
+
+.hr-pulse-feed {
+  padding: 12px;
+  overflow-y: auto;
+  flex: 1;
+  scrollbar-width: thin;
+}
+
+.pulse-item {
+  padding: 12px;
+  border-radius: 12px;
+  background: #f8fafc;
+  margin-bottom: 10px;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.pulse-item:hover {
+  background: #fff;
+  border-color: var(--border);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.pulse-type {
+  font-size: 0.6rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-bottom: 6px;
+  display: inline-block;
+}
+
+.type-asset { background: #e0f2fe; color: #0369a1; }
+.type-prob { background: #fef3c7; color: #92400e; }
+.type-crit { background: #fee2e2; color: #991b1b; }
+.type-hire { background: #dcfce7; color: #166534; }
+
+.pulse-content {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.pulse-ts {
+  font-size: 0.65rem;
+  color: var(--muted);
+  margin-top: 6px;
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
 }
 
 .bento-item {
@@ -421,7 +531,7 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
 
 /* Dashboard Chart Area */
 .chart-main-wrap { grid-column: span 3; padding: 20px;}
-.activity-side-wrap { grid-column: span 1; }
+ 
 
 @media (max-width: 1200px) {
   .bento-container { grid-template-columns: repeat(2, 1fr); }
@@ -520,6 +630,109 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
   color: var(--muted);
   line-height: 1.4;
   margin-top: 2px;
+}
+/* --- PREMIUM ENTERPRISE STAT RIBBON --- */
+.stat-ribbon-v10 {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+  width: 100%;
+}
+
+.premium-pod {
+  background: linear-gradient(145deg, #ffffff, #f9fafb);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  height: 78px;
+  padding: 0 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.premium-pod:hover {
+  transform: translateY(-4px);
+  border-color: var(--primary);
+  box-shadow: 0 20px 25px -5px rgba(21, 178, 1, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Subtle Top Glow Accent */
+.premium-pod::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 20px;
+  right: 20px;
+  height: 2px;
+  background: var(--primary);
+  opacity: 0;
+  transition: opacity 0.3s;
+  border-radius: 0 0 10px 10px;
+}
+
+.premium-pod:hover::after {
+  opacity: 1;
+}
+
+/* Theme Color Logic for Labels */
+.premium-pod.alert-red:hover::after { background: var(--danger); }
+.premium-pod.alert-orange:hover::after { background: var(--warning); }
+.premium-pod.info-blue:hover::after { background: var(--info); }
+
+.pod-label {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 4px;
+}
+
+.pod-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+/* Decorative Watermark Initials (Replaces boring icons) */
+.pod-watermark {
+  position: absolute;
+  right: -5px;
+  bottom: -10px;
+  font-size: 3rem;
+  font-weight: 900;
+  color: var(--primary);
+  opacity: 0.04;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-style: italic;
+  pointer-events: none;
+}
+
+.alert-red .pod-watermark { color: var(--danger); }
+.alert-orange .pod-watermark { color: var(--warning); }
+.info-blue .pod-watermark { color: var(--info); }
+
+/* Layout Smoothing */
+.bento-container {
+  display: grid;
+  grid-template-columns: 2.2fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 1200px) {
+  .stat-ribbon-v10 { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 768px) {
+  .stat-ribbon-v10 { grid-template-columns: 1fr 1fr; }
+  .bento-container { grid-template-columns: 1fr; }
 }
 </style>
 </head>
@@ -712,121 +925,115 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
 
   <div class="content-area" id="content-area">
 
-<!-- DASHBOARD -->
-<!-- DASHBOARD -->
+<!-- DASHBOARD --> 
 <div class="page active" id="p-dashboard">
   
-  <!-- RESTORED BRAND HERO BANNER -->
   <header class="db-hero-banner">
     <div class="db-hero-content">
       <h1 class="db-hero-title">Dashboard Intelligence</h1>
-      <p class="db-hero-sub">Welcome back, YDY. Here is your organization analysis</p>
+      <p class="db-hero-sub">Enterprise Management Hub • March 2026 Operations</p>
     </div>
     
-    <div>
-      <center><span class="qa-label">Quick Actions</span></center>
-      <div class="db-quick-actions">
-        <button class="btn-glass-pro" onclick="goPage('employee-directory', this)">
-          <i data-lucide="user-plus" size="16"></i> New Hire
-        </button>
-        <button class="btn-glass-pro" onclick="goPage('leave-requests', this)">
-          <i data-lucide="calendar" size="16"></i> Leaves
-        </button>
-        <button class="btn-glass-pro" onclick="goPage('hr-analytics', this)">
-          <i data-lucide="bar-chart-3" size="16"></i> Analytics
-        </button>
-      </div>
+    <div class="db-quick-actions">
+      <button class="btn-glass-pro" onclick="goPage('employee-directory', this)">
+        <i data-lucide="user-plus" size="16"></i> New Hire
+      </button>
+      <button class="btn-glass-pro" onclick="goPage('leave-requests', this)">
+        <i data-lucide="calendar" size="16"></i> Leaves
+      </button>
+      <button class="btn-glass-pro" onclick="goPage('hr-analytics', this)">
+        <i data-lucide="bar-chart-3" size="16"></i> Analytics
+      </button>
     </div>
   </header>
 
-  <!-- BENTO GRID -->
+  <!-- PREMIUM 5-COLUMN STAT RIBBON -->
+  <div class="stat-ribbon-v10">
+    
+    <!-- 1: Headcount -->
+    <div class="premium-pod">
+      <span class="pod-label">Total Headcount</span>
+      <span class="pod-value">1,248</span>
+      <span class="pod-watermark">HC</span>
+    </div>
+
+    <!-- 2: Active Units -->
+    <div class="premium-pod info-blue">
+      <span class="pod-label">Active Units</span>
+      <span class="pod-value">7</span>
+      <span class="pod-watermark">AU</span>
+    </div>
+
+    <!-- 3: On Leave -->
+    <div class="premium-pod alert-orange">
+      <span class="pod-label">On Leave</span>
+      <span class="pod-value">47</span>
+      <span class="pod-watermark">OL</span>
+    </div>
+
+    <!-- 4: Expiring Contracts -->
+    <div class="premium-pod alert-red">
+      <span class="pod-label">Expiring Contracts</span>
+      <span class="pod-value">18</span>
+      <span class="pod-watermark">EC</span>
+    </div>
+
+    <!-- 5: Missing Files -->
+    <div class="premium-pod alert-red">
+      <span class="pod-label">Missing Files</span>
+      <span class="pod-value">48</span>
+      <span class="pod-watermark">MF</span>
+    </div>
+
+  </div>
+
   <div class="bento-container">
-    <!-- Row 1 Stats -->
-    <div class="bento-item"><div class="stat-v6-label">Total Headcount</div><div class="stat-v6-value">1,248</div><div class="stat-v6-trend" style="color:var(--success);"><i data-lucide="trending-up" size="14"></i> +12</div></div>
-    <div class="bento-item"><div class="stat-v6-label">Present Today</div><div class="stat-v6-value">96.2%</div><div class="stat-v6-trend" style="color:var(--primary);"><i data-lucide="check-circle-2" size="14"></i> Stable</div></div>
-    <div class="bento-item"><div class="stat-v6-label">On Leave</div><div class="stat-v6-value">47</div><div class="stat-v6-trend" style="color:var(--warning);"><i data-lucide="clock" size="14"></i> 12 Pending</div></div>
-    <div class="bento-item"><div class="stat-v6-label">Open Roles</div><div class="stat-v6-value">23</div><div class="stat-v6-trend" style="color:var(--info);"><i data-lucide="briefcase" size="14"></i> 4 Critical</div></div>
- 
-  <!-- HEADCOUNT BY DEPARTMENT CHART -->  
-<div class="bento-item chart-main-wrap" style="grid-column: span 3;   overflow: hidden; background: #ffffff;">
-  <div class="card-header" style="border:none; padding: 0 0 10px 0; display:flex; justify-content:space-between; align-items:flex-start;">
-    <div>
-      <div class="card-title" style="font-size:1.1rem; color: #001f3f; font-weight: 800; font-family: 'Plus Jakarta Sans';">Headcount by Department</div>
-      <div class="page-sub" style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">Distribution of 1,248 active personnel across units</div>
+    <!-- ANALYTICS CHART -->  
+    <div class="card" style="padding: 24px; border-radius: 20px; background: #fff;">
+      <div class="card-header" style="border:none; padding: 0 0 20px 0;">
+        <div>
+          <div class="card-title" style="font-size:1.15rem; color: #0f172a; font-weight: 800;">Headcount Distribution</div>
+          <div class="page-sub">Departmental workload and personnel breakdown</div>
+        </div>
+      </div>
+      <div style="height: 320px; width: 100%;"> 
+        <canvas id="chart-headcount-dept"></canvas>
+      </div>
     </div>
-    <!-- The Badge from the image -->
-    <div style="background: #f1fcf0; color: #15b201; padding: 10px 18px; border-radius: 30px; font-size: 0.8rem; font-weight: 700; display: flex; align-items: center; gap: 10px;">
-       <i data-lucide="activity" size="14"></i> Active Units: 7
-    </div>
-  </div>
 
-  <!-- CHART AREA: Height adjusted for a compact view -->
-  <div style="height: 260px; width: 100%; position: relative;"> 
-    <canvas id="chart-headcount-dept"></canvas>
-  </div>
-</div>
-
-    <!-- REAL-TIME HR ACTIVITY STREAM (Mapped to System Modules) -->
-    <div class="bento-item activity-side-wrap" id="log-panel">
-      <div class="card-header" style="border:none; padding:0 0 15px 0;">
-        <div class="card-title" style="font-size:0.75rem;">Recent activities</div>
+    <!-- LIVE SYSTEM PULSE -->
+    <div class="activity-side-wrap" style="max-height: 445px; border-radius: 20px;">
+      <div class="pulse-header">
+        <div class="pulse-label">
+          <div class="live-indicator"></div>
+          System Pulse
+        </div>
       </div>
       
-<!-- REAL-TIME HR ACTIVITY STREAM (Icon-free Intelligence Feed) -->
-<div class="log-container" id="hr-activity-list">
-  
-  <!-- Activity Item: Info -->
-  <div class="activity-item info">
-    <div class="activity-header">
-      <span class="activity-module-tag">Asset Tracking</span>
-      <span class="activity-time">2m ago</span>
+      <div class="hr-pulse-feed">
+        <div class="pulse-item">
+          <span class="pulse-type type-asset">Inventory</span>
+          <div class="pulse-content">MacBook Pro 14" (AST-99) assigned to <b>Sarah Jenkins</b></div>
+          <span class="pulse-ts">Just now</span>
+        </div>
+        <div class="pulse-item">
+          <span class="pulse-type type-crit">Compliance</span>
+          <div class="pulse-content">NDA missing for <b>4 employees</b> in Engineering.</div>
+          <span class="pulse-ts">12m ago</span>
+        </div>
+        <div class="pulse-item">
+          <span class="pulse-type type-hire">Talent</span>
+          <div class="pulse-content">New application received for <b>Senior UI Designer</b>.</div>
+          <span class="pulse-ts">45m ago</span>
+        </div>
+        <div class="pulse-item">
+          <span class="pulse-type type-prob">Probation</span>
+          <div class="pulse-content"><b>John Doe</b> completed 90-day review period.</div>
+          <span class="pulse-ts">2h ago</span>
+        </div>
+      </div>
     </div>
-    <span class="activity-title">Inventory Assignment</span>
-    <p class="activity-desc">MacBook Pro (AST-2044) deployed to <b>Jane Doe</b></p>
-  </div>
 
-  <!-- Activity Item: Warning -->
-  <div class="activity-item warning">
-    <div class="activity-header">
-      <span class="activity-module-tag">Probation Tracker</span>
-      <span class="activity-time">14m ago</span>
-    </div>
-    <span class="activity-title">Upcoming Review Notice</span>
-    <p class="activity-desc">8 Engineering employees reaching 90-day milestone this Friday.</p>
-  </div>
-
-  <!-- Activity Item: Danger -->
-  <div class="activity-item danger">
-    <div class="activity-header">
-      <span class="activity-module-tag">Attachment Vault</span>
-      <span class="activity-time">1h ago</span>
-    </div>
-    <span class="activity-title">Compliance Alert</span>
-    <p class="activity-desc">Critical: NDA documents missing for <b>12 new hires</b> in the Sales Dept.</p>
-  </div>
-
-  <!-- Activity Item: Success -->
-  <div class="activity-item success">
-    <div class="activity-header">
-      <span class="activity-module-tag">Talent Acquisition</span>
-      <span class="activity-time">3h ago</span>
-    </div>
-    <span class="activity-title">Position Published</span>
-    <p class="activity-desc">New vacancy: <b>Senior UI/UX Designer</b> (VAC-088) is now live.</p>
-  </div>
-
-  <!-- Activity Item: Info -->
-  <div class="activity-item info">
-    <div class="activity-header">
-      <span class="activity-module-tag">System Admin</span>
-      <span class="activity-time">5h ago</span>
-    </div>
-    <span class="activity-title">Role Configuration</span>
-    <p class="activity-desc">Permissions updated for 'Department Head' security group.</p>
-  </div>
-
-</div>
-    </div>
   </div>
 </div>
 <!-- COMPANY PROFILE -->
