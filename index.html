@@ -656,9 +656,10 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
   <div class="content-area" id="content-area">
 
 <!-- DASHBOARD -->
+<!-- DASHBOARD -->
 <div class="page active" id="p-dashboard">
   
-  <!-- BRAND HERO BANNER -->
+  <!-- RESTORED BRAND HERO BANNER -->
   <header class="db-hero-banner">
     <div class="db-hero-content">
       <h1 class="db-hero-title">Dashboard Intelligence</h1>
@@ -668,13 +669,13 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
     <div>
       <center><span class="qa-label">Quick Actions</span></center>
       <div class="db-quick-actions">
-        <button class="btn-glass-pro" onclick="goPage('employee-directory')">
+        <button class="btn-glass-pro" onclick="goPage('employee-directory', this)">
           <i data-lucide="user-plus" size="16"></i> New Hire
         </button>
-        <button class="btn-glass-pro" onclick="goPage('leave-requests')">
+        <button class="btn-glass-pro" onclick="goPage('leave-requests', this)">
           <i data-lucide="calendar" size="16"></i> Leaves
         </button>
-        <button class="btn-glass-pro" onclick="goPage('hr-analytics')">
+        <button class="btn-glass-pro" onclick="goPage('hr-analytics', this)">
           <i data-lucide="bar-chart-3" size="16"></i> Analytics
         </button>
       </div>
@@ -688,57 +689,78 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
     <div class="bento-item"><div class="stat-v6-label">Present Today</div><div class="stat-v6-value">96.2%</div><div class="stat-v6-trend" style="color:var(--primary);"><i data-lucide="check-circle-2" size="14"></i> Stable</div></div>
     <div class="bento-item"><div class="stat-v6-label">On Leave</div><div class="stat-v6-value">47</div><div class="stat-v6-trend" style="color:var(--warning);"><i data-lucide="clock" size="14"></i> 12 Pending</div></div>
     <div class="bento-item"><div class="stat-v6-label">Open Roles</div><div class="stat-v6-value">23</div><div class="stat-v6-trend" style="color:var(--info);"><i data-lucide="briefcase" size="14"></i> 4 Critical</div></div>
-
-    <!-- MAIN CHART AREA (Simplified to Bar Chart) -->
-    <div class="bento-item chart-main-wrap">
-       <div class="card-header" style="border:none; padding:0 0 10px 0;">
-      <div>
-      <div class="card-title">Headcount by Department</div>
-      <div class="page-sub">Current active personnel distribution</div>
+ 
+  <!-- HEADCOUNT BY DEPARTMENT CHART -->  
+<div class="bento-item chart-main-wrap" style="grid-column: span 3;   overflow: hidden; background: #ffffff;">
+  <div class="card-header" style="border:none; padding: 0 0 10px 0; display:flex; justify-content:space-between; align-items:flex-start;">
+    <div>
+      <div class="card-title" style="font-size:1.1rem; color: #001f3f; font-weight: 800; font-family: 'Plus Jakarta Sans';">Headcount by Department</div>
+      <div class="page-sub" style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">Distribution of 1,248 active personnel across units</div>
+    </div>
+    <!-- The Badge from the image -->
+    <div style="background: #f1fcf0; color: #15b201; padding: 10px 18px; border-radius: 30px; font-size: 0.8rem; font-weight: 700; display: flex; align-items: center; gap: 10px;">
+       <i data-lucide="activity" size="14"></i> Active Units: 7
     </div>
   </div>
-  
-  <!-- Reduced height for a more "Executive" look -->
-  <div style="height: 240px; position: relative;"> 
-    <canvas id="chart-headcount-bar"></canvas>
+
+  <!-- CHART AREA: Height adjusted for a compact view -->
+  <div style="height: 260px; width: 100%; position: relative;"> 
+    <canvas id="chart-headcount-dept"></canvas>
   </div>
 </div>
 
-    <!-- SYSTEM LOGS (Full height, no button) -->
+    <!-- REAL-TIME HR ACTIVITY STREAM (Mapped to System Modules) -->
     <div class="bento-item activity-side-wrap" id="log-panel">
-      <div class="card-header" style="border:none; padding:0 0 20px 0;">
-        <div class="card-title" style="font-size:0.75rem;">System Logs</div>
+      <div class="card-header" style="border:none; padding:0 0 15px 0;">
+        <div class="card-title" style="font-size:0.75rem;">HR Activity Stream</div>
       </div>
       
-      <div class="log-container" id="log-list">
-        <!-- Activities -->
-        <div style="display:flex; gap:12px; align-items:flex-start;">
-          <div style="width:32px; height:32px; border-radius:8px; background:var(--primary-light); color:var(--primary); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><i data-lucide="user-check" size="14"></i></div>
-          <div><div style="font-size:0.75rem; font-weight:700;">Abebe M. Joined</div><div style="font-size:0.65rem; color:var(--muted);">Engineering Dept.</div></div>
-        </div>
-        <div style="display:flex; gap:12px; align-items:flex-start;">
-          <div style="width:32px; height:32px; border-radius:8px; background:var(--warning-bg); color:var(--warning); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><i data-lucide="alert-circle" size="14"></i></div>
-          <div><div style="font-size:0.75rem; font-weight:700;">Contract Expiry</div><div style="font-size:0.65rem; color:var(--muted);">8 Contracts due in 30 days</div></div>
-        </div>
-        <div style="display:flex; gap:12px; align-items:flex-start;">
-          <div style="width:32px; height:32px; border-radius:8px; background:var(--info-bg); color:var(--info); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><i data-lucide="file-text" size="14"></i></div>
-          <div><div style="font-size:0.75rem; font-weight:700;">Payroll Exported</div><div style="font-size:0.65rem; color:var(--muted);">March 2026 Batch A</div></div>
-        </div>
-        <div style="display:flex; gap:12px; align-items:flex-start;">
-          <div style="width:32px; height:32px; border-radius:8px; background:var(--primary-light); color:var(--primary); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><i data-lucide="check-square" size="14"></i></div>
-          <div><div style="font-size:0.75rem; font-weight:700;">Policy Updated</div><div style="font-size:0.65rem; color:var(--muted);">Health & Safety Guidelines</div></div>
+      <div class="log-container" id="hr-activity-list">
+        <!-- Mapping: Asset Tracking -->
+        <div class="d-row" style="border-bottom: 1px solid var(--border); padding-bottom:10px; margin-bottom:4px; align-items: flex-start;">
+          <div style="width:30px; height:30px; border-radius:6px; background:var(--primary-light); color:var(--primary); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><i data-lucide="package" size="13"></i></div>
+          <div style="flex:1; margin-left:10px;">
+            <div style="font-size:0.72rem; font-weight:700;">Asset Assigned</div>
+            <div style="font-size:0.65rem; color:var(--muted);">MacBook Pro (AST-2044) → Jane Doe</div>
+            <div style="font-size:0.6rem; color:var(--muted); margin-top:3px; font-weight:700; text-transform:uppercase;">Asset Tracking</div>
+          </div>
         </div>
 
-        <!-- This div only appears if there are no logs (controlled by JS or hidden manually) -->
-        <div class="no-activity" id="no-activity-msg" style="display:none;">
-          <i data-lucide="database-zap" size="32"></i>
-          <span style="font-size:0.75rem; font-weight:600;">No recent activities</span>
+        <!-- Mapping: Probation Tracker -->
+        <div class="d-row" style="border-bottom: 1px solid var(--border); padding-bottom:10px; margin-bottom:4px; align-items: flex-start;">
+          <div style="width:30px; height:30px; border-radius:6px; background:var(--warning-bg); color:var(--warning); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><i data-lucide="user-check" size="13"></i></div>
+          <div style="flex:1; margin-left:10px;">
+            <div style="font-size:0.72rem; font-weight:700;">Probation Ending</div>
+            <div style="font-size:0.65rem; color:var(--muted);">8 Employees due for review this week</div>
+            <div style="font-size:0.6rem; color:var(--muted); margin-top:3px; font-weight:700; text-transform:uppercase;">Probation Tracker</div>
+          </div>
         </div>
+
+        <!-- Mapping: Attachment Vault -->
+        <div class="d-row" style="border-bottom: 1px solid var(--border); padding-bottom:10px; margin-bottom:4px; align-items: flex-start;">
+          <div style="width:30px; height:30px; border-radius:6px; background:var(--danger-bg); color:var(--danger); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><i data-lucide="shield-alert" size="13"></i></div>
+          <div style="flex:1; margin-left:10px;">
+            <div style="font-size:0.72rem; font-weight:700;">Missing Compliance Doc</div>
+            <div style="font-size:0.65rem; color:var(--muted);">NDA missing for 12 new hires in Engineering</div>
+            <div style="font-size:0.6rem; color:var(--muted); margin-top:3px; font-weight:700; text-transform:uppercase;">Attachment Vault</div>
+          </div>
+        </div>
+
+        <!-- Mapping: Talent Acquisition -->
+        <div class="d-row" style="border-bottom: 1px solid var(--border); padding-bottom:10px; margin-bottom:4px; align-items: flex-start;">
+          <div style="width:30px; height:30px; border-radius:6px; background:var(--info-bg); color:var(--info); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><i data-lucide="briefcase" size="13"></i></div>
+          <div style="flex:1; margin-left:10px;">
+            <div style="font-size:0.72rem; font-weight:700;">New Vacancy Posted</div>
+            <div style="font-size:0.65rem; color:var(--muted);">Senior UI/UX Designer (VAC-088)</div>
+            <div style="font-size:0.6rem; color:var(--muted); margin-top:3px; font-weight:700; text-transform:uppercase;">Talent Acquisition</div>
+          </div>
+        </div>
+
+        <button class="btn btn-secondary btn-xs mt-2" style="width:100%; font-size: 0.65rem;" onclick="goPage('audit-logs', this)">View All System Logs</button>
       </div>
     </div>
   </div>
 </div>
-
 <!-- COMPANY PROFILE -->
 <div class="page" id="p-company-profile">
   <div class="bento-grid">
@@ -1823,92 +1845,73 @@ function initVaultMatrix() {
 
 // ── CHARTS ──
 function initDashboard() {
-  if (inited.has('dashboard-v8')) return;
-  inited.add('dashboard-v8');
+  if (inited.has('dashboard-v14-pill')) return;
+  inited.add('dashboard-v14-pill');
 
-  const canvas = document.getElementById('chart-headcount-bar');
+  const canvas = document.getElementById('chart-headcount-dept');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
 
-  // Create a professional horizontal gradient
-  // From Brand Green to a lighter, vibrant lime
-  const gradient = ctx.createLinearGradient(0, 0, 500, 0);
-  gradient.addColorStop(0, '#15b201'); // Darker Green
-  gradient.addColorStop(1, '#84cc16'); // Vibrant Lime
-
-  const dataValues = [490, 320, 210, 145, 88, 45];
-  const labelNames = ['Operations', 'Engineering', 'Sales', 'Marketing', 'Finance', 'HR'];
-
-  new Chart(ctx, {
+ new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: labelNames,
+      labels: [ 'Engineering', 'Sales', 'Marketing', 'Finance', 'HR', 'Legal'],
       datasets: [{
-        data: dataValues,
-        backgroundColor: gradient,
-        hoverBackgroundColor: '#0f8a00',
-        borderRadius: 20,       // Makes bars look like modern "Pills"
-        borderSkipped: false,  // Rounds both sides
-        barThickness: 15,      // Thinner bars look more professional
+        label: 'Personnel',
+        // Data points calculated to sum to exactly 1,248 as per your subtitle
+        data: [485, 312, 195, 110, 82, 48, 16], 
+         backgroundColor: '#44c100',
+        borderRadius: {
+          topLeft: 12,
+          topRight: 12,
+          bottomLeft: 0,
+          bottomRight: 0
+        },
+        borderSkipped: false,
+        barThickness: 45, // Thick bars as per screenshot
       }]
     },
     options: {
-      indexAxis: 'y',          // Horizontal orientation
       maintainAspectRatio: false,
       responsive: true,
       plugins: {
         legend: { display: false },
         tooltip: {
           backgroundColor: '#0f172a',
-          titleFont: { family: 'Plus Jakarta Sans', size: 13 },
-          bodyFont: { family: 'Plus Jakarta Sans' },
-          padding: 10,
-          displayColors: false,
-          callbacks: {
-            label: (context) => ` ${context.raw} Active Personnel`
-          }
+          padding: 12,
+          titleFont: { family: 'Plus Jakarta Sans', size: 12, weight: '800' },
+          bodyFont: { family: 'Plus Jakarta Sans', size: 12 },
+          cornerRadius: 8,
+          displayColors: false
         }
       },
       scales: {
-        // X-Axis: Hidden completely for the "Modern Progress Bar" look
-        x: {
-          display: false,
-          grid: { display: false }
-        },
-        // Y-Axis Left: Department Names
         y: {
+          beginAtZero: true,
+          max: 500,
+          ticks: {
+            stepSize: 50,
+            font: { family: 'JetBrains Mono', size: 11 },
+            color: '#94a3b8'
+          },
+          grid: {
+            color: '#f1f5f9',
+            drawBorder: false
+          }
+        },
+        x: {
           grid: { display: false },
-          border: { display: false },
           ticks: {
             font: { family: 'Plus Jakarta Sans', size: 12, weight: '600' },
-            color: '#1e293b'
+            color: '#334155'
           }
-        },
-        // Y-Axis Right: The "No-Plugin" Hack to show numbers
-        yRight: {
-          type: 'category',
-          position: 'right',
-          labels: dataValues.map(v => v + ' Pax'), // Display headcount here
-          grid: { display: false },
-          border: { display: false },
-          ticks: {
-            font: { family: 'JetBrains Mono', size: 11, weight: '700' },
-            color: '#64748b',
-            padding: 10
-          }
-        }
-      },
-      layout: {
-        padding: {
-          top: 10,
-          bottom: 10,
-          left: 0,
-          right: 10
         }
       }
     }
   });
+  lucide.createIcons();
 }
+
 function initAnalytics() {
   if (inited.has('analytics-charts')) return;
   inited.add('analytics-charts');
