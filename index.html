@@ -464,6 +464,63 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
   opacity: 0.6;
   padding: 40px 0;
 }
+/* Creative Activity Stream - No Icons */
+.activity-item {
+  position: relative;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border-left: 4px solid var(--border);
+  margin-bottom: 12px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: default;
+}
+
+.activity-item:hover {
+  transform: translateX(4px);
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+
+.activity-item.success { border-left-color: var(--success); }
+.activity-item.warning { border-left-color: var(--warning); }
+.activity-item.danger { border-left-color: var(--danger); }
+.activity-item.info { border-left-color: var(--info); }
+
+.activity-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.activity-module-tag {
+  font-size: 0.6rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.activity-time {
+  font-size: 0.65rem;
+  color: #94a3b8;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.activity-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text);
+  display: block;
+}
+
+.activity-desc {
+  font-size: 0.7rem;
+  color: var(--muted);
+  line-height: 1.4;
+  margin-top: 2px;
+}
 </style>
 </head>
 <body>
@@ -712,52 +769,63 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
     <!-- REAL-TIME HR ACTIVITY STREAM (Mapped to System Modules) -->
     <div class="bento-item activity-side-wrap" id="log-panel">
       <div class="card-header" style="border:none; padding:0 0 15px 0;">
-        <div class="card-title" style="font-size:0.75rem;">HR Activity Stream</div>
+        <div class="card-title" style="font-size:0.75rem;">Recent activities</div>
       </div>
       
-      <div class="log-container" id="hr-activity-list">
-        <!-- Mapping: Asset Tracking -->
-        <div class="d-row" style="border-bottom: 1px solid var(--border); padding-bottom:10px; margin-bottom:4px; align-items: flex-start;">
-          <div style="width:30px; height:30px; border-radius:6px; background:var(--primary-light); color:var(--primary); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><i data-lucide="package" size="13"></i></div>
-          <div style="flex:1; margin-left:10px;">
-            <div style="font-size:0.72rem; font-weight:700;">Asset Assigned</div>
-            <div style="font-size:0.65rem; color:var(--muted);">MacBook Pro (AST-2044) → Jane Doe</div>
-            <div style="font-size:0.6rem; color:var(--muted); margin-top:3px; font-weight:700; text-transform:uppercase;">Asset Tracking</div>
-          </div>
-        </div>
+<!-- REAL-TIME HR ACTIVITY STREAM (Icon-free Intelligence Feed) -->
+<div class="log-container" id="hr-activity-list">
+  
+  <!-- Activity Item: Info -->
+  <div class="activity-item info">
+    <div class="activity-header">
+      <span class="activity-module-tag">Asset Tracking</span>
+      <span class="activity-time">2m ago</span>
+    </div>
+    <span class="activity-title">Inventory Assignment</span>
+    <p class="activity-desc">MacBook Pro (AST-2044) deployed to <b>Jane Doe</b></p>
+  </div>
 
-        <!-- Mapping: Probation Tracker -->
-        <div class="d-row" style="border-bottom: 1px solid var(--border); padding-bottom:10px; margin-bottom:4px; align-items: flex-start;">
-          <div style="width:30px; height:30px; border-radius:6px; background:var(--warning-bg); color:var(--warning); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><i data-lucide="user-check" size="13"></i></div>
-          <div style="flex:1; margin-left:10px;">
-            <div style="font-size:0.72rem; font-weight:700;">Probation Ending</div>
-            <div style="font-size:0.65rem; color:var(--muted);">8 Employees due for review this week</div>
-            <div style="font-size:0.6rem; color:var(--muted); margin-top:3px; font-weight:700; text-transform:uppercase;">Probation Tracker</div>
-          </div>
-        </div>
+  <!-- Activity Item: Warning -->
+  <div class="activity-item warning">
+    <div class="activity-header">
+      <span class="activity-module-tag">Probation Tracker</span>
+      <span class="activity-time">14m ago</span>
+    </div>
+    <span class="activity-title">Upcoming Review Notice</span>
+    <p class="activity-desc">8 Engineering employees reaching 90-day milestone this Friday.</p>
+  </div>
 
-        <!-- Mapping: Attachment Vault -->
-        <div class="d-row" style="border-bottom: 1px solid var(--border); padding-bottom:10px; margin-bottom:4px; align-items: flex-start;">
-          <div style="width:30px; height:30px; border-radius:6px; background:var(--danger-bg); color:var(--danger); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><i data-lucide="shield-alert" size="13"></i></div>
-          <div style="flex:1; margin-left:10px;">
-            <div style="font-size:0.72rem; font-weight:700;">Missing Compliance Doc</div>
-            <div style="font-size:0.65rem; color:var(--muted);">NDA missing for 12 new hires in Engineering</div>
-            <div style="font-size:0.6rem; color:var(--muted); margin-top:3px; font-weight:700; text-transform:uppercase;">Attachment Vault</div>
-          </div>
-        </div>
+  <!-- Activity Item: Danger -->
+  <div class="activity-item danger">
+    <div class="activity-header">
+      <span class="activity-module-tag">Attachment Vault</span>
+      <span class="activity-time">1h ago</span>
+    </div>
+    <span class="activity-title">Compliance Alert</span>
+    <p class="activity-desc">Critical: NDA documents missing for <b>12 new hires</b> in the Sales Dept.</p>
+  </div>
 
-        <!-- Mapping: Talent Acquisition -->
-        <div class="d-row" style="border-bottom: 1px solid var(--border); padding-bottom:10px; margin-bottom:4px; align-items: flex-start;">
-          <div style="width:30px; height:30px; border-radius:6px; background:var(--info-bg); color:var(--info); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><i data-lucide="briefcase" size="13"></i></div>
-          <div style="flex:1; margin-left:10px;">
-            <div style="font-size:0.72rem; font-weight:700;">New Vacancy Posted</div>
-            <div style="font-size:0.65rem; color:var(--muted);">Senior UI/UX Designer (VAC-088)</div>
-            <div style="font-size:0.6rem; color:var(--muted); margin-top:3px; font-weight:700; text-transform:uppercase;">Talent Acquisition</div>
-          </div>
-        </div>
+  <!-- Activity Item: Success -->
+  <div class="activity-item success">
+    <div class="activity-header">
+      <span class="activity-module-tag">Talent Acquisition</span>
+      <span class="activity-time">3h ago</span>
+    </div>
+    <span class="activity-title">Position Published</span>
+    <p class="activity-desc">New vacancy: <b>Senior UI/UX Designer</b> (VAC-088) is now live.</p>
+  </div>
 
-        <button class="btn btn-secondary btn-xs mt-2" style="width:100%; font-size: 0.65rem;" onclick="goPage('audit-logs', this)">View All System Logs</button>
-      </div>
+  <!-- Activity Item: Info -->
+  <div class="activity-item info">
+    <div class="activity-header">
+      <span class="activity-module-tag">System Admin</span>
+      <span class="activity-time">5h ago</span>
+    </div>
+    <span class="activity-title">Role Configuration</span>
+    <p class="activity-desc">Permissions updated for 'Department Head' security group.</p>
+  </div>
+
+</div>
     </div>
   </div>
 </div>
