@@ -963,6 +963,7 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
 .refresh-pill i {
   transition: transform 0.2s ease;
 }
+
 /* --- EXECUTIVE MASTER DATA (ZERO-GAP 100VH) --- */
 .master-profile-wrapper {
     height: calc(100vh - var(--header-h) - 48px);
@@ -1064,6 +1065,7 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
     .profile-main-grid { grid-template-columns: 1fr; grid-template-rows: auto; }
     .span-v-2 { grid-row: auto; }
 }
+ 
 </style>
 </head>
 <body>
@@ -1366,7 +1368,7 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
           <div class="page-sub">Departmental workload and personnel breakdown</div>
         </div>
       </div>
-      <div style="height: 320px; width: 100%;"> 
+      <div style="height: 240px; width: 100%;"> 
         <canvas id="chart-headcount-dept"></canvas>
       </div>
     </div>
@@ -1411,26 +1413,27 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
 
   </div>
 </div>
+
+<!-- COMPANY PROFILE PAGE -->
 <div class="page" id="p-company-profile">
     <div class="master-profile-wrapper">
         
-        <!-- IDENTITY BAR -->
-        <div class="profile-identity-bar">
-            <div class="id-main">
-                <div class="id-logo"><i data-lucide="layers" size="24"></i></div>
-                <div class="id-text">
-                    <h1>YDY HRM Enterprise Ltd.</h1>
-                    <span>Corporate Registry • Global Headquarters</span>
-                </div>
-            </div>
-            <div class="flex-row">
-                <span class="badge badge-success">● VERIFIED ENTITY</span>
-                <button class="btn btn-primary btn-sm" onclick="openEditCompanyModal()">
-                    <i data-lucide="edit-3" size="14"></i> Update Record
-                </button>
-            </div>
-        </div>
-
+      <header class="db-hero-banner" style="padding: 16px 28px; min-height: auto; position: relative;">
+  <div class="db-hero-content">
+    <h1 class="db-hero-title" style="font-size: 1.5rem;">YDY HRM Enterprise Ltd.</h1>
+    <p class="db-hero-sub">Corporate Registry </p>
+  </div>
+  
+  <!-- CENTER IMAGE -->
+  <img src="assets/bgt.png" class="db-hero-center-img" alt="Banner Illustration">
+  
+   <button class="btn-glass-pro-slim"  >
+        <i data-lucide="edit" size="14"></i>
+        <span>Update records</span>
+      </button>
+</header>
+  
+ 
         <!-- MAIN DATA CORE -->
         <div class="profile-main-grid">
             
@@ -1493,7 +1496,7 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
                     </table>
                 </div>
             </div>
-
+<br>
         </div>
     </div>
 </div>
