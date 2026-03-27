@@ -110,11 +110,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
   background: rgba(255, 255, 255, 0.1) !important;
   color: var(--primary) !important;
 }
-
-/* 6. Fix for the Dash-link (Dashboard icon) background */
-.sidebar.collapsed .dash-link.active {
-    background: rgba(21, 178, 1, 0.15) !important;
-}
+ 
 
 .sidebar.collapsed .nav-group:hover{ max-height: none !important; display: flex !important;}
 .sidebar.collapsed{width:78px;overflow:visible!important}
@@ -390,6 +386,7 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
   position: relative;
   overflow: hidden;
   box-shadow: 0 10px 30px -10px rgba(21, 178, 1, 0.3);
+  clip-path: polygon(0 10%, 45% 10%, 45% 0, 55% 0, 55% 10%, 100% 10%, 100% 90%, 55% 90%, 55% 100%, 45% 100%, 45% 90%, 0 90%);
 }
 
 /* Subtle background pattern for professional texture */
@@ -814,6 +811,105 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
   .stat-ribbon-v10 { grid-template-columns: 1fr 1fr; }
   .bento-container { grid-template-columns: 1fr; }
 }
+/* 1. Stack container - Centers the label above the row */
+.qa-stack-v2 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+/* 2. Slim Header with subtle lines */
+.qa-mini-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.qa-mini-label {
+  font-size: 0.6rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: rgba(255, 255, 255, 0.85);
+  white-space: nowrap;
+}
+
+.qa-mini-line {
+  height: 1px;
+  flex: 1;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+}
+
+/* 3. Horizontal Button Row */
+.qa-button-row {
+  display: flex;
+  gap: 8px;
+}
+
+/* 4. Restored Theme: Horizontal, Glassy, Slim */
+.btn-glass-pro-slim {
+  all: unset;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+
+.btn-glass-pro-slim i {
+  opacity: 0.9;
+}
+
+/* 5. Refined Hover (Stays compact but feels premium) */
+.btn-glass-pro-slim:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
+}
+
+.btn-glass-pro-slim:active {
+  transform: translateY(0) scale(0.97);
+}
+
+/* Responsive fix */
+@media (max-width: 768px) {
+  .db-hero-banner {
+    padding: 20px !important;
+  }
+  .qa-button-row {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}
+/* Position the logo inside the protruding middle box */
+.db-center-logo {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 10%; /* This matches the 45% to 55% area of your clip-path */
+}
+
+.db-center-logo img {
+  max-height: 45px; /* Adjust this to fit your logo nicely */
+  width: auto;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+}
 </style>
 </head>
 <body>
@@ -827,9 +923,13 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
   </div>
   <div class="sidebar-scroll">
     <div class="nav-group">
-      <div class="dash-link active" onclick="goPage('dashboard',this)">
+      <!-- <div class="dash-link active" onclick="goPage('dashboard',this)">
         <div class="nav-icon"><i data-lucide="layout-dashboard" size="15"></i></div>
         <span>Dashboard</span>
+      </div> -->
+      <div class="dash-link active" onclick="goPage('dashboard',this)">
+        <div class="nav-trigger-left"><div class="nav-icon"><i data-lucide="layout-dashboard" size="15"></i></div><span>Dashboard</span></div>
+  
       </div>
     </div>
     <div class="nav-label">Organization</div>
@@ -1008,24 +1108,38 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
 <!-- DASHBOARD --> 
 <div class="page active" id="p-dashboard">
   
-  <header class="db-hero-banner">
-    <div class="db-hero-content">
-      <h1 class="db-hero-title">Dashboard Intelligence</h1>
-      <p class="db-hero-sub">Welcome back, YDY. Monitor your organization here.</p>
+<header class="db-hero-banner" style="padding: 16px 28px; min-height: auto;">
+  <div class="db-hero-content">
+    <h1 class="db-hero-title" style="font-size: 1.5rem;">Dashboard Intelligence</h1>
+    <p class="db-hero-sub">Organization performance is at peak efficiency.</p>
+  </div>
+  
+  <!-- COMPACT QUICK ACTIONS STACK -->
+  <div class="qa-stack-v2">
+    <div class="qa-mini-header">
+      <span class="qa-mini-line"></span>
+      <span class="qa-mini-label">Quick Actions</span>
+      <span class="qa-mini-line"></span>
     </div>
     
-    <div class="db-quick-actions">
-      <button class="btn-glass-pro" onclick="goPage('employee-directory', this)">
-        <i data-lucide="user-plus" size="16"></i> New Hire
+    <div class="qa-button-row">
+      <button class="btn-glass-pro-slim" onclick="goPage('employee-directory', this)">
+        <i data-lucide="user-plus" size="14"></i>
+        <span>New Hire</span>
       </button>
-      <button class="btn-glass-pro" onclick="goPage('leave-requests', this)">
-        <i data-lucide="calendar" size="16"></i> Leaves
+      
+      <button class="btn-glass-pro-slim" onclick="goPage('leave-requests', this)">
+        <i data-lucide="calendar" size="14"></i>
+        <span>Leaves</span>
       </button>
-      <button class="btn-glass-pro" onclick="goPage('hr-analytics', this)">
-        <i data-lucide="bar-chart-3" size="16"></i> Analytics
+      
+      <button class="btn-glass-pro-slim" onclick="goPage('hr-analytics', this)">
+        <i data-lucide="bar-chart-3" size="14"></i>
+        <span>Analytics</span>
       </button>
     </div>
-  </header>
+  </div>
+</header>
 
 <div class="stat-ribbon-art">
   
