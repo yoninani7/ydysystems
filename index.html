@@ -2037,7 +2037,7 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
 <!-- JOB POSITIONS -->
 <div class="page" id="p-job-positions">
   <div class="page-header">
-    <div><div class="page-title">Job Positions</div><div class="page-sub">Define roles, grades and pay bands</div></div>
+    <div><div class="page-title">Job Positions</div><div class="page-sub">Define job information</div></div>
    <button class="btn btn-primary" onclick="openJobModal()">
   <i data-lucide="plus" size="13"></i>New Position
 </button>
@@ -2049,7 +2049,9 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
 <div class="page" id="p-branch-offices">
   <div class="page-header">
     <div><div class="page-title">Branch Offices</div><div class="page-sub">All locations and regional offices</div></div>
-    <button class="btn btn-primary"><i data-lucide="plus" size="13"></i>Add Branch</button>
+    <button class="btn btn-primary" onclick="openBranchModal()">
+  <i data-lucide="plus" size="13"></i>Add Branch
+</button>
   </div>
   <div id="tbl-branch-offices"></div>
 </div>
@@ -2594,6 +2596,64 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
     </div>
   </div>
 </div>
+
+<!-- MODAL: ADD BRANCH OFFICE -->
+<div class="modal-overlay" id="modal-add-branch" onclick="closeBranchModal(event)">
+  <div class="modal-box" style="max-width: 500px; overflow: visible;">
+    <div class="modal-header">
+      <div>
+        <div style="font-size:1rem;font-weight:800;">Add New Branch</div>
+        <div style="font-size:.75rem;color:var(--muted);margin-top:3px;">Register a new corporate location</div>
+      </div>
+      <button class="icon-btn" onclick="closeBranchModal()"><i data-lucide="x" size="15"></i></button>
+    </div>
+    <div class="modal-body" style="overflow: visible;">
+      <div class="form-grid fg-2"> 
+         
+
+        <!-- BRANCH NAME -->
+        <div class="form-group">
+          <label>Branch Name *</label>
+          <input id="branch-name" placeholder="e.g. East Hub">
+        </div>
+
+        <!-- CITY -->
+        <div class="form-group">
+          <label>City</label>
+          <input id="branch-city" placeholder="e.g. Adama">
+        </div>
+
+        <!-- SEARCHABLE MANAGER DROPDOWN -->
+        <div class="form-group" style="position:relative;">
+          <label>Branch Manager</label>
+          <div class="as-combo-container">
+            <input type="text" id="as-input-branch-mgr" placeholder="Search manager..." 
+                   onfocus="showAsDrop('as-drop-branch-mgr')" 
+                   oninput="filterAsDrop('as-input-branch-mgr', 'as-drop-branch-mgr')">
+            <div class="as-combo-results" id="as-drop-branch-mgr"></div>
+          </div>
+        </div>
+
+        <!-- STATUS -->
+        <div class="form-group" style="grid-column: span 2;">
+          <label>Status</label>
+          <select id="branch-status">
+            <option>Active</option>
+            <option>Inactive</option>
+          </select>
+        </div>
+
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeBranchModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveBranch()">
+        <i data-lucide="check" size="13"></i>Create Branch
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL: REGISTER NEW ASSET -->
 <div class="modal-overlay" id="modal-add-asset" onclick="closeAssetModal(event)">
   <div class="modal-box" style="max-width:460px;overflow:visible;">
@@ -2962,7 +3022,7 @@ function initPage(id) {
     case 'job-positions':
       buildTable('tbl-job-positions', { columns: [{key:'title',label:'Job Title'},{key:'dept',label:'Department'},{key:'count',label:'Headcount'},ac], rows: gen(28, i => ({code:`JP${String(i+1).padStart(3,'0')}`,title:['Software Engineer','Sales Manager','HR Business Partner','Finance Analyst','Product Manager','UX Designer','DevOps Engineer','Data Scientist','Legal Counsel','Support Lead'][i%10],dept:rand(depts),grade:['L1','L2','L3','L4','M1','M2','S1','S2'][i%8],min:fmtMoney(randInt(40,80)*1000),max:fmtMoney(randInt(80,150)*1000),count:randInt(2,40)})) }); break;
     case 'branch-offices':
-      buildTable('tbl-branch-offices', { columns: [{key:'code',label:'Code'},{key:'name',label:'Branch Name'},{key:'city',label:'City'},{key:'country',label:'Country'},{key:'manager',label:'Branch Manager'},{key:'emp',label:'Staff'},{key:'status',label:'Status'},ac], rows: gen(12, i => ({code:`BR${String(i+1).padStart(2,'0')}`,name:['HQ','North','South','East','West','APAC','EMEA','LATAM','Canada','Australia','UK','Singapore'][i]+' Office',city:['New York','Chicago','Atlanta','Boston','San Jose','Singapore','London','São Paulo','Toronto','Sydney','Manchester','Tokyo'][i],country:['USA','USA','USA','USA','USA','Singapore','UK','Brazil','Canada','Australia','UK','Japan'][i],manager:names[i%names.length],emp:randInt(30,320),status:statusBadge.active})) }); break;
+      buildTable('tbl-branch-offices', { columns: [{key:'code',label:'Code'},{key:'name',label:'Branch Name'},{key:'city',label:'City'} ,{key:'manager',label:'Branch Manager'},{key:'emp',label:'Staff'},{key:'status',label:'Status'},ac], rows: gen(12, i => ({code:`BR${String(i+1).padStart(2,'0')}`,name:['HQ','North','South','East','West','APAC','EMEA','LATAM','Canada','Australia','UK','Singapore'][i]+' Office',city:['New York','Chicago','Atlanta','Boston','San Jose','Singapore','London','São Paulo','Toronto','Sydney','Manchester','Tokyo'][i],manager:names[i%names.length],emp:randInt(30,320),status:statusBadge.active})) }); break;
     case 'employee-directory':
       buildTable('tbl-employees', { columns: [{key:'id',label:'Emp ID'},{key:'fname',label:'First Name'},{key:'mname',label:'Middle Name'},{key:'lname',label:'Last Name'},{key:'uname',label:'Username'},{key:'gender',label:'Gender'},{key:'dob',label:'Date of Birth'},{key:'hire',label:'Hired Date'},{key:'status',label:'Status'},{key:'marital',label:'Marital Status'},{key:'phone',label:'Phone'},{key:'email',label:'Email'},{key:'dept',label:'Department'},{key:'position',label:'Job Position'},{key:'type',label:'Emp Type'},{key:'probation',label:'Probation Date'},{key:'termDate',label:'Termination Date'},{key:'termReason',label:'Termination Reason'},{key:'bank',label:'Bank Account'},{key:'created',label:'Created At'},ac],
         rows: gen(60, i => {
@@ -3379,6 +3439,48 @@ function saveJobPosition() {
     
     closeJobModal();
     btn.innerHTML = `<i data-lucide="check" size="13"></i>Create Position`;
+    lucide.createIcons();
+  }, 600);
+}
+
+// Function to open the Branch Modal
+function openBranchModal() { 
+  openModal('modal-add-branch'); 
+}
+
+// Function to close the Branch Modal
+function closeBranchModal(e) { 
+  closeModal('modal-add-branch', e); 
+}
+
+// Save Function
+function saveBranch() {
+  const code = document.getElementById('branch-code').value.trim();
+  const name = document.getElementById('branch-name').value.trim();
+  const city = document.getElementById('branch-city').value.trim();
+  const manager = document.getElementById('as-input-branch-mgr').value.trim();
+  const status = document.getElementById('branch-status').value;
+
+  if (!code || !name) { 
+    alert('Branch Code and Name are required.'); 
+    return; 
+  }
+
+  const btn = document.querySelector('#modal-add-branch .btn-primary');
+  btn.innerHTML = `<i data-lucide="loader-2" class="spin" size="13"></i> Saving...`;
+  lucide.createIcons();
+
+  setTimeout(() => {
+    alert(`Success: ${name} (${code}) in ${city} has been registered.`);
+    
+    // Clear fields
+    document.getElementById('branch-code').value = '';
+    document.getElementById('branch-name').value = '';
+    document.getElementById('branch-city').value = '';
+    document.getElementById('as-input-branch-mgr').value = '';
+    
+    closeBranchModal();
+    btn.innerHTML = `<i data-lucide="check" size="13"></i>Create Branch`;
     lucide.createIcons();
   }, 600);
 }
