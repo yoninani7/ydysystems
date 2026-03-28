@@ -2038,7 +2038,9 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
 <div class="page" id="p-job-positions">
   <div class="page-header">
     <div><div class="page-title">Job Positions</div><div class="page-sub">Define roles, grades and pay bands</div></div>
-    <button class="btn btn-primary"><i data-lucide="plus" size="13"></i>New Position</button>
+   <button class="btn btn-primary" onclick="openJobModal()">
+  <i data-lucide="plus" size="13"></i>New Position
+</button>
   </div>
   <div id="tbl-job-positions"></div>
 </div>
@@ -2550,6 +2552,48 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
   </div>
 </div>
 
+<!-- MODAL: ADD JOB POSITION -->
+<div class="modal-overlay" id="modal-add-job-position" onclick="closeJobModal(event)">
+  <div class="modal-box" style="max-width: 500px; overflow: visible;">
+    <div class="modal-header">
+      <div>
+        <div style="font-size:1rem;font-weight:800;">Add New Job Position</div>
+        <div style="font-size:.75rem;color:var(--muted);margin-top:3px;">Define a new role and headcount requirements</div>
+      </div>
+      <button class="icon-btn" onclick="closeJobModal()"><i data-lucide="x" size="15"></i></button>
+    </div>
+    <div class="modal-body" style="overflow: visible;">
+      <div class="form-grid fg-2"> 
+        
+        <!-- JOB TITLE -->
+        <div class="form-group" style="grid-column: span 2;">
+          <label>Job Title *</label>
+          <input id="job-title" placeholder="e.g. Senior Software Engineer">
+        </div>
+
+        <!-- SEARCHABLE DEPARTMENT DROPDOWN -->
+        <div class="form-group" style="position:relative;grid-column: span 2;">
+          <label>Department</label>
+          <div class="as-combo-container">
+            <input type="text" id="as-input-job-dept" placeholder="Search department..." 
+                   onfocus="showAsDrop('as-drop-job-dept')" 
+                   oninput="filterAsDrop('as-input-job-dept', 'as-drop-job-dept')">
+            <div class="as-combo-results" id="as-drop-job-dept"></div>
+          </div>
+        </div>
+
+        
+
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeJobModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveJobPosition()">
+        <i data-lucide="check" size="13"></i>Create Position
+      </button>
+    </div>
+  </div>
+</div>
 <!-- MODAL: REGISTER NEW ASSET -->
 <div class="modal-overlay" id="modal-add-asset" onclick="closeAssetModal(event)">
   <div class="modal-box" style="max-width:460px;overflow:visible;">
@@ -2583,6 +2627,7 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
     </div>
   </div>
 </div>
+
 
 <!-- MODAL: REASSIGN ASSET -->
 <div class="modal-overlay" id="modal-reassign-asset" onclick="closeReassignModal(event)">
@@ -3298,6 +3343,44 @@ function saveCompanyProfile() {
   btn.innerHTML = `<i data-lucide="loader-2" class="spin" size="14"></i> Saving...`;
   lucide.createIcons();
   setTimeout(() => { alert('Success: Company master data has been updated.'); btn.innerHTML = orig; lucide.createIcons(); closeEditCompanyModal(); }, 800);
+}
+// Function to open the Job Position Modal
+function openJobModal() { 
+  openModal('modal-add-job-position'); 
+}
+
+// Function to close the Job Position Modal
+function closeJobModal(e) { 
+  closeModal('modal-add-job-position', e); 
+}
+
+// Save Function
+function saveJobPosition() {
+  const title = document.getElementById('job-title').value.trim();
+  const dept = document.getElementById('as-input-job-dept').value.trim();
+  const count = document.getElementById('job-count').value;
+
+  if (!title) { 
+    alert('Job Title is required.'); 
+    return; 
+  }
+
+  const btn = document.querySelector('#modal-add-job-position .btn-primary');
+  btn.innerHTML = `<i data-lucide="loader-2" class="spin" size="13"></i> Saving...`;
+  lucide.createIcons();
+
+  setTimeout(() => {
+    alert(`Success: ${title} created for ${dept} department.`);
+    
+    // Clear fields
+    document.getElementById('job-title').value = '';
+    document.getElementById('as-input-job-dept').value = '';
+    document.getElementById('job-count').value = '';
+    
+    closeJobModal();
+    btn.innerHTML = `<i data-lucide="check" size="13"></i>Create Position`;
+    lucide.createIcons();
+  }, 600);
 }
 
 // ── ASSET DROPDOWNS ──
