@@ -121,7 +121,16 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
     display: none !important;
   }
  
-
+.sidebar.collapsed .nav-group::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: -15px;         /* Creates an invisible 15px bridge to the right */
+  width: 20px;
+  height: 100%;
+  z-index: 5;           /* Higher than the background but lower than the menu */
+  display: none;
+}
 .sidebar.collapsed .nav-group:hover{ max-height: none !important; display: flex !important;}
 .sidebar.collapsed{width:78px;overflow:visible!important} 
 .sidebar-brand{height:var(--header-h);padding:0 16px;display:flex;align-items:center;gap:10px;font-weight:800;font-size:.95rem;color:var(--primary);border-bottom:1px solid var(--border);letter-spacing:-.01em;flex-shrink:0;white-space:nowrap;overflow:hidden}
@@ -208,8 +217,10 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
     pointer-events: none;
     display: block !important;
     position: fixed;
-    left: 82px; /* Sidebar width + border offset */
+    left: 78px; /* Sidebar width + border offset */
     z-index: 10000;
+    transform: translateX(0); 
+  margin-left: -1px; 
     width: 222px;
     padding: 12px 16px;
     background: #fafafa; /* Slightly different bg for header */
@@ -312,8 +323,8 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 .table-wrap{overflow-x:auto;position:relative;border-radius:0 0 var(--radius) var(--radius);-webkit-overflow-scrolling:touch}
 
 table.tbl{width:100%;border-collapse:separate;border-spacing:0;table-layout:auto}
-table.tbl th{padding:12px 14px;background:#f8fafc;font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);white-space:nowrap;text-align:left}
-table.tbl td{padding:12px 14px;font-size:.8rem;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle;background-color:var(--surface)}
+table.tbl th{ padding: 6px 18px !important;background:#f8fafc;font-size:.72rem;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);white-space:nowrap;text-align:left}
+table.tbl td{  padding: 4px 14px !important;font-size:.8rem;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle;background-color:var(--surface)}
 table.tbl tr:hover td{background-color:#fcfdfe!important}
 table.tbl th:last-child,table.tbl td:last-child{width:.1%;white-space:nowrap;position:sticky;right:0;z-index:20;border-left:1px solid var(--border);box-shadow:-4px 0 8px -4px rgba(0,0,0,.1)}
 table.tbl th:last-child{background:#f8fafc}
@@ -339,10 +350,120 @@ table.tbl tr:hover td:last-child{background:#fcfdfe!important}
 .badge-primary{background:var(--primary-light);color:var(--primary)}
 .avatar{width:36px;height:36px;border-radius:8px;background:var(--primary-light);color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:.68rem;font-weight:700;flex-shrink:0}
 .avatar-sm{width:28px;height:28px;font-size:.6rem}
-.search-bar{position:relative;display:inline-flex;align-items:center}
-.search-bar input{padding:8px 12px 8px 38px;border:1px solid var(--border);border-radius:8px;font-size:.78rem;font-family:inherit;color:var(--text);background:#f8fafc;outline:none;transition:all .15s;width:100%}
-.search-bar input:focus{border-color:var(--primary);background:#fff}
-.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+/* --- EXECUTIVE SEARCH BAR REFINEMENT --- */
+.search-container {
+  width: 100%;
+  max-width: 400px;
+  position: relative;
+}
+
+.search-inner {
+  display: flex;
+  align-items: center;
+  height: 40px; /* Standard premium height */
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px; /* Matches var(--radius) */
+  padding: 0 4px 0 14px; /* Space for the lead icon */
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow);
+}
+
+/* Focused state for the whole bar */
+.search-inner:focus-within {
+  border-color: var(--primary);
+  background: #ffffff;
+  box-shadow: 0 0 0 3px var(--primary-light), 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.search-lead-icon {
+  color: var(--muted);
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  transition: color 0.2s ease;
+}
+
+.search-inner:focus-within .search-lead-icon {
+  color: var(--primary);
+}
+
+.search-inner input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  padding: 0 10px;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.search-inner input::placeholder {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+/* Button Arrangement & Types */
+.search-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Size Fix for all internal buttons */
+.btn-search-ghost, 
+.btn-search-primary {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s ease;
+}
+
+.btn-search-ghost i,
+.btn-search-primary i {
+  width: 14px;
+  height: 14px;
+}
+
+/* TYPE 1: Ghost Button (Clear) */
+.btn-search-ghost {
+  background: transparent;
+  color: var(--muted);
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.9);
+}
+
+.btn-search-ghost:hover {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+/* Visibility Logic: Show X only when typing */
+.search-inner:has(input:not(:placeholder-shown)) .btn-search-ghost {
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1);
+}
+
+/* TYPE 2: Primary Button (Submit) */
+.btn-search-primary {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 2px 4px rgba(21, 178, 1, 0.2);
+}
+
+.btn-search-primary:hover {
+  background: var(--primary-dark);
+  transform: translateX(2px); /* Subtle elegant nudge */
+}.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
 .sel{padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:.78rem;font-family:inherit;color:var(--text);background:#f8fafc;outline:none;cursor:pointer}
 .sel:focus{border-color:var(--primary)}
 .form-grid{display:grid;gap:16px}
@@ -588,6 +709,7 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
   .sidebar.collapsed .submenu {
     display: none !important;
   }
+  
    .sidebar.collapsed .nav-group:hover .submenu {
     display: flex !important;
     flex-direction: column;
@@ -604,10 +726,12 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
     padding: 45px 8px 12px 8px; 
     opacity: 1;
     visibility: visible;
-    transform: translateX(0px);
+    transform: translateX(0);
     transition: opacity .2s ease;
     max-height: calc(100vh - 20px) !important; /* Prevents menu being taller than screen */
     overflow-y: auto !important;
+    padding-top: 45px;
+    margin-left: -1px;
   }
 }
 .sidebar.collapsed .sidebar-scroll::-webkit-scrollbar-thumb {
@@ -1902,7 +2026,9 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
 <!-- DEPARTMENTS -->
 <div class="page" id="p-departments">
   <div class="page-header">
+    
     <div><div class="page-title">Departments</div><div class="page-sub">Manage all organizational units</div></div>
+    
     <button class="btn btn-primary" onclick="openDeptModal()"><i data-lucide="plus" size="13"></i>Add Department</button>
   </div>
   <div id="tbl-departments"></div>
@@ -2024,8 +2150,7 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
 <div class="page" id="p-candidates">
   <div class="page-header">
     <div><div class="page-title">Job Applicant's List</div><div class="page-sub">Track applicants through hiring stages</div></div>
-    <div class="flex-row">
-      <div class="search-bar"><i data-lucide="search" size="13" class="search-icon"></i><input placeholder="Search candidates..."></div>
+    <div class="flex-row"> 
       <button class="btn btn-primary"><i data-lucide="plus" size="13"></i>Add Candidate</button>
     </div>
   </div>
@@ -2365,33 +2490,62 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
 
 <!-- MODAL: ADD DEPARTMENT -->
 <div class="modal-overlay" id="modal-add-dept" onclick="closeDeptModal(event)">
-  <div class="modal-box">
+  <div class="modal-box" style="max-width: 500px; overflow: visible;"> <!-- Added overflow: visible -->
     <div class="modal-header">
-      <div><div style="font-size:1rem;font-weight:800;">Add New Department</div><div style="font-size:.75rem;color:var(--muted);margin-top:3px;">Fill in the details below to create a new department</div></div>
+      <div>
+        <div style="font-size:1rem;font-weight:800;">Add New Department</div>
+        <div style="font-size:.75rem;color:var(--muted);margin-top:3px;">Create a new organizational unit</div>
+      </div>
       <button class="icon-btn" onclick="closeDeptModal()"><i data-lucide="x" size="15"></i></button>
     </div>
-    <div class="modal-body">
-      <div class="form-grid fg-2">
-        <div class="form-group"><label>Department Code *</label><input id="dept-code" placeholder="e.g. D011"></div>
-        <div class="form-group"><label>Department Name *</label><input id="dept-name" placeholder="e.g. Research & Development"></div>
-        <div class="form-group"><label>Head of Department</label><input id="dept-head" placeholder="Search employee..."></div>
-        <div class="form-group"><label>Location / Office</label>
-          <select id="dept-location"><option value="">Select...</option><option>New York — HQ</option><option>Atlanta</option><option>San Jose</option><option>Chicago</option><option>Boston</option><option>Remote</option></select>
+    <div class="modal-body" style="overflow: visible;"> <!-- Added overflow: visible -->
+      <div class="form-grid fg-2"> 
+        
+        <div class="form-group" style="grid-column: span 2;">
+          <label>Department Name *</label>
+          <input id="dept-name" placeholder="e.g. Engineering">
         </div>
-        <div class="form-group"><label>Parent Department</label>
-          <select id="dept-parent"><option value="">None (Top Level)</option><option>Engineering</option><option>Sales</option><option>Operations</option><option>Finance</option><option>HR</option></select>
+
+        <!-- NEW SEARCHABLE DROPDOWN FOR HEAD OF DEPT -->
+       <div class="form-group" style="position:relative;">
+  <label>Head of Department</label>
+  <div class="as-combo-container">
+    <!-- input ID must start with as-input- -->
+    <input type="text" id="as-input-dept-head" placeholder="Type name to search..." 
+           onfocus="showAsDrop('as-drop-dept-head')" 
+           oninput="filterAsDrop('as-input-dept-head', 'as-drop-dept-head')">
+    
+    <!-- dropdown ID must start with as-drop- -->
+    <div class="as-combo-results" id="as-drop-dept-head"></div>
+  </div>
+</div>
+
+        <div class="form-group">
+          <label>Location</label>
+          <select id="dept-location">
+            <option value="">Select...</option>
+            <option>Addis Ababa</option>
+            <option>Mekelle</option>
+            <option>Adama</option>
+            <option>Remote</option>
+          </select>
         </div>
-        <div class="form-group"><label>Cost Center Code</label><input id="dept-costcenter" placeholder="e.g. CC-011"></div>
-        <div class="form-group"><label>Headcount Budget</label><input id="dept-budget" type="number" placeholder="e.g. 50"></div>
-        <div class="form-group"><label>Status</label>
-          <select id="dept-status"><option>Active</option><option>Inactive</option><option>Under Setup</option></select>
+
+        <div class="form-group" style="grid-column: span 2;">
+          <label>Status</label>
+          <select id="dept-status">
+            <option>Active</option>
+            <option>Inactive</option>
+          </select>
         </div>
+
       </div>
-      <div class="form-group mt-3"><label>Description</label><textarea id="dept-desc" placeholder="Describe this department's function and scope..."></textarea></div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeDeptModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="saveDepartment()"><i data-lucide="check" size="13"></i>Create Department</button>
+      <button class="btn btn-primary" onclick="saveDepartment()">
+        <i data-lucide="check" size="13"></i>Create Department
+      </button>
     </div>
   </div>
 </div>
@@ -2650,7 +2804,25 @@ function buildTable(containerId, { columns, rows, perPage = 8 }) {
     pgBtns += `<button class="pg-btn" onclick="changePg('${containerId}',1)" ${page>=tp?'disabled':''}>›</button>`;
     container.innerHTML = `
       <div class="filter-bar">
-        <div class="search-bar"><i data-lucide="search" size="13" class="search-icon"></i><input placeholder="Search…"></div>
+        <div class="search-container">
+  <div class="search-inner">
+    <i data-lucide="search" class="search-lead-icon"></i>
+    <input type="text" placeholder="Search records..." id="nav-search" autocomplete="off">
+    
+    <div class="search-actions">
+      <!-- Type: Ghost Button (Clear) -->
+      <button class="btn-search-ghost" id="search-clear" title="Clear">
+        <i data-lucide="x"></i>
+      </button>
+      
+      <!-- Type: Primary Button (Submit) -->
+      <button class="btn-search-primary" title="Search">
+        <i data-lucide="arrow-right"></i>
+      </button>
+    </div>
+  </div>
+</div>
+        
         <div class="ml-auto flex-row"><select class="sel" style="font-size:.72rem;"><option>10 / page</option><option>25 / page</option><option>50 / page</option></select></div>
       </div>
       <div class="table-wrap"><table class="tbl"><thead><tr>${colHeaders}</tr></thead><tbody>${bodyRows}</tbody></table></div>
@@ -3187,6 +3359,10 @@ function initOrgChart() {
     applyOCZoom(); 
     initOrgChartDrag(); // <--- Add this line
     lucide.createIcons();
+}
+function selectAsItem(inputId, dropId, name) { 
+   document.getElementById(inputId).value = name; // Writes the name to the input
+   document.getElementById(dropId).classList.remove('active'); // Just hides the list
 }
 // ── STARTUP ──
 window.addEventListener('DOMContentLoaded', () => { initPage('dashboard'); initDashboard(); });
