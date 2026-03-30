@@ -753,6 +753,7 @@ input[type="radio"] {
     .onboard-card { grid-template-columns: 80px 1fr; }
     .step-text { display: none; }
 }
+ 
 </style>
 </head>
 <body>
@@ -1157,9 +1158,8 @@ input[type="radio"] {
 </button></div>
   </div>
   <div id="tbl-employees"></div>
-</div>
-<!-- ── ADD NEW EMPLOYEE (EXECUTIVE MASTER DATA WIZARD) ── -->
-<!-- ── ADD NEW EMPLOYEE (PROFESSIONAL MASTER DATA WIZARD) ── -->
+</div> 
+<!-- ── ADD NEW EMPLOYEE (PROFESSIONAL MASTER DATA  ) ── -->
 <div class="page" id="p-add-employee">
   <div class="page-header" style="margin-bottom: 24px;">
     <div style="display:flex; align-items:center; gap:16px;">
@@ -1301,13 +1301,13 @@ input[type="radio"] {
         </div>
       </section>
 
-      <!-- Footer Buttons -->
-      <div style="margin-top: auto; padding-top: 40px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f5f9;">
+     <!-- Navigation Footer -->
+      <div style="margin-top: 60px; padding-top: 24px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border);">
         <button class="btn btn-secondary" id="ob-prev" onclick="moveOnboarding(-1)" style="visibility: hidden;"><i data-lucide="chevron-left" size="14"></i> Previous</button>
         <div class="dot-progress">
           <span class="dot active"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
         </div>
-        <button class="btn btn-primary" id="ob-next" onclick="moveOnboarding(1)" style="background: var(--text); padding: 12px 24px; border-radius: 12px;">Next Step <i data-lucide="chevron-right" size="14"></i></button>
+        <button class="btn btn-primary" id="ob-next" onclick="moveOnboarding(1)" style="padding: 10px 24px;">Next Step <i data-lucide="chevron-right" size="14"></i></button>
       </div>
 
     </main>
