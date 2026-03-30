@@ -753,7 +753,131 @@ input[type="radio"] {
     .onboard-card { grid-template-columns: 80px 1fr; }
     .step-text { display: none; }
 }
- 
+/* RESPONSIVE ONBOARDING GRID */
+@media (max-width: 992px) {
+    /* Stack the sidebar on top of the content */
+    .onboard-grid {
+        grid-template-columns: 1fr; /* Remove the 300px sidebar */
+        height: auto; 
+    }
+
+    .onboard-sidebar {
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding: 20px;
+    }
+
+    /* Make the step navigation scroll horizontally on mobile */
+    #onboard-nav-list {
+        display: flex;
+        overflow-x: auto;
+        gap: 8px;
+        padding-bottom: 10px;
+    }
+
+    .step-pro {
+        flex-shrink: 0;
+        margin-bottom: 0;
+        white-space: nowrap;
+    }
+
+    .onboard-content {
+        padding: 24px; /* Reduce padding on smaller screens */
+    }
+}
+
+@media (max-width: 640px) {
+    /* Stack the Identity section (Photo vs Inputs) */
+    .identity-flex-container {
+        flex-direction: column;
+        align-items: center !important;
+        gap: 20px !important;
+    }
+    
+    .profile-upload-wrapper {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    /* Force all form grids to single column */
+    .fg-2, .fg-3 {
+        grid-template-columns: 1fr !important;
+    }
+} 
+/* Professional Identity Layout */
+    .identity-master-wrapper {
+      display: flex;
+      gap: 40px;
+      align-items: flex-start;
+      background: #fcfdfe;
+      padding: 30px;
+      border-radius: 18px;
+      border: 1px solid #eef2f6;
+    }
+
+    .avatar-upload-zone {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .avatar-frame {
+      width: 130px;
+      height: 130px;
+      border-radius: 24px;
+      background: #fff;
+      border: 2px dashed #cbd5e1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+      transition: all 0.3s ease;
+      box-shadow: var(--shadow);
+    }
+
+    .avatar-frame:hover {
+      border-color: var(--primary);
+      background: var(--primary-light);
+    }
+
+    .identity-fields-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* Tight Name Grouping */
+    .name-grid-row {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr 1.2fr; /* Middle name slightly smaller */
+      gap: 12px;
+    }
+
+    .demo-grid-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+    }
+
+    .form-group label {
+      font-size: 0.68rem !important;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    
+    .identity-divider {
+       height: 1px;
+       background: linear-gradient(90deg, #eef2f6 0%, transparent 100%);
+       margin: 5px 0;
+    }
 </style>
 </head>
 <body>
@@ -1229,20 +1353,86 @@ input[type="radio"] {
     <!-- Content -->
     <main class="onboard-content">
       
-      <!-- STEP 1 -->
-      <section id="ob-step-1" class="form-section-content active">
-        <div class="input-group-label">Personal Identity</div>
-        <p class="input-group-sub">Primary identification and demographic information.</p>
-        <div class="form-grid fg-3">
-          <div class="form-group"><label>First Name *</label><input type="text" class="form-ctrl master-req" id="o-fname"></div>
-          <div class="form-group"><label>Middle Name</label><input type="text" class="form-ctrl" id="o-mname"></div>
-          <div class="form-group"><label>Last Name *</label><input type="text" class="form-ctrl master-req" id="o-lname"></div>
-          <div class="form-group"><label>Date of Birth *</label><input type="date" class="form-ctrl master-req" id="o-dob"></div>
-          <div class="form-group"><label>Gender *</label><select class="form-ctrl master-req" id="o-gender"><option value="">Select...</option><option>Male</option><option>Female</option></select></div>
-          <div class="form-group"><label>Nationality *</label><input type="text" class="form-ctrl master-req" id="o-nat" value="Ethiopian"></div>
-        </div>
-      </section>
+<!-- STEP 1: Updated with Profile Image -->
+<section id="ob-step-1" class="form-section-content active">
+   <div class="form-header-pro">
+    <div class="input-group-label">Personal Identity</div>
+    <p class="input-group-sub">Establish the primary legal identity and demographic profile for the master record.</p>
+  </div>
+<div class="identity-master-wrapper">
+    <!-- Profile Image Column -->
+    <div class="avatar-upload-zone">
+      <div class="avatar-frame" id="avatar-preview-box">
+        <i data-lucide="user" size="40" style="color: #cbd5e1;" id="placeholder-icon"></i>
+        <img id="avatar-img-output" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+      </div>
+      <label for="avatar-upload" class="btn btn-secondary btn-xs" style="cursor:pointer; border-radius: 20px; padding: 5px 15px;">
+        <i data-lucide="camera" size="12"></i> Upload Photo
+      </label>
+      <input type="file" id="avatar-upload" hidden accept="image/*" onchange="previewAvatar(this)">
+    </div>
 
+    <!-- Data Column -->
+    <div class="identity-fields-container">
+      
+      <!-- Row 1: The Full Name Block -->
+      <div class="name-grid-row">
+        <div class="form-group">
+          <label>First Name *</label>
+          <input type="text" class="form-ctrl master-req" id="o-fname" placeholder="Ex: Abebe">
+        </div>
+        <div class="form-group">
+          <label>Middle Name</label>
+          <input type="text" class="form-ctrl" id="o-mname" placeholder="Ex: Bikila">
+        </div>
+        <div class="form-group">
+          <label>Last Name *</label>
+          <input type="text" class="form-ctrl master-req" id="o-lname" placeholder="Ex: Gebre">
+        </div>
+      </div>
+
+      <div class="identity-divider"></div>
+
+      <!-- Row 2: Birth and Demographics -->
+      <div class="demo-grid-row">
+        <div class="form-group">
+          <label>Date of Birth *</label>
+          <input type="date" class="form-ctrl master-req" id="o-dob">
+        </div>
+        <div class="form-group">
+          <label>Gender *</label>
+          <select class="form-ctrl master-req" id="o-gender">
+            <option value="">Select...</option>
+            <option>Male</option>
+            <option>Female</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Nationality *</label>
+          <input type="text" class="form-ctrl master-req" id="o-nat" value="Ethiopian">
+        </div>
+      </div>
+
+      <!-- Row 3: Legal Status -->
+      <div class="demo-grid-row">
+        <div class="form-group">
+          <label>Marital Status</label>
+          <select class="form-ctrl" id="o-marital">
+            <option>Single</option>
+            <option>Married</option>
+            <option>Divorced</option>
+            <option>Widowed</option>
+          </select>
+        </div>
+        <div class="form-group" style="grid-column: span 2;">
+          <label>Place of Birth (City/Region)</label>
+          <input type="text" class="form-ctrl" id="o-pob" placeholder="Enter city or region">
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
       <!-- STEP 2 -->
       <section id="ob-step-2" class="form-section-content">
         <div class="input-group-label">Contact Channels</div>
@@ -2719,6 +2909,23 @@ function saveNewEmployee() {
         jumpToStep(1);
         btn.innerHTML = `<i data-lucide="shield-check" size="16"></i> Commit Record`;
     }, 1500);
+}
+function previewAvatar(input) {
+    const preview = document.getElementById('avatar-img-output');
+    const icon = document.getElementById('placeholder-icon');
+    const box = document.getElementById('avatar-preview-box');
+
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+            icon.style.display = 'none';
+            box.style.borderStyle = 'solid';
+            box.style.borderColor = 'var(--primary)';
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
 }
 </script>
 </body>
