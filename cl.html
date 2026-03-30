@@ -653,6 +653,38 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
   /* Prevent 78px collapsed width on mobile */
   .sidebar.collapsed.mobile-open{width:280px!important;background:var(--surface)!important}
 }
+
+/* Styling for the Add Employee Form Sections */
+.form-section-content {
+  display: none;
+}
+.form-section-content.active {
+  display: block;
+}
+
+/* Ensure the radio buttons look like the theme */
+input[type="radio"] {
+  accent-color: var(--primary);
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+/* Adjusting the role-pill to act as a form tab */
+#p-add-employee .role-pill {
+  padding: 12px 16px;
+  margin-bottom: 4px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  border-left: 3px solid transparent;
+}
+
+#p-add-employee .role-pill.active {
+  background: var(--primary-light);
+  color: var(--primary);
+  border-left: 3px solid var(--primary);
+  font-weight: 700;
+}
 </style>
 </head>
 <body>
@@ -1051,9 +1083,82 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
 <div class="page" id="p-employee-directory">
   <div class="page-header">
     <div><div class="page-title">Employee Profile</div><div class="page-sub">1,248 employees across all branches</div></div>
-    <div class="flex-row"><select class="sel"><option>All Departments</option><option>Engineering</option><option>Sales</option><option>HR</option><option>Finance</option></select><button class="btn btn-primary"><i data-lucide="user-plus" size="13"></i>Add Employee</button></div>
+    <div class="flex-row"><select class="sel"><option>All Departments</option><option>Engineering</option><option>Sales</option><option>HR</option><option>Finance</option></select><!-- Inside <div class="page" id="p-employee-directory"> -->
+<button class="btn btn-primary" onclick="goPage('add-employee', this)">
+    <i data-lucide="user-plus" size="13"></i>Add Employee
+</button></div>
   </div>
   <div id="tbl-employees"></div>
+</div>
+<!-- ── ADD NEW EMPLOYEE (FORM WIZARD) ── -->
+<div class="page" id="p-add-employee">
+  <div class="page-header">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <button class="icon-btn" onclick="goPage('employee-directory')"><i data-lucide="arrow-left" size="16"></i></button>
+      <div>
+        <div class="page-title">Create New Employee Profile</div>
+        <div class="page-sub">Fill in the formal records to onboard a new staff member</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="display: flex; flex-direction: row; min-height: 600px; overflow: hidden;">
+    <!-- Form Left Sidebar -->
+    <div style="width: 240px; border-right: 1px solid var(--border); background: #f8fafc; padding: 24px 16px;">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <div style="position: relative; width: 100px; height: 100px; margin: 0 auto 12px; background: #e2e8f0; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 4px solid #fff; box-shadow: var(--shadow);">
+          <i data-lucide="user" size="40" style="color: #94a3b8;"></i>
+          <button style="position: absolute; bottom: 0; right: 0; width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: #fff; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow);">
+            <i data-lucide="camera" size="14"></i>
+          </button>
+        </div>
+        <div style="font-size: .85rem; font-weight: 800; color: var(--text);">New Employee</div>
+        <div style="font-size: .7rem; color: var(--muted);">Profile Preview</div>
+      </div>
+
+      <div class="flex-col" style="gap: 4px;">
+        <div class="role-pill active" onclick="switchFormTab(this, 'personal')">Personal Details</div>
+        <div class="role-pill" onclick="switchFormTab(this, 'contact')">Contact Details</div>
+        <div class="role-pill" onclick="switchFormTab(this, 'emergency')">Emergency Contacts</div>
+        <div class="role-pill" onclick="switchFormTab(this, 'dependents')">Dependents</div>
+        <div class="role-pill" onclick="switchFormTab(this, 'immigration')">Immigration</div>
+        <div class="role-pill" onclick="switchFormTab(this, 'job')">Job & Contract</div>
+        <div class="role-pill" onclick="switchFormTab(this, 'salary')">Salary & Bank</div>
+      </div>
+    </div>
+
+    <!-- Form Content Right -->
+    <div style="flex: 1; padding: 32px; background: #fff;">
+      <div id="form-tab-personal" class="form-section-content active">
+        <h3 style="font-size: 1rem; margin-bottom: 20px; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 10px;">Personal Details</h3>
+        <div class="form-grid fg-3">
+          <div class="form-group"><label>First Name*</label><input type="text" placeholder="John"></div>
+          <div class="form-group"><label>Middle Name</label><input type="text" placeholder="Middle Name"></div>
+          <div class="form-group"><label>Last Name*</label><input type="text" placeholder="Doe"></div>
+          <div class="form-group"><label>Employee ID*</label><input type="text" value="EMP-1249"></div>
+          <div class="form-group"><label>Other ID</label><input type="text" placeholder="External Ref"></div>
+          <div class="form-group"><label>Driver's License No.</label><input type="text"></div>
+          <div class="form-group"><label>License Expiry</label><input type="date"></div>
+          <div class="form-group"><label>Nationality</label><select><option>Ethiopian</option><option>Other</option></select></div>
+          <div class="form-group"><label>Marital Status</label><select><option>Single</option><option>Married</option></select></div>
+          <div class="form-group"><label>Date of Birth</label><input type="date"></div>
+          <div class="form-group" style="grid-column: span 2;">
+            <label>Gender</label>
+            <div class="flex-row" style="gap: 20px; margin-top: 10px;">
+              <label style="display:flex; align-items:center; gap:8px; font-weight:500;"><input type="radio" name="gender" checked> Male</label>
+              <label style="display:flex; align-items:center; gap:8px; font-weight:500;"><input type="radio" name="gender"> Female</label>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Footer buttons -->
+      <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px;">
+        <button class="btn btn-secondary" onclick="goPage('employee-directory')">Cancel</button>
+        <button class="btn btn-primary" style="padding: 10px 30px;" onclick="saveNewEmployee()"><i data-lucide="save" size="14"></i> Save Employee Profile</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- ── EMPLOYMENT TYPES ── -->
@@ -1563,282 +1668,830 @@ input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor
 ══════════════════════════════════════════════ -->
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-// ————————————————————————————————————————————————————————————
-// 1. INITIALIZATION & ICONS
-// ————————————————————————————————————————————————————————————
+ <script>
 lucide.createIcons();
 
-// ————————————————————————————————————————————————————————————
-// 2. NAVIGATION & SIDEBAR LOGIC
-// ————————————————————————————————————————————————————————————
+// ── SIDEBAR TOGGLE ──
 let sidebarCollapsed = false;
 const isMobile = () => window.innerWidth <= 768;
-
 function toggleSidebar() {
   const sidebar = document.getElementById('sidebar');
-  const mainContent = document.getElementById('main-content');
   const overlay = document.getElementById('sidebar-overlay');
-  const toggleIcon = document.getElementById('toggle-icon');
-
-  if (isMobile()) {
+  const mainContent = document.getElementById('main-content');
+  
+  if (window.innerWidth <= 768) {
+    // MOBILE LOGIC
     const isOpen = sidebar.classList.contains('mobile-open');
     if (isOpen) {
       sidebar.classList.remove('mobile-open');
       overlay.classList.remove('visible');
     } else {
-      sidebar.classList.remove('collapsed');
+      // Force remove collapsed class so text shows up on mobile
+      sidebar.classList.remove('collapsed'); 
+      mainContent.classList.remove('sidebar-collapsed');
+      
       sidebar.classList.add('mobile-open');
       overlay.classList.add('visible');
     }
   } else {
+    // DESKTOP LOGIC
     sidebarCollapsed = !sidebarCollapsed;
     sidebar.classList.toggle('collapsed', sidebarCollapsed);
     mainContent.classList.toggle('sidebar-collapsed', sidebarCollapsed);
-    toggleIcon.setAttribute('data-lucide', sidebarCollapsed ? 'panel-left-open' : 'menu');
-    lucide.createIcons();
+    
+    // Switch the menu icon
+    const icon = document.getElementById('toggle-icon');
     if (sidebarCollapsed) {
-      document.querySelectorAll('.submenu').forEach(s => s.classList.remove('open'));
-      document.querySelectorAll('.nav-trigger').forEach(t => t.classList.remove('open'));
+        icon.setAttribute('data-lucide', 'panel-left-open');
+        // Close all submenus when collapsing
+        document.querySelectorAll('.submenu').forEach(s => s.classList.remove('open'));
+        document.querySelectorAll('.nav-trigger').forEach(t => t.classList.remove('open'));
+    } else {
+        icon.setAttribute('data-lucide', 'menu');
     }
+    lucide.createIcons();
   }
-}
+} 
+// Smart positioning for collapsed sidebar submenus AND titles
+document.addEventListener('mouseover', (e) => {
+    const sidebar = document.getElementById('sidebar');
+    if (!sidebar || !sidebar.classList.contains('collapsed')) return;
 
+    const navGroup = e.target.closest('.nav-group');
+    if (navGroup) {
+        const submenu = navGroup.querySelector('.submenu');
+        const label = navGroup.querySelector('.nav-trigger-left span');
+        
+        if (submenu && label) {
+            const rect = navGroup.getBoundingClientRect();
+            const viewportHeight = window.innerHeight;
+            
+            // Temporary show to calculate height
+            submenu.style.visibility = 'hidden';
+            submenu.style.display = 'flex';
+            
+            const menuHeight = submenu.offsetHeight;
+            submenu.style.display = ''; // Reset
+            submenu.style.visibility = '';
+
+            let topPosition = rect.top;
+
+            // COLLISION DETECTION: 
+            // If the menu height extends past the bottom of the screen...
+            if (topPosition + menuHeight > viewportHeight) {
+                // Shift the menu up so its bottom aligns with the screen bottom (with 10px buffer)
+                topPosition = viewportHeight - menuHeight - 10;
+            }
+
+            // Safety check: ensure it doesn't go off the top either
+            if (topPosition < 10) topPosition = 10;
+
+            submenu.style.top = topPosition + 'px';
+            label.style.top = topPosition + 'px';
+        }
+    }
+}); 
 function closeMobileSidebar() {
   document.getElementById('sidebar').classList.remove('mobile-open');
   document.getElementById('sidebar-overlay').classList.remove('visible');
 }
 
+window.addEventListener('resize', () => {
+  if (!isMobile()) {
+    document.getElementById('sidebar').classList.remove('mobile-open');
+    document.getElementById('sidebar-overlay').classList.remove('visible');
+  }
+});
+
+// ── NAVIGATION ──
 function toggleNav(el, id) {
-  if (sidebarCollapsed && !isMobile()) { toggleSidebar(); }
+  if (sidebarCollapsed && !isMobile()) { toggleSidebar(); return; }
   const sub = document.getElementById(id);
   const isOpen = sub.classList.contains('open');
   
-  // Close others
-  document.querySelectorAll('.nav-trigger').forEach(t => t.classList.remove('open'));
-  document.querySelectorAll('.submenu').forEach(s => s.classList.remove('open'));
-
-  if (!isOpen) {
-    el.classList.add('open');
-    sub.classList.add('open');
-  }
+  // Close other submenus that are just "expanded" but NOT active
+  document.querySelectorAll('.nav-trigger').forEach(t => { 
+    if (t !== el) t.classList.remove('open'); 
+  });
+  document.querySelectorAll('.submenu').forEach(s => { 
+    if (s !== sub) s.classList.remove('open'); 
+  });
+  
+  // Toggle the "open" state (arrow rotation and expansion)
+  el.classList.toggle('open', !isOpen);
+  sub.classList.toggle('open', !isOpen);
 }
-
-function goPage(pageId, el) {
-  // Update UI State
+function goPage(id, el) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById('p-' + pageId).classList.add('active');
-
+  const pg = document.getElementById('p-' + id);
+  if (pg) pg.classList.add('active');
+  document.getElementById('page-title').textContent = el ? el.textContent.trim() : 'Dashboard';
   document.querySelectorAll('.sub-link, .dash-link').forEach(l => l.classList.remove('active'));
   if (el) el.classList.add('active');
-
-  // Breadcrumb
-  const rawText = el ? (el.querySelector('span')?.innerText || el.innerText) : "Dashboard";
-  document.getElementById('page-title').innerText = rawText;
-
+  document.querySelectorAll('.nav-trigger').forEach(t => t.classList.remove('parent-active'));
+  const parentSub = el.closest('.submenu');
+  if (parentSub) {
+    const trigger = document.querySelector(`.nav-trigger[onclick*="${parentSub.id}"]`);
+    if (trigger) trigger.classList.add('parent-active');
+  } else {
+    document.querySelectorAll('.submenu').forEach(s => s.classList.remove('open'));
+    document.querySelectorAll('.nav-trigger').forEach(t => t.classList.remove('open'));
+  }
+  initPage(id);
   if (isMobile()) closeMobileSidebar();
-  
-  // Initialize specific page logic
-  if (pageId === 'document-vault') renderVaultMatrix();
-  if (pageId === 'asset-tracking') renderAssetStream();
 }
 
-// ————————————————————————————————————————————————————————————
-// 3. DATA REPOSITORY (MOCK DATA)
-// ————————————————————————————————————————————————————————————
-const DATA = {
-  employees: [
-    { id: 'E-101', name: 'Abebe Bikila', dept: 'Executive', role: 'CEO', status: 'Active', joined: '2010-10-12' },
-    { id: 'E-102', name: 'Sara Jenkins', dept: 'Operations', role: 'Director', status: 'Active', joined: '2015-03-20' },
-    { id: 'E-103', name: 'Michael Kassa', dept: 'Technical', role: 'Director', status: 'Active', joined: '2016-11-02' },
-    { id: 'E-104', name: 'Helen Gebre', dept: 'Operations', role: 'Supervisor', status: 'On Leave', joined: '2018-01-15' },
-    { id: 'E-105', name: 'Yared Tolla', dept: 'Technical', role: 'QA Lead', status: 'Probation', joined: '2024-01-10' }
-  ],
-  assets: [
-    { id: 'AST-099', name: 'MacBook Pro 14"', custodian: 'Sara Jenkins', prev: 'Michael Kassa', ref: 'SN-992834', loc: 'Addis HQ' },
-    { id: 'AST-104', name: 'Dell Latitude 5420', custodian: 'Helen Gebre', prev: 'Unassigned', ref: 'DELL-XP-02', loc: 'Mekelle' },
-    { id: 'AST-202', name: 'iPad Air 5th Gen', custodian: 'Yared Tolla', prev: 'Sarah J.', ref: 'APL-PAD-88', loc: 'Addis HQ' }
-  ],
-  departments: [
-    { name: 'Executive', head: 'Abebe Bikila', staff: 5, status: 'Active' },
-    { name: 'Engineering', head: 'Michael Kassa', staff: 42, status: 'Active' },
-    { name: 'Sales & Marketing', head: 'Lydia Solomon', staff: 18, status: 'Active' }
+// ── PAGINATED TABLE BUILDER ──
+function buildTable(containerId, { columns, rows, perPage = 8 }) {
+  const container = document.getElementById(containerId);
+  if (!container || container.dataset.built) return;
+  container.dataset.built = '1';
+  let page = 1;
+  const totalPages = () => Math.ceil(rows.length / perPage);
+
+  function render() {
+    const start = (page - 1) * perPage, end = Math.min(start + perPage, rows.length);
+    const slice = rows.slice(start, end);
+    const colHeaders = columns.map(c => `<th>${c.label}</th>`).join('');
+    const bodyRows = slice.map(row =>
+      `<tr>${columns.map(c => { let v = row[c.key] !== undefined ? row[c.key] : '—'; if (c.render) v = c.render(v, row); return `<td>${v}</td>`; }).join('')}</tr>`
+    ).join('');
+    const tp = totalPages();
+    let pgBtns = `<button class="pg-btn" onclick="changePg('${containerId}',-1)" ${page<=1?'disabled':''}>‹</button>`;
+    for (let i = 1; i <= tp; i++) {
+      if (tp <= 7 || i===1 || i===tp || Math.abs(i-page)<=1) pgBtns += `<button class="pg-btn ${i===page?'active':''}" onclick="setPg('${containerId}',${i})">${i}</button>`;
+      else if (Math.abs(i-page)===2) pgBtns += `<button class="pg-btn" disabled>…</button>`;
+    }
+    pgBtns += `<button class="pg-btn" onclick="changePg('${containerId}',1)" ${page>=tp?'disabled':''}>›</button>`;
+    container.innerHTML = `
+      <div class="filter-bar">
+        <div class="search-container">
+  <div class="search-inner">
+    <i data-lucide="search" class="search-lead-icon"></i>
+    <input type="text" placeholder="Search records..." id="nav-search" autocomplete="off">
+    
+    <div class="search-actions">
+      <!-- Type: Ghost Button (Clear) -->
+      <button class="btn-search-ghost" id="search-clear" title="Clear">
+        <i data-lucide="x"></i>
+      </button>
+      
+      <!-- Type: Primary Button (Submit) -->
+      <button class="btn-search-primary" title="Search">
+        <i data-lucide="arrow-right"></i>
+      </button>
+    </div>
+  </div>
+</div>
+        
+        <div class="ml-auto flex-row"><select class="sel" style="font-size:.72rem;"><option>10 / page</option><option>25 / page</option><option>50 / page</option></select></div>
+      </div>
+      <div class="table-wrap"><table class="tbl"><thead><tr>${colHeaders}</tr></thead><tbody>${bodyRows}</tbody></table></div>
+      <div class="pagination"><span class="pagination-info">Showing ${start+1}–${end} of ${rows.length} records</span><div class="pagination-btns">${pgBtns}</div></div>`;
+    lucide.createIcons();
+  }
+  container._rows = rows; container._cols = columns; container._perPage = perPage;
+  container._page = () => page; container._setPage = p => { page = p; render(); };
+  render();
+}
+window.changePg = (id, dir) => { const c = document.getElementById(id); const np = c._page() + dir; const tp = Math.ceil(c._rows.length / c._perPage); if (np >= 1 && np <= tp) c._setPage(np); };
+window.setPg = (id, p) => document.getElementById(id)._setPage(p);
+
+// ── MOCK DATA HELPERS ──
+const depts = ['Engineering','Sales','HR','Finance','Marketing','Operations','Legal','IT','Product','Customer Success'];
+const names = ['John Smith','Jane Doe','Carlos Martinez','Alice Kim','Michael Brown','Sarah Lee','David Park','Emily Wang','Robert Johnson','Lisa Chen','Tom Wilson','Maya Singh','James White','Anna Taylor','Kevin Moore','Sophie Turner','Chris Davis','Rachel Green','Daniel Hill','Olivia Harris'];
+const gen = (n, fn) => Array.from({ length: n }, (_, i) => fn(i));
+const rand = arr => arr[Math.floor(Math.random() * arr.length)];
+const randInt = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
+const fmtMoney = n => '$' + n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const b = (cls, txt) => `<span class="badge badge-${cls}">${txt}</span>`;
+const bpri = ['pending','approved','rejected'].map(s => ({ pending: b('warning','Pending'), approved: b('success','Approved'), rejected: b('danger','Rejected') }[s]));
+const actions = `<div class="flex-row"><button class="btn btn-xs btn-secondary"><i data-lucide="eye" size="10"></i></button><button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;"><i data-lucide="trash-2" size="10"></i></button></div>`;
+const ac = { key: '_', label: 'Actions', render: () => actions };
+const statusBadge = { active: b('success','Active'), inactive: b('neutral','Inactive'), pending: b('warning','Pending'), approved: b('success','Approved'), rejected: b('danger','Rejected') };
+
+// ── ORG CHART ──
+const orgData = {
+  name:'YDY Systems.',role:'CEO / Founder',type:'ceo',
+  children:[
+    {name:'Michael Chen',role:'COO',type:'vp',children:[{name:'James Wilson',role:'Ops Manager',type:'mgr',children:[]},{name:'Sarah Miller',role:'Logistics Lead',type:'mgr',children:[]}]},
+    {name:'David Park',role:'CTO',type:'vp',children:[{name:'Kevin Smith',role:'Engineering Dir',type:'mgr',children:[]},{name:'Alice Wang',role:'QA Manager',type:'mgr',children:[]}]},
+    {name:'Elena Rod',role:'CHRO',type:'vp',children:[{name:'Pat Nguyen',role:'HR Manager',type:'mgr',children:[]}]}
   ]
 };
-
-// ————————————————————————————————————————————————————————————
-// 4. TABLE RENDERER ENGINE
-// ————————————————————————————————————————————————————————————
-function renderTable(containerId, headers, rows, type = 'standard') {
-  const container = document.getElementById(containerId);
-  if (!container) return;
-
-  let html = `<div class="card"><div class="table-wrap"><table class="tbl"><thead><tr>`;
-  headers.forEach(h => html += `<th>${h}</th>`);
-  html += `<th>Actions</th></tr></thead><tbody>`;
-
-  rows.forEach(row => {
-    html += `<tr>`;
-    Object.values(row).forEach(val => {
-      if (val === 'Active' || val === 'Present') html += `<td><span class="badge badge-success">${val}</span></td>`;
-      else if (val === 'On Leave' || val === 'Probation') html += `<td><span class="badge badge-warning">${val}</span></td>`;
-      else html += `<td>${val}</td>`;
-    });
-    html += `<td><div class="flex-row"><button class="btn btn-xs btn-secondary"><i data-lucide="edit-2" size="12"></i></button></div></td></tr>`;
-  });
-
-  html += `</tbody></table></div></div>`;
-  container.innerHTML = html;
-  lucide.createIcons();
+function renderTree(node) {
+  const ini = node.name.split(' ').map(n => n[0]).join('');
+  const children = node.children && node.children.length ? `<ul>${node.children.map(renderTree).join('')}</ul>` : '';
+  return `<li><div class="oc-node ${node.type}"><div class="oc-avatar">${ini}</div><span class="oc-name">${node.name}</span><span class="oc-role">${node.role}</span></div>${children}</li>`;
 }
+// --- UPDATED ORG CHART LOGIC ---
+let ocZoom = 1.0;
 
-// ————————————————————————————————————————————————————————————
-// 5. ASSET TRACKING SPECIAL LOGIC
-// ————————————————————————————————————————————————————————————
-function renderAssetStream() {
-  const container = document.getElementById('asset-stream-container');
-  container.innerHTML = DATA.assets.map(as => `
-    <div class="asset-stripe">
-      <div class="as-id">${as.id}</div>
-      <div class="as-name">${as.name}</div>
-      <div class="as-custodian-curr">${as.custodian}</div>
-      <div class="as-custodian-prev">${as.prev}</div>
-      <div class="as-ref-text">${as.ref}</div>
-      <div class="as-location-text">${as.loc}</div>
-      <div class="as-actions">
-        <button class="as-icon-btn edit-btn" onclick="openReassignModal('${as.id}', '${as.name}', '${as.custodian}')"><i data-lucide="repeat" size="14"></i></button>
-        <button class="as-icon-btn"><i data-lucide="more-vertical" size="14"></i></button>
-      </div>
-    </div>
-  `).join('');
-  lucide.createIcons();
-}
-
-// ————————————————————————————————————————————————————————————
-// 6. DOCUMENT VAULT MATRIX
-// ————————————————————————————————————————————————————————————
-function renderVaultMatrix() {
-  const container = document.getElementById('vault-matrix-container');
-  const docs = ['ID/Pass', 'Contract', 'NDA', 'Degree', 'Health'];
-  
-  let html = `<div class="table-wrap"><table class="tbl"><thead><tr><th>Employee</th>`;
-  docs.forEach(d => html += `<th style="text-align:center;">${d}</th>`);
-  html += `</tr></thead><tbody>`;
-
-  DATA.employees.forEach((emp, idx) => {
-    html += `<tr><td><div class="flex-row"><div class="avatar avatar-sm">${emp.name.charAt(0)}</div><div><b>${emp.name}</b><br><small>${emp.id}</small></div></div></td>`;
-    docs.forEach((d, dIdx) => {
-      const isFilled = (idx + dIdx) % 3 !== 0; // Mock logic
-      html += `<td style="text-align:center;"><div class="vault-slot ${isFilled ? 'filled' : 'empty'}"><i data-lucide="${isFilled ? 'check' : 'plus'}" size="12"></i></div></td>`;
-    });
-    html += `</tr>`;
-  });
-  html += `</tbody></table></div>`;
-  container.innerHTML = html;
-  lucide.createIcons();
-}
-
-// ————————————————————————————————————————————————————————————
-// 7. ORG CHART ZOOM LOGIC
-// ————————————————————————————————————————————————————————————
-let ocZoom = 1;
 function zoomOC(delta) {
-  ocZoom = Math.max(0.4, Math.min(1.5, ocZoom + delta));
-  document.getElementById('oc-zoom-container').style.transform = `scale(${ocZoom})`;
-  document.getElementById('oc-zoom-label').innerText = Math.round(ocZoom * 100) + '%';
-}
-function resetOC() { ocZoom = 1; zoomOC(0); }
-
-// ————————————————————————————————————————————————————————————
-// 8. DASHBOARD CHARTS (CHART.JS)
-// ————————————————————————————————————————————————————————————
-function initCharts() {
-  const ctx = document.getElementById('chart-headcount-dept')?.getContext('2d');
-  if (ctx) {
-    new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: ['Technical', 'Operations', 'Sales', 'HR', 'Finance', 'Logistics'],
-        datasets: [{
-          label: 'Employees',
-          data: [420, 310, 180, 45, 65, 120],
-          backgroundColor: '#15b201',
-          borderRadius: 6
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } }
-      }
-    });
+  // Set limits: Min 30%, Max 150%
+  const newZoom = ocZoom + delta;
+  if (newZoom >= 0.3 && newZoom <= 1.5) {
+    ocZoom = newZoom;
+    applyOCZoom();
   }
 }
 
-// ————————————————————————————————————————————————————————————
-// 9. MODAL HANDLERS
-// ————————————————————————————————————————————————————————————
-function openEditCompanyModal() { document.getElementById('modal-edit-company').classList.add('open'); }
-function closeEditCompanyModal(e) { if(!e || e.target.classList.contains('modal-overlay') || e.target.closest('.icon-btn')) document.getElementById('modal-edit-company').classList.remove('open'); }
-
-function openReassignModal(id, name, current) {
-  document.getElementById('reassign-display-name').innerText = name;
-  document.getElementById('reassign-display-curr').innerText = current;
-  document.getElementById('modal-reassign-asset').classList.add('open');
-}
-function closeReassignModal() { document.getElementById('modal-reassign-asset').classList.remove('open'); }
-
-// Dashboard Pulse Refresh
-function triggerRefresh(btn) {
-  const icon = btn.querySelector('i');
-  const text = document.getElementById('refresh-text');
-  icon.classList.add('spin');
-  text.innerText = "Syncing...";
-  setTimeout(() => {
-    icon.classList.remove('spin');
-    text.innerText = "Refresh";
-  }, 1200);
-}
-
-// ————————————————————————————————————————————————————————————
-// 10. APP ENTRY POINT
-// ————————————————————————————————————————————————————————————
-document.addEventListener('DOMContentLoaded', () => {
-  // Initial Table Renders
-  renderTable('tbl-employees', ['ID', 'Name', 'Dept', 'Role', 'Status', 'Joined'], DATA.employees);
-  renderTable('tbl-departments', ['Name', 'Head', 'Staff Count', 'Status'], DATA.departments);
+function resetOC() {
+  ocZoom = 1.0;
+  applyOCZoom();
   
-  // Dashboard Chart
-  initCharts();
+  // Also reset scroll position to center
+  const blueprint = document.getElementById('oc-blueprint-area');
+  if (blueprint) {
+    blueprint.scrollLeft = (blueprint.scrollWidth - blueprint.clientWidth) / 2;
+  }
+}
 
-  // Handle outside clicks for Asset Autocomplete (combos)
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.as-combo-container')) {
-      document.querySelectorAll('.as-combo-results').forEach(r => r.classList.remove('active'));
+function applyOCZoom() {
+  const container = document.getElementById('oc-zoom-container');
+  const label = document.getElementById('oc-zoom-label');
+  
+  if (container) {
+    container.style.transform = `scale(${ocZoom})`;
+  }
+  
+  if (label) {
+    label.textContent = Math.round(ocZoom * 100) + '%';
+  }
+}
+
+
+// ── PAGE INIT ──
+const inited = new Set();
+function initPage(id) {
+  if (inited.has(id)) return;
+  inited.add(id);
+  switch (id) {
+    case 'dashboard': initDashboard(); break;
+    case 'org-chart': initOrgChart(); break;
+    case 'departments':
+      buildTable('tbl-departments', { columns: [{key:'name',label:'Department Name'},{key:'head',label:'Head of Dept'},{key:'emp',label:'Employees'},{key:'loc',label:'Location'},{key:'status',label:'Status'},ac], rows: gen(32, i => ({code:`D${String(i+1).padStart(3,'0')}`,name:depts[i%depts.length]+' '+(i>=10?String.fromCharCode(65+Math.floor(i/10)):''),head:names[i%names.length],emp:randInt(20,150),loc:['New York','Atlanta','San Jose','Chicago','Boston'][i%5],status:statusBadge.active})) }); break;
+    case 'job-positions':
+      buildTable('tbl-job-positions', { columns: [{key:'title',label:'Job Title'},{key:'dept',label:'Department'},{key:'count',label:'Headcount'},ac], rows: gen(28, i => ({code:`JP${String(i+1).padStart(3,'0')}`,title:['Software Engineer','Sales Manager','HR Business Partner','Finance Analyst','Product Manager','UX Designer','DevOps Engineer','Data Scientist','Legal Counsel','Support Lead'][i%10],dept:rand(depts),grade:['L1','L2','L3','L4','M1','M2','S1','S2'][i%8],min:fmtMoney(randInt(40,80)*1000),max:fmtMoney(randInt(80,150)*1000),count:randInt(2,40)})) }); break;
+    case 'branch-offices':
+      buildTable('tbl-branch-offices', { columns: [{key:'code',label:'Code'},{key:'name',label:'Branch Name'},{key:'city',label:'City'} ,{key:'manager',label:'Branch Manager'},{key:'emp',label:'Staff'},{key:'status',label:'Status'},ac], rows: gen(12, i => ({code:`BR${String(i+1).padStart(2,'0')}`,name:['HQ','North','South','East','West','APAC','EMEA','LATAM','Canada','Australia','UK','Singapore'][i]+' Office',city:['New York','Chicago','Atlanta','Boston','San Jose','Singapore','London','São Paulo','Toronto','Sydney','Manchester','Tokyo'][i],manager:names[i%names.length],emp:randInt(30,320),status:statusBadge.active})) }); break;
+    case 'employee-directory':
+      buildTable('tbl-employees', { columns: [{key:'id',label:'Emp ID'},{key:'fname',label:'First Name'},{key:'mname',label:'Middle Name'},{key:'lname',label:'Last Name'},{key:'uname',label:'Username'},{key:'gender',label:'Gender'},{key:'dob',label:'Date of Birth'},{key:'hire',label:'Hired Date'},{key:'status',label:'Status'},{key:'marital',label:'Marital Status'},{key:'phone',label:'Phone'},{key:'email',label:'Email'},{key:'dept',label:'Department'},{key:'position',label:'Job Position'},{key:'type',label:'Emp Type'},{key:'probation',label:'Probation Date'},{key:'termDate',label:'Termination Date'},{key:'termReason',label:'Termination Reason'},{key:'bank',label:'Bank Account'},{key:'created',label:'Created At'},ac],
+        rows: gen(60, i => {
+          const isActive = i%8!==0, fn = names[i%names.length].split(' ')[0], ln = names[i%names.length].split(' ')[1];
+          return {id:`E${String(i+1).padStart(4,'0')}`,fname:fn,mname:['A.','M.','D.','S.','K.'][i%5],lname:ln,uname:(fn[0]+ln).toLowerCase()+randInt(10,99),gender:i%2===0?'Male':'Female',dob:`19${randInt(70,99)}-${String(randInt(1,12)).padStart(2,'0')}-${String(randInt(1,28)).padStart(2,'0')}`,hire:`202${randInt(0,5)}-${String(randInt(1,12)).padStart(2,'0')}-${String(randInt(1,28)).padStart(2,'0')}`,status:isActive?statusBadge.active:statusBadge.inactive,marital:['Single','Married','Divorced','Widowed'][i%4],phone:`+1 555-${randInt(100,999)}-${randInt(1000,9999)}`,email:`${fn.toLowerCase()}.${ln.toLowerCase()}@hrm.com`,dept:rand(depts),position:['Software Engineer','Project Manager','HR Specialist','Accountant','Sales Lead'][i%5],type:i%4===0?'Contract':'Full-Time',probation:`2026-06-${String(randInt(1,28)).padStart(2,'0')}`,termDate:isActive?'—':`2026-02-${String(randInt(1,28)).padStart(2,'0')}`,termReason:isActive?'—':['Resigned','Contract Ended','Performance'][i%3],bank:`BE${randInt(10,99)} 0000 ${randInt(1000,9999)} ${randInt(10,99)}`,created:'2025-01-10 08:30'};
+        }) }); break;
+    case 'employment-types':
+      buildTable('tbl-employment-types', { columns: [{key:'code',label:'Code'},{key:'name',label:'Type Name'},{key:'desc',label:'Description'},{key:'count',label:'Employees'},ac], rows: [{code:'FT',name:'Permanent / Full-Time',desc:'Regular employee with full benefits',benefits:'Yes',count:912},{code:'CT',name:'Fixed-Term Contract',desc:'Time-bound employment agreement',benefits:'Partial',count:248},{code:'PT',name:'Part-Time',desc:'Less than 40 hours per week',benefits:'Partial',count:55},{code:'IN',name:'Internship',desc:'Student or graduate trainee',benefits:'No',count:33},{code:'TM',name:'Temporary / Casual',desc:'Short-term project-based',benefits:'No',count:0}] }); break;
+    case 'probation-tracker':
+      buildTable('tbl-probation', { columns: [{key:'id',label:'Emp ID'},{key:'name',label:'Employee'},{key:'dept',label:'Dept'},{key:'start',label:'Probation Start'},{key:'end',label:'Probation End'},{key:'days',label:'Days Left'},ac], rows: gen(22, i => ({id:`E${String(i+100).padStart(4,'0')}`,name:names[i%names.length],dept:rand(depts),start:`Jan ${randInt(5,20)}, 2026`,end:`Apr ${randInt(5,20)}, 2026`,days:randInt(0,50),status:i<8?b('warning','Ending Soon'):b('info','Active')})) }); break;
+    case 'contract-renewals':
+      buildTable('tbl-contract-renewals', { columns: [{key:'id',label:'Emp ID'},{key:'name',label:'Employee'},{key:'dept',label:'Dept'},{key:'type',label:'Contract Type'},{key:'start',label:'Start'},{key:'expiry',label:'Expiry'},{key:'days',label:'Days to Expiry'},{key:'status',label:'Status'},ac], rows: gen(18, i => ({id:`E${String(i+50).padStart(4,'0')}`,name:names[i%names.length],dept:rand(depts),type:'Fixed-Term',start:`Apr ${randInt(1,28)}, 2025`,expiry:`Apr ${randInt(1,28)}, 2026`,days:randInt(-5,90),status:i<3?b('danger','Critical'):i<8?b('warning','Due Soon'):b('success','Active')})) }); break;
+    case 'former-employees':
+      buildTable('tbl-former-employees', { columns: [{key:'id',label:'Emp ID'},{key:'name',label:'Employee'},{key:'dept',label:'Dept'},{key:'type',label:'Contract Type'},{key:'start',label:'Start'},{key:'expiry',label:'Expiry'},{key:'days',label:'Days to Expiry'},{key:'status',label:'Status'},ac], rows: gen(18, i => ({id:`E${String(i+50).padStart(4,'0')}`,name:names[i%names.length],dept:rand(depts),type:'Fixed-Term',start:`Apr ${randInt(1,28)}, 2025`,expiry:`Apr ${randInt(1,28)}, 2026`,days:randInt(-5,90),status:i<3?b('danger','Critical'):i<8?b('warning','Due Soon'):b('success','Active')})) }); break;
+    case 'asset-tracking': initAssets(); break;
+    case 'document-vault': initVaultMatrix(); break;
+    case 'job-vacancies':
+      buildTable('tbl-vacancies', { columns: [{key:'ref',label:'Ref #'},{key:'title',label:'Position'},{key:'dept',label:'Dept'},{key:'branch',label:'Branch'},{key:'type',label:'Type'},{key:'posted',label:'Posted'},{key:'deadline',label:'Deadline'},ac], rows: gen(23, i => ({ref:`VAC-${String(i+1).padStart(3,'0')}`,title:['Senior Dev','Sales Rep','HR Coordinator','Finance Analyst','UX Designer','DevOps','QA Engineer','Data Analyst','Legal Counsel','Support Specialist'][i%10],dept:rand(depts),branch:['Remote','New York','Hybrid','Atlanta','London'][i%5],type:['Full-Time','Contract','Part-Time'][i%3],posted:`Mar ${randInt(1,18)}, 2026`,deadline:`Apr ${randInt(5,30)}, 2026`})) }); break;
+    case 'candidates':
+      buildTable('tbl-candidates', { columns: [{key:'id',label:'Ref'},{key:'name',label:'Candidate'},{key:'position',label:'Applied For'} ,{key:'applied',label:'Applied'},{key:'stage',label:'Stage'},ac], rows: gen(45, i => ({id:`APP-${String(i+1).padStart(4,'0')}`,name:names[i%names.length],position:['Senior Dev','Sales Rep','HR Coordinator','Finance Analyst'][i%4],applied:`Mar ${randInt(1,18)}, 2026`,stage:['Applied','Screening','Interview','Assessment','Offer','Hired'][i%6]})) }); break;
+    case 'interview-tracker':
+      buildTable('tbl-interviews', { columns: [{key:'id',label:'ID'},{key:'candidate',label:'Candidate'},{key:'position',label:'Position'},{key:'interviewer',label:'Interviewer'},{key:'date',label:'Date'},{key:'time',label:'Time'},{key:'mode',label:'Mode'},{key:'result',label:'Result'},ac], rows: gen(30, i => ({id:`INT-${String(i+1).padStart(3,'0')}`,candidate:names[i%names.length],position:['Senior Dev','Sales Rep','HR Coordinator'][i%3],interviewer:names[(i+5)%names.length],date:`Mar ${randInt(18,31)}, 2026`,time:`${randInt(9,17)}:00`,mode:['In-Person','Video Call','Phone'][i%3],result:[b('success','Passed'),b('danger','Failed'),b('warning','On Hold'),b('info','Scheduled')][i%4]})) }); break;
+    case 'shift-management':
+      buildTable('tbl-shifts', { columns: [{key:'code',label:'Code'},{key:'name',label:'Shift Name'},{key:'start',label:'Start'},{key:'end',label:'End'},{key:'break',label:'Break'},{key:'type',label:'Type'},{key:'dept',label:'Assigned To'},{key:'emp',label:'Employees'},ac], rows: [{code:'S01',name:'Morning',start:'07:00',end:'15:00',break:'30 min',type:'Fixed',dept:'Operations',emp:320},{code:'S02',name:'Day',start:'09:00',end:'17:00',break:'60 min',type:'Fixed',dept:'All',emp:680},{code:'S03',name:'Afternoon',start:'14:00',end:'22:00',break:'30 min',type:'Fixed',dept:'Customer Success',emp:120},{code:'S04',name:'Night',start:'22:00',end:'06:00',break:'30 min',type:'Fixed',dept:'Security / IT',emp:48},{code:'S05',name:'Split',start:'08:00',end:'20:00',break:'4 hrs',type:'Split',dept:'Sales',emp:80}] }); break;
+    case 'daily-attendance':
+      buildTable('tbl-attendance', { columns: [{key:'id',label:'Emp ID'},{key:'name',label:'Employee'},{key:'dept',label:'Dept'},{key:'shift',label:'Shift'},{key:'in',label:'Check In'},{key:'out',label:'Check Out'},{key:'hours',label:'Hours'},{key:'ot',label:'OT'},{key:'status',label:'Status'},ac], rows: gen(50, i => ({id:`E${String(i+1).padStart(4,'0')}`,name:names[i%names.length],dept:rand(depts),shift:'Day',in:`0${randInt(8,9)}:${['00','15','30','45'][i%4]}`,out:`17:${['00','15','30'][i%3]}`,hours:randInt(7,9)+'.0',ot:i%5===0?'1.5':'0',status:i%8===0?b('warning','Late'):i%15===0?b('danger','Absent'):b('success','Present')})) }); break;
+    case 'overtime-requests':
+      buildTable('tbl-overtime', { columns: [{key:'id',label:'Ref'},{key:'emp',label:'Employee'},{key:'dept',label:'Dept'},{key:'date',label:'Date'},{key:'hours',label:'OT Hours'},{key:'reason',label:'Reason'},{key:'submitted',label:'Submitted'},{key:'status',label:'Status'},ac], rows: gen(25, i => ({id:`OT-${String(i+1).padStart(3,'0')}`,emp:names[i%names.length],dept:rand(depts),date:`Mar ${randInt(1,20)}, 2026`,hours:randInt(1,4)+'.0',reason:['Project deadline','Client request','Coverage','System migration','Month-end close'][i%5],submitted:`Mar ${randInt(1,18)}, 2026`,status:[statusBadge.pending,statusBadge.approved,statusBadge.rejected][i%3]})) }); break;
+    case 'attendance-reports':
+      buildTable('tbl-attendance-reports', { columns: [{key:'dept',label:'Department'},{key:'total',label:'Total Emp'},{key:'present',label:'Present Days'},{key:'absent',label:'Absent Days'},{key:'leave',label:'Leave Days'},{key:'late',label:'Late Arrivals'},{key:'ot',label:'Total OT Hrs'},{key:'rate',label:'Attendance Rate'},ac], rows: gen(10, i => ({dept:depts[i],total:randInt(40,300),present:randInt(800,2000),absent:randInt(10,80),leave:randInt(20,100),late:randInt(5,30),ot:randInt(20,200),rate:randInt(90,99)+'%'})) }); break;
+    case 'leave-types':
+      buildTable('tbl-leave-types', { columns: [{key:'code',label:'Code'},{key:'name',label:'Leave Type'},{key:'days',label:'Days/Year'},{key:'carry',label:'Carryover'},{key:'paid',label:'Paid'},{key:'approval',label:'Needs Approval'},ac], rows: [{code:'AL',name:'Annual Leave',days:20,carry:'5 days',paid:'Yes',approval:'Yes'},{code:'SL',name:'Sick Leave',days:10,carry:'0 days',paid:'Yes',approval:'No (with cert)'},{code:'ML',name:'Maternity Leave',days:90,carry:'N/A',paid:'Yes',approval:'Yes'},{code:'PL',name:'Paternity Leave',days:14,carry:'N/A',paid:'Yes',approval:'Yes'},{code:'BL',name:'Bereavement Leave',days:5,carry:'N/A',paid:'Yes',approval:'Yes'},{code:'UL',name:'Unpaid Leave',days:'—',carry:'N/A',paid:'No',approval:'Yes'},{code:'SL2',name:'Study/Exam Leave',days:5,carry:'N/A',paid:'Partial',approval:'Yes'},{code:'PH',name:'Public Holiday',days:12,carry:'N/A',paid:'Yes',approval:'N/A'}] }); break;
+    case 'leave-requests':
+      buildTable('tbl-leave-requests', { columns: [{key:'id',label:'Ref'},{key:'emp',label:'Employee'},{key:'dept',label:'Dept'},{key:'type',label:'Leave Type'},{key:'from',label:'From'},{key:'to',label:'To'},{key:'days',label:'Days'},{key:'reason',label:'Reason'},{key:'status',label:'Status'},ac], rows: gen(40, i => ({id:`LR-${String(i+1).padStart(4,'0')}`,emp:names[i%names.length],dept:rand(depts),type:['Annual','Sick','Maternity','Bereavement','Unpaid'][i%5],from:`Mar ${randInt(18,25)}, 2026`,to:`Mar ${randInt(26,31)}, 2026`,days:randInt(1,7),reason:['Vacation','Medical','Personal'][i%3],status:[statusBadge.pending,statusBadge.approved,statusBadge.rejected][i%3]})) }); break;
+    case 'leave-entitlement':
+      buildTable('tbl-leave-entitlement', { columns: [{key:'id',label:'Emp ID'},{key:'name',label:'Employee'},{key:'dept',label:'Dept'},{key:'al_total',label:'AL Total'},{key:'al_used',label:'AL Used'},{key:'al_bal',label:'AL Balance'},{key:'sl_used',label:'SL Used'},{key:'sl_bal',label:'SL Balance'},{key:'carry',label:'Carried Over'},ac], rows: gen(48, i => ({id:`E${String(i+1).padStart(4,'0')}`,name:names[i%names.length],dept:rand(depts),al_total:20,al_used:randInt(0,18),al_bal:randInt(2,20),sl_used:randInt(0,8),sl_bal:randInt(2,10),carry:randInt(0,5)})) }); break;
+    case 'benefits-catalog':
+      buildTable('tbl-benefits', { columns: [{key:'code',label:'Code'},{key:'name',label:'Benefit Name'},{key:'type',label:'Type'},{key:'value',label:'Annual Value'},{key:'eligible',label:'Eligible'},{key:'enrolled',label:'Enrolled'},ac], rows: [{code:'B01',name:'Group Health Insurance',type:'Medical',value:'$5,400',eligible:'All Permanent',enrolled:980},{code:'B02',name:'Dental & Vision',type:'Medical',value:'$900',eligible:'All Permanent',enrolled:810},{code:'B03',name:'Life Insurance',type:'Insurance',value:'2x Annual Salary',eligible:'All Permanent',enrolled:912},{code:'B04',name:'Employee Assistance Program',type:'Wellness',value:'$1,200',eligible:'All',enrolled:1050},{code:'B05',name:'Gym Membership Subsidy',type:'Wellness',value:'$600',eligible:'All',enrolled:420},{code:'B06',name:'Tuition Reimbursement',type:'Education',value:'$5,250',eligible:'Permanent (2yr+)',enrolled:85},{code:'B07',name:'401(k) Employer Match',type:'Retirement',value:'Up to 4% match',eligible:'All Full-Time',enrolled:750}] }); break;
+    case 'medical-claims':
+      buildTable('tbl-medical', { columns: [{key:'id',label:'Claim ID'},{key:'emp',label:'Employee'},{key:'dept',label:'Dept'},{key:'category',label:'Category'},{key:'amount',label:'Amount'},{key:'submitted',label:'Submitted'},{key:'receipt',label:'Receipt'},{key:'status',label:'Status'},ac], rows: gen(35, i => ({id:`MC-${String(i+1).padStart(3,'0')}`,emp:names[i%names.length],dept:rand(depts),category:['Doctor Visit','Specialist','Prescription','Dental','Vision','Hospital'][i%6],amount:fmtMoney(randInt(50,1500)),submitted:`Mar ${randInt(1,18)}, 2026`,receipt:'Yes',status:[statusBadge.pending,statusBadge.approved,statusBadge.rejected][i%3]})) }); break;
+    case 'training-needs':
+      buildTable('tbl-training-needs', { columns: [{key:'id',label:'TNA ID'},{key:'dept',label:'Department'},{key:'skill',label:'Skill Gap'},{key:'priority',label:'Priority'},{key:'emp_count',label:'Affected'},{key:'proposed',label:'Proposed Training'},{key:'status',label:'Status'},ac], rows: gen(20, i => ({id:`TNA-${String(i+1).padStart(3,'0')}`,dept:rand(depts),skill:['Leadership','Excel Advanced','Cloud Computing','Project Management','Customer Service','Data Analytics','Cybersecurity','Presentation Skills'][i%8],priority:i%3===0?b('danger','High'):i%3===1?b('warning','Medium'):b('neutral','Low'),emp_count:randInt(5,80),proposed:['Workshop','Online Course','Mentoring','Certification Program','Conference'][i%5],status:[statusBadge.pending,statusBadge.approved,b('success','Ongoing')][i%3]})) }); break;
+    case 'course-catalog':
+      buildTable('tbl-courses', { columns: [{key:'id',label:'Course ID'},{key:'name',label:'Course Name'},{key:'cat',label:'Category'},{key:'duration',label:'Duration'},{key:'format',label:'Format'},{key:'provider',label:'Provider'},{key:'enrolled',label:'Enrolled'},{key:'cost',label:'Cost'},ac], rows: gen(25, i => ({id:`CRS-${String(i+1).padStart(3,'0')}`,name:['Leadership 101','Advanced Excel','AWS Cloud Practitioner','PMP Prep','Design Thinking','Python Fundamentals','Communication Skills','Financial Modeling','Cybersecurity Basics','HR Analytics'][i%10],cat:['Leadership','Technical','Cloud','PM','Design','Technical','Soft Skills','Finance','IT','HR'][i%10],duration:['1 day','3 days','40 hrs','16 hrs','2 days','20 hrs','8 hrs','24 hrs','16 hrs','12 hrs'][i%10],format:['Classroom','Online','Blended'][i%3],provider:['Internal','LinkedIn Learning','AWS','PMI','IDEO','Coursera','Internal','CFI','SANS','Udemy'][i%10],enrolled:randInt(5,60),cost:fmtMoney(randInt(0,2000))})) }); break;
+    case 'training-schedule':
+      buildTable('tbl-training-schedule', { columns: [{key:'id',label:'Ref'},{key:'course',label:'Course'},{key:'dept',label:'Dept'},{key:'trainer',label:'Trainer'},{key:'date',label:'Date'},{key:'time',label:'Time'},{key:'venue',label:'Venue'},{key:'seats',label:'Enrolled/Seats'},{key:'status',label:'Status'},ac], rows: gen(20, i => ({id:`SCH-${String(i+1).padStart(3,'0')}`,course:['Leadership 101','Advanced Excel','AWS Cloud','PMP Prep','Python Basics'][i%5],dept:rand(depts),trainer:names[i%names.length],date:`${['Apr','May','Jun'][i%3]} ${randInt(1,28)}, 2026`,time:`${randInt(9,14)}:00`,venue:['Room A','Room B','Online','HQ Auditorium'][i%4],seats:`${randInt(5,25)}/${randInt(25,30)}`,status:i%3===0?b('success','Confirmed'):b('warning','Open')})) }); break;
+    case 'learning-history':
+      buildTable('tbl-learning-history', { columns: [{key:'id',label:'Emp ID'},{key:'name',label:'Employee'},{key:'dept',label:'Dept'},{key:'course',label:'Course'},{key:'completed',label:'Completed'},{key:'score',label:'Score'},{key:'cert',label:'Cert. Received'},{key:'hrs',label:'Training Hrs'},ac], rows: gen(45, i => ({id:`E${String(i+1).padStart(4,'0')}`,name:names[i%names.length],dept:rand(depts),course:['Leadership 101','Advanced Excel','AWS Cloud','PMP Prep'][i%4],completed:`${['Jan','Feb','Mar'][i%3]} ${randInt(1,28)}, 2026`,score:randInt(70,100)+'%',cert:i%3===0?'Yes':'No',hrs:randInt(4,40)})) }); break;
+    case 'kpi-setup':
+      buildTable('tbl-kpis', { columns: [{key:'id',label:'KPI ID'},{key:'name',label:'KPI Name'},{key:'dept',label:'Dept/Role'},{key:'weight',label:'Weight'},{key:'target',label:'Target'},{key:'measure',label:'Measure'},{key:'freq',label:'Review Freq'},ac], rows: gen(18, i => ({id:`KPI-${String(i+1).padStart(3,'0')}`,name:['Revenue Target','Customer Satisfaction','Code Quality','Headcount Accuracy','Training Completion','Absenteeism Rate','Time-to-Hire','Employee Satisfaction','Budget Adherence','Sales Quota'][i%10],dept:rand(depts),weight:randInt(10,30)+'%',target:randInt(80,100)+'%',measure:['$','Score','%','Count','%','%','Days','Score','%','%'][i%10],freq:['Monthly','Quarterly','Annual'][i%3]})) }); break;
+    case 'performance-reviews':
+      buildTable('tbl-reviews', { columns: [{key:'id',label:'Review ID'},{key:'emp',label:'Employee'},{key:'dept',label:'Dept'},{key:'reviewer',label:'Reviewer'},{key:'period',label:'Period'},{key:'score',label:'Overall Score'},{key:'rank',label:'Rating'},{key:'status',label:'Status'},ac], rows: gen(35, i => ({id:`REV-${String(i+1).padStart(3,'0')}`,emp:names[i%names.length],dept:rand(depts),reviewer:names[(i+4)%names.length],period:'Q1 2026',score:(randInt(60,100)/10).toFixed(1)+' / 10',rank:['Exceptional','Exceeds','Meets','Below'][i%4],status:i%4===0?statusBadge.pending:b('success','Submitted')})) }); break;
+    case '360-feedback':
+      buildTable('tbl-360', { columns: [{key:'id',label:'Ref'},{key:'subject',label:'Subject'},{key:'dept',label:'Dept'},{key:'total',label:'Respondents'},{key:'complete',label:'Completed'},{key:'avg',label:'Avg Score'},{key:'status',label:'Status'},ac], rows: gen(20, i => ({id:`FBK-${String(i+1).padStart(3,'0')}`,subject:names[i%names.length],dept:rand(depts),total:randInt(5,12),complete:randInt(3,12),avg:(randInt(60,100)/10).toFixed(1)+'/10',status:i%3===0?b('success','Closed'):i%3===1?b('success','Open'):b('warning','In Progress')})) }); break;
+    case 'succession-planning':
+      buildTable('tbl-succession', { columns: [{key:'id',label:'Ref'},{key:'role',label:'Critical Role'},{key:'incumbent',label:'Current Holder'},{key:'successor1',label:'Primary Successor'},{key:'ready1',label:'Readiness'},{key:'successor2',label:'Secondary'},{key:'ready2',label:'Readiness'},ac], rows: gen(12, i => ({id:`SUC-${String(i+1).padStart(3,'0')}`,role:['CTO','CFO','HR Director','Engineering VP','Sales Director','COO','Product Lead'][i%7],incumbent:names[i%names.length],successor1:names[(i+2)%names.length],ready1:['Ready Now','1 Year','2 Years'][i%3],successor2:names[(i+4)%names.length],ready2:['1 Year','2 Years','3 Years'][i%3]})) }); break;
+    case 'performance-reports':
+      buildTable('tbl-perf-reports', { columns: [{key:'dept',label:'Department'},{key:'total',label:'Reviewed'},{key:'exceptional',label:'Exceptional'},{key:'exceeds',label:'Exceeds'},{key:'meets',label:'Meets'},{key:'below',label:'Below'},{key:'avg',label:'Avg Score'},ac], rows: gen(10, i => ({dept:depts[i],total:randInt(20,150),exceptional:randInt(2,20),exceeds:randInt(5,40),meets:randInt(10,80),below:randInt(0,15),avg:(randInt(65,92)/10).toFixed(1)})) }); break;
+    case 'Promote/Demote':
+      buildTable('tbl-Promote/Demote', { columns: [{key:'id',label:'Ref'},{key:'emp',label:'Employee'},{key:'type',label:'Change Type'},{key:'from_pos',label:'Prev Position'},{key:'to_pos',label:'Current Position'},{key:'dept',label:'Dept'},{key:'sal_from',label:'Old Salary'},{key:'sal_to',label:'New Salary'},{key:'eff_date',label:'Effective'},{key:'status',label:'Status'},ac], rows: gen(18, i => ({id:`PRO-${String(i+1).padStart(3,'0')}`,emp:names[i%names.length],from_pos:['Junior Dev','Sales Rep','HR Assistant','Analyst'][i%4],to_pos:['Senior Dev','Senior Rep','HR Manager','Senior Analyst'][i%4],dept:rand(depts),sal_from:fmtMoney(randInt(40,70)*1000),sal_to:fmtMoney(randInt(70,100)*1000),eff_date:'Apr 1, 2026',status:[statusBadge.pending,statusBadge.approved,b('info','Processing')][i%3],type:[statusBadge.pending,statusBadge.approved][i%3]})) }); break;
+    case 'transfers':
+      buildTable('tbl-transfers-dept', { columns: [{key:'id',label:'Ref'},{key:'emp',label:'Employee'},{key:'from_dept',label:'From Dept'},{key:'to_dept',label:'To Dept'},{key:'from_branch',label:'From Branch'},{key:'to_branch',label:'To Branch'},{key:'req_date',label:'Requested'},{key:'eff_date',label:'Effective'},{key:'status',label:'Status'},ac], rows: gen(20, i => ({id:`TRF-${String(i+1).padStart(3,'0')}`,emp:names[i%names.length],from_dept:rand(depts),to_dept:rand(depts),from_branch:'HQ',to_branch:['North','South','West','APAC'][i%4],req_date:`Mar ${randInt(1,18)}, 2026`,eff_date:'Apr 1, 2026',status:[statusBadge.pending,statusBadge.approved][i%2]})) }); break;
+    case 'disciplinary-actions':
+      buildTable('tbl-disciplinary', { columns: [{key:'id',label:'Ref'},{key:'emp',label:'Employee'},{key:'dept',label:'Dept'},{key:'type',label:'Action Type'},{key:'incident',label:'Incident Date'},{key:'issued',label:'Issued'},{key:'issuer',label:'Issued By'},{key:'status',label:'Status'},ac], rows: gen(18, i => ({id:`DA-${String(i+1).padStart(3,'0')}`,emp:names[i%names.length],dept:rand(depts),type:['Verbal Warning','Written Warning','Final Warning','Suspension','Demotion'][i%5],incident:`Feb ${randInt(1,28)}, 2026`,issued:`Mar ${randInt(1,15)}, 2026`,issuer:names[(i+3)%names.length],status:i%3===0?b('success','Closed'):b('danger','Active')})) }); break;
+    case 'grievances':
+      buildTable('tbl-grievances', { columns: [{key:'id',label:'Ref'},{key:'emp',label:'Employee'},{key:'dept',label:'Dept'},{key:'type',label:'Grievance Type'},{key:'filed',label:'Filed'},{key:'assigned',label:'Assigned To'},{key:'priority',label:'Priority'},{key:'status',label:'Status'},ac], rows: gen(15, i => ({id:`GRV-${String(i+1).padStart(3,'0')}`,emp:names[i%names.length],dept:rand(depts),type:['Harassment','Unfair Treatment','Pay Dispute','Safety Concern','Discrimination','Work Conditions'][i%6],filed:`Mar ${randInt(1,18)}, 2026`,assigned:names[(i+2)%names.length],priority:i%3===0?b('danger','High'):i%3===1?b('warning','Medium'):b('neutral','Low'),status:i%4===0?b('success','Resolved'):i%4===1?statusBadge.pending:b('info','Under Review')})) }); break;
+    case 'termination':
+      buildTable('tbl-termination', { columns: [{key:'id',label:'Ref'},{key:'emp',label:'Employee'},{key:'dept',label:'Dept'},{key:'type',label:'Separation Type'},{key:'notice',label:'Notice Date'},{key:'last_day',label:'Last Working Day'},{key:'clearance',label:'Clearance'},{key:'settlement',label:'Final Settlement'},{key:'status',label:'Status'},ac], rows: gen(12, i => ({id:`SEP-${String(i+1).padStart(3,'0')}`,emp:names[i%names.length],dept:rand(depts),type:['Resignation','Involuntary','Retirement','End of Contract'][i%4],notice:`Mar ${randInt(1,15)}, 2026`,last_day:`Mar ${randInt(25,31)}, 2026`,clearance:i%3===0?b('success','Done'):b('warning','Pending'),settlement:i%3===0?fmtMoney(randInt(2000,15000)):b('neutral','TBD'),status:i%3===0?b('success','Complete'):b('warning','In Progress')})) }); break;
+    case 'exit-clearance': {
+      const chk = v => v ? b('success','✓') : b('warning','—');
+      buildTable('tbl-clearance', { columns: [{key:'id',label:'Ref'},{key:'emp',label:'Employee'},{key:'dept',label:'Dept'},{key:'it',label:'IT'},{key:'finance',label:'Finance'},{key:'hr',label:'HR'},{key:'admin',label:'Admin'},{key:'assets',label:'Assets'},{key:'overall',label:'Overall'},ac], rows: gen(12, i => { const done = i%3===0; return {id:`CLR-${String(i+1).padStart(3,'0')}`,emp:names[i%names.length],dept:rand(depts),it:chk(done||i%2===0),finance:chk(done),hr:chk(done||i%3===0),admin:chk(done||i%4===0),assets:chk(done),overall:done?b('success','Cleared'):b('warning','In Progress')}; }) }); break;
+    }
+    case 'user-management':
+      buildTable('tbl-users', { columns: [{key:'id',label:'User ID'},{key:'name',label:'Name'},{key:'email',label:'Email'},{key:'role',label:'Role'},{key:'dept',label:'Dept'},{key:'last_login',label:'Last Login'},{key:'status',label:'Status'},ac], rows: gen(25, i => ({id:`USR-${String(i+1).padStart(3,'0')}`,name:names[i%names.length],email:`${names[i%names.length].toLowerCase().replace(' ','.')}@hrm.com`,role:['Super Admin','HR Manager','Finance Officer','Department Head','Employee'][i%5],dept:rand(depts),last_login:`Mar ${randInt(1,20)}, 2026 ${randInt(8,17)}:${['00','30'][i%2]}`,status:i%7===0?statusBadge.inactive:statusBadge.active})) }); break;
+    case 'audit-logs':
+      buildTable('tbl-audit', { columns: [{key:'id',label:'Log ID'},{key:'user',label:'User'},{key:'action',label:'Action'},{key:'module',label:'Module'},{key:'record',label:'Record'},{key:'ip',label:'IP Address'},{key:'ts',label:'Timestamp'},{key:'_',label:'Details',render:()=>'<button class="btn btn-xs btn-secondary">View</button>'}], rows: gen(60, i => ({id:`LOG-${String(i+1000).padStart(5,'0')}`,user:names[i%names.length],action:['CREATE','UPDATE','DELETE','LOGIN','APPROVE'][i%6],module:['Payroll','Employees','Leave','Recruitment','Settings'][i%5],record:`Record #${randInt(100,999)}`,ip:`192.168.${randInt(1,10)}.${randInt(1,255)}`,ts:`Mar ${randInt(18,20)}, 2026 ${String(randInt(8,17)).padStart(2,'0')}:${String(randInt(0,59)).padStart(2,'0')}`})) }); break;
+    case 'hr-analytics': initAnalytics(); break;
+  }
+}
+
+// ── ASSET TRACKING ──
+function initAssets() {
+  const streamContainer = document.getElementById('asset-stream-container');
+  const paginator = document.getElementById('as-pagination');
+  const addBtn = document.querySelector('.as-add-btn');
+  if (addBtn) addBtn.onclick = openAssetModal;
+  if (!streamContainer || streamContainer.dataset.init) return;
+  streamContainer.dataset.init = 'true';
+  const allAssets = gen(50, i => ({
+    id:`AST-${2000+i}`,
+    name:i%4===0?'MacBook Pro 16"':i%4===1?'Toyota Hilux Fleet':i%4===2?'Executive Desk':'DSLR Camera Kit',
+    prevUser:names[(i+5)%names.length], user:names[i%names.length],
+    serial:`SN-${randInt(10000,99999)}`,
+    location:['Headquarters','Satellite Office','Warehouse A','North Branch'][i%4]
+  }));
+  let currentAsPage = 1;
+  const asPerPage = 8;
+  function renderAssetPage(page) {
+    const start = (page-1)*asPerPage, end = start+asPerPage, slice = allAssets.slice(start, end);
+    streamContainer.innerHTML = slice.map(a => `
+      <div class="asset-stripe">
+        <div class="as-id">${a.id}</div>
+        <div class="as-name">${a.name}</div>
+        <div class="as-custodian-curr">${a.user}</div>
+        <div class="as-custodian-prev">${a.prevUser}</div>
+        <div class="as-ref-text">${a.serial}</div>
+        <div class="as-location-text">${a.location}</div>
+        <div class="as-actions">
+          <button class="as-icon-btn edit-btn" title="Edit Asset"><i data-lucide="settings-2" size="14"></i></button>
+          <button class="as-icon-btn" title="Reassign Asset" onclick="openReassignModal('${a.name}','${a.user}')"><i data-lucide="shuffle" size="14"></i></button>
+        </div>
+      </div>`).join('');
+    const totalPages = Math.ceil(allAssets.length / asPerPage);
+    paginator.innerHTML = `<span class="pagination-info">Showing ${start+1}–${Math.min(end,allAssets.length)} of ${allAssets.length} assets</span>
+      <div class="pagination-btns">
+        <button class="pg-btn" ${page===1?'disabled':''} id="as-prev">‹</button>
+        ${Array.from({length:totalPages},(_,i) => `<button class="pg-btn ${i+1===page?'active':''}" data-page="${i+1}">${i+1}</button>`).join('')}
+        <button class="pg-btn" ${page===totalPages?'disabled':''} id="as-next">›</button>
+      </div>`;
+    lucide.createIcons();
+    document.getElementById('as-prev')?.addEventListener('click', () => { if (currentAsPage>1) renderAssetPage(--currentAsPage); });
+    document.getElementById('as-next')?.addEventListener('click', () => { if (currentAsPage<totalPages) renderAssetPage(++currentAsPage); });
+    paginator.querySelectorAll('.pg-btn[data-page]').forEach(btn => { btn.onclick = e => { currentAsPage = parseInt(e.target.dataset.page); renderAssetPage(currentAsPage); }; });
+  }
+  renderAssetPage(currentAsPage);
+}
+
+// ── VAULT MATRIX ──
+const companyRequiredDocs = [
+  {id:'id_card',short:'ID',name:'National ID/Passport'},
+  {id:'contract',short:'CTR',name:'Employment Contract'},
+  {id:'nda',short:'NDA',name:'Non-Disclosure Agreement'},
+  {id:'tax',short:'TAX',name:'Tax Filing (TIN)'},
+  {id:'edu',short:'EDU',name:'Degree/Certificates'},
+  {id:'photo',short:'IMG',name:'Profile Photo'}
+];
+function initVaultMatrix() {
+  const container = document.getElementById('vault-matrix-container');
+  if (!container || container.dataset.built) return;
+  container.dataset.built = '1';
+  const cols = [{key:'emp',label:'Employee'}];
+  companyRequiredDocs.forEach(doc => cols.push({key:doc.id,label:doc.short,render:val=>val==='filled'?`<div class="vault-slot filled" title="Uploaded"><i data-lucide="check" size="10"></i></div>`:`<div class="vault-slot expired" title="Expired"><i data-lucide="alert-circle" size="10"></i></div>`}));
+  cols.push({key:'progress',label:'Fulfillment',render:v=>`<span style="font-size:.7rem;font-weight:800;color:var(--primary);">${v}%</span>`});
+  cols.push({key:'_',label:'Actions',render:()=>`<button class="btn btn-xs btn-secondary">Open Folder</button>`});
+  const rows = gen(25, i => {
+    const row = {emp:`<b>${names[i%names.length]}</b><br><small style="color:var(--muted)">E-${1000+i}</small>`,progress:randInt(40,100)};
+    companyRequiredDocs.forEach(doc => { row[doc.id] = Math.random()>0.4?'filled':'expired'; });
+    return row;
+  });
+  const wrapper = document.createElement('div');
+  wrapper.id = 'tbl-vault-matrix-final';
+  container.appendChild(wrapper);
+  buildTable('tbl-vault-matrix-final', {columns:cols, rows, perPage:12});
+  lucide.createIcons();function initDashboard() {
+  if (inited.has('dashboard-v8-final')) return;
+  inited.add('dashboard-v8-final');
+
+  const canvas = document.getElementById('chart-headcount-bar');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  // 1. Create a Premium Horizontal Gradient 
+const gradient = ctx.createLinearGradient(0, 220, 0, 0); 
+gradient.addColorStop(0, '#44c100'); 
+gradient.addColorStop(1, '#d4fc79');
+
+  const dataValues = [490, 320, 210, 145, 88, 45];
+  const labelNames = ['Operations', 'Engineering', 'Sales', 'Marketing', 'Finance', 'HR'];
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labelNames,
+      datasets: [{
+        data: dataValues,
+        backgroundColor: gradient,
+        hoverBackgroundColor: '#0f8a00',
+        borderRadius: 20,       // Elegant "Pill" shape
+        borderSkipped: false,  // Rounding on both ends
+        barThickness: 12,      // Slim, modern bar width
+      }]
+    },
+    options: {
+      indexAxis: 'y',          // Flip to Horizontal
+      maintainAspectRatio: false,
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#0f172a',
+          titleFont: { family: 'Plus Jakarta Sans', size: 12, weight: '700' },
+          bodyFont: { family: 'Plus Jakarta Sans', size: 12 },
+          padding: 12,
+          cornerRadius: 10,
+          displayColors: false,
+          callbacks: {
+            label: (context) => ` ${context.raw} Personnel`
+          }
+        }
+      },
+      scales: {
+        // Hide the X-Axis (Bottom) for a clean dashboard look
+        x: {
+          display: false,
+          grid: { display: false }
+        },
+        // Left Axis: Department Names
+        y: {
+          grid: { display: false },
+          border: { display: false },
+          ticks: {
+            font: { family: 'Plus Jakarta Sans', size: 12, weight: '600' },
+            color: '#1e293b',
+            padding: 10
+          }
+        },
+        // Right Axis: The "No-Plugin" data labels
+        yRight: {
+          type: 'category',
+          position: 'right',
+          labels: dataValues.map(v => v.toLocaleString()), 
+          grid: { display: false },
+          border: { display: false },
+          ticks: {
+            font: { family: 'JetBrains Mono', size: 11, weight: '700' },
+            color: '#64748b',
+            padding: 10
+          }
+        }
+      },
+      layout: {
+        padding: {
+          top: 5,
+          bottom: 5,
+          left: 0,
+          right: 0
+        }
+      }
     }
   });
+
+  // Ensure system logs empty state logic stays intact
+  const logList = document.querySelectorAll('#log-list > div:not(.no-activity)');
+  const emptyState = document.getElementById('no-activity-msg');
+  if (logList.length === 0 && emptyState) {
+    emptyState.style.display = 'flex';
+  }
+}
+}
+
+// ── CHARTS ──
+function initDashboard() {
+  if (inited.has('dashboard-v14-pill')) return;
+  inited.add('dashboard-v14-pill');
+
+  const canvas = document.getElementById('chart-headcount-dept');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  // Create a Vertical Gradient: Green (Bottom) -> Yellow Green (Top)
+  // (0, 300, 0, 0) coordinates map to the height of your chart container
+  const gradient = ctx.createLinearGradient(0, 300, 0, 0);
+  gradient.addColorStop(0, '#44c100'); // Brand Green
+  gradient.addColorStop(1, '#d4fc79'); // Yellow Green
+
+  new Chart(ctx, {
+    type: 'bar', // Restored to Vertical
+    data: {
+      labels: ['Engineering', 'Sales', 'Marketing', 'Finance', 'HR', 'Legal', 'IT'],
+      datasets: [{
+        label: 'Personnel',
+        data: [485, 312, 195, 110, 82, 48, 16], 
+        backgroundColor: gradient,
+        borderRadius: 6, // Matches the subtle rounding of your other analytics charts
+        borderSkipped: false,
+        barThickness: 28, // Thinner width to match the professional style of the other charts
+      }]
+    },
+    options: {
+      maintainAspectRatio: false,
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#0f172a',
+          padding: 12,
+          titleFont: { family: 'Plus Jakarta Sans', size: 12, weight: '800' },
+          bodyFont: { family: 'Plus Jakarta Sans', size: 12 },
+          cornerRadius: 8,
+          displayColors: false
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 500,
+          ticks: {
+            stepSize: 100,
+            font: { family: 'JetBrains Mono', size: 11 },
+            color: '#94a3b8'
+          },
+          grid: {
+            color: '#f1f5f9',
+            drawBorder: false
+          }
+        },
+        x: {
+          grid: { display: false },
+          ticks: {
+            font: { family: 'Plus Jakarta Sans', size: 11, weight: '600' },
+            color: '#334155'
+          }
+        }
+      }
+    }
+  });
+  lucide.createIcons();
+}
+function initAnalytics() {
+  if (inited.has('analytics-charts')) return;
+  inited.add('analytics-charts');
+  setTimeout(() => {
+    const gridCfg = { color: '#f1f5f9' };
+    const legOpts = {position:'bottom',labels:{boxWidth:10,font:{size:10}}};
+    const c4 = document.getElementById('chart-hire-attrition');
+    if (c4) new Chart(c4, {type:'bar',data:{labels:['Jan','Feb','Mar','Apr','May','Jun'],datasets:[{label:'New Hires',data:[15,8,12,0,0,0],backgroundColor:'#16a34a',borderRadius:4},{label:'Attrition',data:[5,4,7,0,0,0],backgroundColor:'#dc2626',borderRadius:4}]},options:{maintainAspectRatio:false,plugins:{legend:legOpts},scales:{y:{beginAtZero:true,grid:gridCfg},x:{grid:{display:false}}}}});
+    const c5 = document.getElementById('chart-age');
+    if (c5) new Chart(c5, {type:'bar',data:{labels:['18–25','26–35','36–45','46–55','55+'],datasets:[{label:'Employees',data:[180,420,380,200,68],backgroundColor:['#15b201','#16a34a','#d97706','#dc2626','#64748b'],borderRadius:4}]},options:{maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:gridCfg},x:{grid:{display:false}}}}});
+  }, 100);
+}
+
+// ── ROLES ──
+function selectRole(el, name) {
+  document.querySelectorAll('.role-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('active-role-name').textContent = name;
+}
+
+// ── MODALS ──
+function openModal(id) { document.getElementById(id).classList.add('open'); lucide.createIcons(); }
+function closeModal(id, e) { if (!e || e.target === e.currentTarget) document.getElementById(id).classList.remove('open'); }
+
+function openDeptModal() { openModal('modal-add-dept'); }
+function closeDeptModal(e) { closeModal('modal-add-dept', e); }
+function saveDepartment() {
+  const code = document.getElementById('dept-code').value.trim(), name = document.getElementById('dept-name').value.trim();
+  if (!code || !name) { alert('Department Code and Name are required.'); return; }
+  alert(`Department "${name}" (${code}) created successfully.`);
+  closeDeptModal();
+}
+
+function openAssetModal() { openModal('modal-add-asset'); }
+function closeAssetModal(e) { closeModal('modal-add-asset', e); }
+function saveNewAsset() {
+  const name = document.getElementById('as-new-name').value;
+  if (!name) { alert('Asset Name is required.'); return; }
+  alert(`Asset "${name}" registered successfully.`);
+  closeAssetModal();
+}
+
+function openReassignModal(assetName, currentCustodian) {
+  document.getElementById('reassign-display-name').textContent = assetName;
+  document.getElementById('reassign-display-curr').textContent = currentCustodian;
+  document.getElementById('as-input-reassign').value = '';
+  openModal('modal-reassign-asset');
+}
+function closeReassignModal(e) { closeModal('modal-reassign-asset', e); }
+function saveReassignment() {
+  const o = document.getElementById('as-input-reassign').value, a = document.getElementById('reassign-display-name').textContent;
+  if (!o) { alert('Please select a new custodian.'); return; }
+  alert(`Reassignment Successful: ${a} has been transferred to ${o}.`);
+  closeReassignModal();
+}
+
+function openEditCompanyModal() { openModal('modal-edit-company'); }
+function closeEditCompanyModal(e) { closeModal('modal-edit-company', e); }
+function saveCompanyProfile() {
+  const btn = document.querySelector('#modal-edit-company .btn-primary');
+  const orig = btn.innerHTML;
+  btn.innerHTML = `<i data-lucide="loader-2" class="spin" size="14"></i> Saving...`;
+  lucide.createIcons();
+  setTimeout(() => { alert('Success: Company master data has been updated.'); btn.innerHTML = orig; lucide.createIcons(); closeEditCompanyModal(); }, 800);
+}
+// Function to open the Job Position Modal
+function openJobModal() { 
+  openModal('modal-add-job-position'); 
+}
+
+// Function to close the Job Position Modal
+function closeJobModal(e) { 
+  closeModal('modal-add-job-position', e); 
+}
+
+// Save Function
+function saveJobPosition() {
+  const title = document.getElementById('job-title').value.trim();
+  const dept = document.getElementById('as-input-job-dept').value.trim();
+  const count = document.getElementById('job-count').value;
+
+  if (!title) { 
+    alert('Job Title is required.'); 
+    return; 
+  }
+
+  const btn = document.querySelector('#modal-add-job-position .btn-primary');
+  btn.innerHTML = `<i data-lucide="loader-2" class="spin" size="13"></i> Saving...`;
+  lucide.createIcons();
+
+  setTimeout(() => {
+    alert(`Success: ${title} created for ${dept} department.`);
+    
+    // Clear fields
+    document.getElementById('job-title').value = '';
+    document.getElementById('as-input-job-dept').value = '';
+    document.getElementById('job-count').value = '';
+    
+    closeJobModal();
+    btn.innerHTML = `<i data-lucide="check" size="13"></i>Create Position`;
+    lucide.createIcons();
+  }, 600);
+}
+
+// Function to open the Branch Modal
+function openBranchModal() { 
+  openModal('modal-add-branch'); 
+}
+
+// Function to close the Branch Modal
+function closeBranchModal(e) { 
+  closeModal('modal-add-branch', e); 
+}
+
+// Save Function
+function saveBranch() {
+  const code = document.getElementById('branch-code').value.trim();
+  const name = document.getElementById('branch-name').value.trim();
+  const city = document.getElementById('branch-city').value.trim();
+  const manager = document.getElementById('as-input-branch-mgr').value.trim();
+  const status = document.getElementById('branch-status').value;
+
+  if (!code || !name) { 
+    alert('Branch Code and Name are required.'); 
+    return; 
+  }
+
+  const btn = document.querySelector('#modal-add-branch .btn-primary');
+  btn.innerHTML = `<i data-lucide="loader-2" class="spin" size="13"></i> Saving...`;
+  lucide.createIcons();
+
+  setTimeout(() => {
+    alert(`Success: ${name} (${code}) in ${city} has been registered.`);
+    
+    // Clear fields
+    document.getElementById('branch-code').value = '';
+    document.getElementById('branch-name').value = '';
+    document.getElementById('branch-city').value = '';
+    document.getElementById('as-input-branch-mgr').value = '';
+    
+    closeBranchModal();
+    btn.innerHTML = `<i data-lucide="check" size="13"></i>Create Branch`;
+    lucide.createIcons();
+  }, 600);
+}
+
+// ── ASSET DROPDOWNS ──
+function showAsDrop(id) { const d = document.getElementById(id); if (!d.innerHTML.trim()) populateAsDrop(id); d.classList.add('active'); }
+function populateAsDrop(id) {
+  const d = document.getElementById(id), inputId = id.replace('as-drop-','as-input-');
+  d.innerHTML = names.map(n => `<div class="as-res-item" onclick="selectAsItem('${inputId}','${id}','${n}')">${n}</div>`).join('');
+}
+function filterAsDrop(inputId, dropId) {
+  const val = document.getElementById(inputId).value.toLowerCase(), d = document.getElementById(dropId);
+  if (!d.innerHTML.trim()) populateAsDrop(dropId);
+  d.querySelectorAll('.as-res-item').forEach(item => { item.style.display = item.textContent.toLowerCase().includes(val) ? 'block' : 'none'; });
+  d.classList.add('active');
+}
+function selectAsItem(inputId, dropId, name) { document.getElementById(inputId).value = name; document.getElementById(dropId).classList.remove('active'); }
+window.addEventListener('mousedown', e => { if (!e.target.closest('.as-combo-container')) document.querySelectorAll('.as-combo-results').forEach(d => d.classList.remove('active')); });
+// --- DRAG TO PAN LOGIC ---
+function initOrgChartDrag() {
+    const slider = document.getElementById('oc-blueprint-area');
+    let isDown = false;
+    let startX;
+    let startY;
+    let scrollLeft;
+    let scrollTop;
+
+    slider.addEventListener('mousedown', (e) => {
+        // Only allow drag if clicking the background, not buttons/nodes if preferred
+        // but usually, it's fine to allow all.
+        isDown = true;
+        slider.classList.add('active');
+        startX = e.pageX - slider.offsetLeft;
+        startY = e.pageY - slider.offsetTop;
+        scrollLeft = slider.scrollLeft;
+        scrollTop = slider.scrollTop;
+    });
+
+    slider.addEventListener('mouseleave', () => {
+        isDown = false;
+    });
+
+    slider.addEventListener('mouseup', () => {
+        isDown = false;
+    });
+
+    slider.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        const x = e.pageX - slider.offsetLeft;
+        const y = e.pageY - slider.offsetTop;
+        const walkX = (x - startX) * 2; // Scroll speed
+        const walkY = (y - startY) * 2;
+        slider.scrollLeft = scrollLeft - walkX;
+        slider.scrollTop = scrollTop - walkY;
+    });
+}
+
+// Call this inside your existing initOrgChart function
+function initOrgChart() {
+    applyOCZoom(); 
+    initOrgChartDrag(); // <--- Add this line
+    lucide.createIcons();
+}
+ 
+// ── STARTUP ──
+window.addEventListener('DOMContentLoaded', () => { 
+    initPage('dashboard'); 
 });
 
-/** Generic Autocomplete Logic */
-function showAsDrop(id) { 
-  document.querySelectorAll('.as-combo-results').forEach(r => r.classList.remove('active'));
-  document.getElementById(id).classList.add('active'); 
-  filterAsDrop('', id); // Show all initially
-}
-
-function filterAsDrop(inputIdx, dropId) {
-  const val = inputIdx ? document.getElementById(inputIdx).value.toLowerCase() : "";
-  const drop = document.getElementById(dropId);
-  // Mock data for dropdown
-  const list = ['Abebe Bikila', 'Sara Jenkins', 'Michael Kassa', 'Helen Gebre', 'Lydia Solomon'];
-  const filtered = list.filter(i => i.toLowerCase().includes(val));
+function switchFormTab(el, tabName) {
+  // Remove active class from all pills in the Add Employee page
+  const container = el.closest('.page');
+  container.querySelectorAll('.role-pill').forEach(p => p.classList.remove('active'));
   
-  drop.innerHTML = filtered.map(name => `<div class="as-res-item" onclick="selectAsItem('${inputIdx}','${dropId}','${name}')">${name}</div>`).join('');
+  // Set current pill to active
+  el.classList.add('active');
+  
+  // In a real implementation, you would hide/show content divs here:
+  // container.querySelectorAll('.form-section-content').forEach(s => s.classList.remove('active'));
+  // document.getElementById('form-tab-' + tabName).classList.add('active');
+  
+  console.log("Switching to form tab: " + tabName);
 }
 
-function selectAsItem(inputId, dropId, val) {
-  if(inputId) document.getElementById(inputId).value = val;
-  document.getElementById(dropId).classList.remove('active');
+function saveNewEmployee() {
+  const btn = event.currentTarget;
+  const originalHtml = btn.innerHTML;
+  btn.innerHTML = `<i data-lucide="loader-2" class="spin" size="14"></i> Saving Record...`;
+  lucide.createIcons();
+
+  setTimeout(() => {
+    alert("Employee successfully added to the database!");
+    btn.innerHTML = originalHtml;
+    lucide.createIcons();
+    goPage('employee-directory');
+  }, 1500);
 }
 </script>
 </body>
