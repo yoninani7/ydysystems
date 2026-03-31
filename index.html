@@ -152,7 +152,9 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 .d-value{font-size:.78rem;font-weight:700;color:var(--text);text-align:right}
 .table-wrap{overflow-x:auto;position:relative;border-radius:0 0 var(--radius) var(--radius);-webkit-overflow-scrolling:touch}
 table.tbl{width:100%;border-collapse:separate;border-spacing:0;table-layout:auto}
-table.tbl th{padding:6px 18px!important;background:#f8fafc;font-size:.72rem;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);white-space:nowrap;text-align:left}
+table.tbl th{cursor: pointer; user-select: none; transition: background .15s;padding:6px 18px!important;background:#f8fafc;font-size:.72rem;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);white-space:nowrap;text-align:left}
+table.tbl th:hover { background: #f1f5f9!important; color: var(--primary); }
+.sort-indicator { margin-left: 4px; opacity: 0.5; font-family: monospace; font-size: 10px; }
 table.tbl td{padding:4px 14px!important;font-size:.8rem;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle;background-color:var(--surface)}
 table.tbl tr:hover td{background-color:#fcfdfe!important}
 table.tbl th:last-child,table.tbl td:last-child{width:.1%;white-space:nowrap;position:sticky;right:0;z-index:20;border-left:1px solid var(--border);box-shadow:-4px 0 8px -4px rgba(0,0,0,.1)}
@@ -1680,19 +1682,75 @@ function initVaultMatrix(){
 }
 
 // ── DASHBOARD CHART (single definition) ──
-function initDashboard(){
-  if(inited.has('dashboard'))return;
-  inited.add('dashboard');
-  const canvas=document.getElementById('chart-headcount-dept');
-  if(!canvas)return;
-  requestAnimationFrame(()=>{
-    const ctx=canvas.getContext('2d');
-    const grad=ctx.createLinearGradient(0,300,0,0);
-    grad.addColorStop(0,'#44c100');
-    grad.addColorStop(1,'#d4fc79');
-    new Chart(ctx,{type:'bar',data:{labels:['Engineering','Sales','Marketing','Finance','HR','Legal','IT'],datasets:[{label:'Personnel',data:[485,312,195,110,82,48,16],backgroundColor:grad,borderRadius:6,borderSkipped:false,barThickness:28}]},options:{maintainAspectRatio:false,responsive:true,plugins:{legend:{display:false},tooltip:{backgroundColor:'#0f172a',padding:12,titleFont:{family:'Plus Jakarta Sans',size:12,weight:'800'},bodyFont:{family:'Plus Jakarta Sans',size:12},cornerRadius:8,displayColors:false}},scales:{y:{beginAtZero:true,max:500,ticks:{stepSize:100,font:{family:'JetBrains Mono',size:11},color:'#94a3b8'},grid:{color:'#f1f5f9',drawBorder:false}},x:{grid:{display:false},ticks:{font:{family:'Plus Jakarta Sans',size:11,weight:'600'},color:'#334155'}}}}});
+// ── REPLACEMENT DASHBOARD INITIALIZATION ──
+function initDashboard() {
+  // Use a unique key to prevent re-initialization
+  if (inited.has('dashboard-main-chart')) return;
+  inited.add('dashboard-main-chart');
+
+  const canvas = document.getElementById('chart-headcount-dept');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  // Create the Premium Vertical Gradient (Green to Lime)
+  const gradient = ctx.createLinearGradient(0, 300, 0, 0);
+  gradient.addColorStop(0, '#44c100'); // Deep Green
+  gradient.addColorStop(1, '#d4fc79'); // Bright Lime
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Engineering', 'Sales', 'Marketing', 'Finance', 'HR', 'Legal', 'IT'],
+      datasets: [{
+        label: 'Personnel',
+        data: [485, 312, 195, 110, 82, 48, 16],
+        backgroundColor: gradient,
+        borderRadius: 6,
+        borderSkipped: false,
+        barThickness: 28,
+      }]
+    },
+    options: {
+      maintainAspectRatio: false,
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#0f172a',
+          padding: 12,
+          titleFont: { family: 'Plus Jakarta Sans', size: 12, weight: '800' },
+          bodyFont: { family: 'Plus Jakarta Sans', size: 12 },
+          cornerRadius: 8,
+          displayColors: false
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 500,
+          ticks: {
+            stepSize: 100,
+            font: { family: 'JetBrains Mono', size: 11 },
+            color: '#94a3b8'
+          },
+          grid: {
+            color: '#f1f5f9',
+            drawBorder: false
+          }
+        },
+        x: {
+          grid: { display: false },
+          ticks: {
+            font: { family: 'Plus Jakarta Sans', size: 11, weight: '600' },
+            color: '#334155'
+          }
+        }
+      }
+    }
   });
 }
+
+ 
 
 // ── ANALYTICS CHARTS ──
 function initAnalytics(){
@@ -1859,6 +1917,96 @@ window.addEventListener('DOMContentLoaded',()=>{
   lcIcons();
   initPage('dashboard');
 });
+//sorting algorithm for all tables
+// ── UPDATED PAGINATED TABLE BUILDER (NO SORT ON ACTIONS) ──
+function buildTable(containerId, {columns, rows, perPage=8}) {
+  const container = document.getElementById(containerId);
+  if (!container || container.dataset.built) return;
+  container.dataset.built = '1';
+  
+  container._rows = [...rows]; 
+  container._cols = columns; 
+  container._perPage = perPage;
+  container._currPg = 1;
+  container._sort = { key: null, dir: 'desc' };
+
+  container._render = function() {
+    const start = (this._currPg - 1) * this._perPage;
+    const end = Math.min(start + this._perPage, this._rows.length);
+    const slice = this._rows.slice(start, end);
+    
+    // Header Logic: Check for action key '_'
+    const colHeaders = this._cols.map(c => {
+      if (c.key === '_') return `<th>${c.label}</th>`; // No sort for Actions
+      
+      const isSorted = this._sort.key === c.key;
+      const arrow = isSorted ? (this._sort.dir === 'asc' ? ' ↑' : ' ↓') : ' ↕';
+      return `<th onclick="sortTbl('${containerId}','${c.key}')">${c.label}<span class="sort-indicator">${arrow}</span></th>`;
+    }).join('');
+
+    const bodyRows = slice.map(row =>
+      `<tr>${this._cols.map(c => {
+        let v = row[c.key] !== undefined ? row[c.key] : '—';
+        if (c.render) v = c.render(v, row);
+        return `<td>${v}</td>`;
+      }).join('')}</tr>`
+    ).join('');
+
+    const tp = Math.ceil(this._rows.length / this._perPage);
+    let pgBtns = `<button class="pg-btn" onclick="changePg('${containerId}',-1)" ${this._currPg<=1?'disabled':''}>‹</button>`;
+    for (let i=1; i<=tp; i++) {
+      if (tp<=7 || i===1 || i===tp || Math.abs(i-this._currPg)<=1) 
+        pgBtns += `<button class="pg-btn ${i===this._currPg?'active':''}" onclick="setPg('${containerId}',${i})">${i}</button>`;
+      else if (Math.abs(i-this._currPg)===2) pgBtns += `<button class="pg-btn" disabled>…</button>`;
+    }
+    pgBtns += `<button class="pg-btn" onclick="changePg('${containerId}',1)" ${this._currPg>=tp?'disabled':''}>›</button>`;
+
+    this.innerHTML = `
+      <div class="filter-bar">
+        <div class="search-container"><div class="search-inner">
+          <i data-lucide="search" class="search-lead-icon"></i>
+          <input type="text" placeholder="Search..." oninput="filterTbl('${containerId}', this.value)">
+        </div></div>
+      </div>
+      <div class="table-wrap"><table class="tbl"><thead><tr>${colHeaders}</tr></thead><tbody>${bodyRows}</tbody></table></div>
+      <div class="pagination"><span class="pagination-info">Showing ${this._rows.length?start+1:0}–${end} of ${this._rows.length}</span><div class="pagination-btns">${pgBtns}</div></div>`;
+    lcIcons(this);
+  };
+
+  container._render();
+}
+
+// ── GLOBAL SORT HANDLER (DESC-FIRST) ──
+window.sortTbl = (id, key) => {
+  const c = document.getElementById(id);
+  if (c._sort.key === key) {
+    c._sort.dir = c._sort.dir === 'asc' ? 'desc' : 'asc';
+  } else {
+    c._sort.key = key;
+    c._sort.dir = 'desc';
+  }
+
+  c._rows.sort((a, b) => {
+    let vA = a[key], vB = b[key];
+    const isNum = !isNaN(parseFloat(vA)) && isFinite(vA) && !isNaN(parseFloat(vB)) && isFinite(vB);
+    let res = isNum ? (vA - vB) : String(vA).localeCompare(String(vB), undefined, {numeric: true, sensitivity: 'base'});
+    return c._sort.dir === 'asc' ? res : -res;
+  });
+
+  c._currPg = 1;
+  c._render();
+};
+
+window.changePg = (id, dir) => { const c = document.getElementById(id); c._currPg += dir; c._render(); };
+window.setPg = (id, p) => { const c = document.getElementById(id); c._currPg = p; c._render(); };
+window.filterTbl = (id, val) => {
+  const c = document.getElementById(id);
+  if (!c._rawRows) c._rawRows = [...c._rows];
+  const q = val.toLowerCase();
+  c._rows = c._rawRows.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(q)));
+  c._currPg = 1;
+  c._render();
+};
 </script>
 </body>
 </html>
