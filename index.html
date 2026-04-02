@@ -717,6 +717,27 @@ th.sticky-emp.sticky-head {
 
 .ledger-d-num { font-size: 15px; font-weight: 800; color: var(--text); display: block; line-height: 1; }
 .ledger-d-day { font-size: 9px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+/* Force Attendance filter to show dropdowns */
+#p-attendance .card {
+    overflow: visible !important;
+}
+#as-drop-att-name {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 9999;
+}
+#as-drop-att-name.active {
+    display: block;
+}
 </style>
 </head>
 <body>
@@ -1455,9 +1476,10 @@ th.sticky-emp.sticky-head {
     </div>
   </div>
 
-  <!-- CONTROL BAR (SELECTORS) --> 
+<!-- ATTENDANCE CONTROL BAR -->
 <div class="card" style="padding: 20px; background: #fff; display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap;">
-  <div class="form-group" style="width: 180px; margin:0">
+  
+  <div class="form-group" style="width: 160px; margin:0">
     <label>Target Month</label>
     <select id="att-m-select" class="form-ctrl">
       <option value="">Select Month...</option>
@@ -1469,6 +1491,7 @@ th.sticky-emp.sticky-head {
       <option value="10">November</option><option value="11">December</option>
     </select>
   </div>
+
   <div class="form-group" style="width: 110px; margin:0">
     <label>Fiscal Year</label>
     <select id="att-y-select" class="form-ctrl">
@@ -1477,26 +1500,25 @@ th.sticky-emp.sticky-head {
     </select>
   </div>
   
-  <!-- NEW: Department Filter -->
   <div class="form-group" style="width: 180px; margin:0">
     <label>Department</label>
     <select id="att-dept-select" class="form-ctrl">
       <option value="All">All Departments</option>
-      <option>Engineering</option>
-      <option>Sales</option>
-      <option>HR</option>
-      <option>Finance</option>
-      <option>Marketing</option>
-      <option>Operations</option>
-      <option>Legal</option>
-      <option>IT</option>
+      <option>Engineering</option><option>Sales</option><option>HR</option>
+      <option>Finance</option><option>Marketing</option><option>Operations</option>
     </select>
   </div>
 
-  <!-- NEW: Employee Name Filter -->
-  <div class="form-group" style="width: 200px; margin:0">
+  <!-- THE DROPDOWN -->
+  <div class="form-group" style="width: 240px; margin:0; position:relative;">
     <label>Employee Name</label>
-    <input type="text" id="att-name-filter" class="form-ctrl" placeholder="Search by name...">
+    <div class="as-combo-container">
+      <input type="text" id="as-input-att-name" class="form-ctrl" 
+             placeholder="Click to see list..." 
+             onfocus="showAsDrop('as-drop-att-name')" 
+             oninput="filterAsDrop('as-input-att-name','as-drop-att-name')">
+      <div class="as-combo-results" id="as-drop-att-name"></div>
+    </div>
   </div>
 
   <button class="btn btn-primary" style="height: 40px; padding: 0 24px" onclick="buildMatrix()">
@@ -2682,7 +2704,8 @@ function buildMatrix() {
   const m = document.getElementById('att-m-select').value;
   const y = document.getElementById('att-y-select').value;
   const deptFilter = document.getElementById('att-dept-select').value;
-  const nameFilter = document.getElementById('att-name-filter').value.toLowerCase();
+  // Get typed or selected name
+  const nameInput = document.getElementById('as-input-att-name').value.toLowerCase().trim();
 
   if (m === "" || y === "") {
     alert("System Check: Please select Month and Year.");
@@ -2694,54 +2717,41 @@ function buildMatrix() {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const now = new Date();
 
-  // 1. HEADER GENERATION
-  let headHtml = `<tr>
-    <th class="sticky-emp sticky-head">
-      <div class="id-label-theme">Employee Identity</div>
-    </th>`;
-
+  // 1. Header
+  let headHtml = `<tr><th class="sticky-emp sticky-head"><div class="id-label-theme">Employee Identity</div></th>`;
   for (let d = 1; d <= daysInMonth; d++) {
     const dObj = new Date(year, month, d);
     const dayName = dObj.toLocaleDateString('en-US', { weekday: 'short' });
     const isToday = (d === now.getDate() && month === now.getMonth() && year === now.getFullYear());
-    
-    headHtml += `
-      <th class="sticky-head att-day-col ${isToday ? 'is-today' : ''}">
-        <span class="ledger-d-num">${d}</span>
-        <span class="ledger-d-day">${dayName}</span>
-      </th>`;
+    headHtml += `<th class="sticky-head att-day-col ${isToday ? 'is-today' : ''}"><span class="ledger-d-num">${d}</span><span class="ledger-d-day">${dayName}</span></th>`;
   }
   headHtml += `</tr>`;
   document.getElementById('ledger-head').innerHTML = headHtml;
 
-  // 2. FILTERED BODY GENERATION
+  // 2. Filter logic
   let bodyHtml = '';
-  
-  // Create a subset of names to act as our filtered list
+  // Combine names with departments to filter them
   const filteredList = names.map((name, idx) => {
-    // We simulate data here: assign specific departments to specific names for testing
-    // In a real app, this data would come from your employee object
-    const assignedDept = depts[idx % depts.length]; 
-    return { name, dept: assignedDept, id: `EMP-10${idx + 100}` };
+    return { name, dept: depts[idx % depts.length], id: `EMP-10${idx + 100}` };
   }).filter(emp => {
     const matchesDept = (deptFilter === 'All' || emp.dept === deptFilter);
-    const matchesName = emp.name.toLowerCase().includes(nameFilter);
+    const matchesName = nameInput === "" || emp.name.toLowerCase().includes(nameInput);
     return matchesDept && matchesName;
   });
 
   if (filteredList.length === 0) {
-    bodyHtml = `<tr><td colspan="${daysInMonth + 1}" style="text-align:center; padding: 40px; color: var(--muted);">No employees found matching these filters.</td></tr>`;
+    bodyHtml = `<tr><td colspan="${daysInMonth + 1}" style="text-align:center; padding: 60px; color: var(--muted);">No matching records found.</td></tr>`;
   } else {
-    filteredList.forEach((emp) => {
+    // Show top 40 matches
+    filteredList.slice(0, 40).forEach((emp) => {
       const initials = emp.name.split(' ').map(n => n[0]).join('');
-      
       bodyHtml += `<tr>
         <td class="sticky-emp">
           <div class="flex-row" style="gap:10px">
-            <div class="avatar avatar-sm" style="background:var(--primary-light); color:var(--primary); font-size: 10px;">${initials}</div>
+            <div class="avatar avatar-sm">${initials}</div>
             <div style="line-height:1.2">
-              <div style="font-size:11px; font-weight:800; color:var(--text)">${emp.name}</div>
-              <div style="font-size:9px; color:var(--muted); font-family:'JetBrains Mono'">${emp.id} <span style="opacity:0.6">| ${emp.dept}</span></div>
+              <div style="font-size:11px; font-weight:800;">${emp.name}</div>
+              <div style="font-size:9px; color:var(--muted); font-family:'JetBrains Mono'">${emp.id} | ${emp.dept}</div>
             </div>
           </div>
         </td>`;
@@ -2752,11 +2762,9 @@ function buildMatrix() {
         const isSun = dObj.getDay() === 0;
         const isFuture = dObj > now;
         let status = isSat ? 'H' : (isSun ? 'O' : 'P');
-        
         bodyHtml += `<td class="att-cell st-${status}">
-                      <div class="status-pill ${isFuture ? 'future' : ''}" 
-                           onclick="${isFuture ? '' : 'cycleStatus(this)'}">
-                           ${isFuture ? '' : status}
+                      <div class="status-pill ${isFuture ? 'future' : ''}" onclick="${isFuture ? '' : 'cycleStatus(this)'}">
+                         ${isFuture ? '' : status}
                       </div>
                     </td>`;
       }
@@ -2765,12 +2773,9 @@ function buildMatrix() {
   }
 
   document.getElementById('ledger-body').innerHTML = bodyHtml;
-  
-  // Show/Hide UI elements
   document.getElementById('ledger-container').style.display = 'block';
   document.getElementById('att-meta-header').style.display = 'flex';
   document.getElementById('ledger-empty').style.display = 'none';
-  
   lcIcons(document.getElementById('p-attendance'));
 }
 function filterAttMatrix(val) {
