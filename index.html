@@ -516,29 +516,62 @@ input:checked+.slider:before{transform:translateX(14px)}
   border-color: var(--primary) !important;
   box-shadow: var(--shadow-md);
 }
-/* Attendance Matrix Specifics */
-.att-container { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; }
-.att-toolbar { padding: 15px 20px; border-bottom: 1px solid var(--border); background: #fafafa; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
-.att-grid-wrap { overflow: auto; max-height: calc(100vh - 280px); position: relative; }
-.att-table { border-collapse: separate; border-spacing: 0; width: 100%; }
-.att-table th, .att-table td { border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); text-align: center; transition: all 0.1s; }
-.att-table th { background: #f8fafc; padding: 8px 4px; font-size: 10px; font-weight: 800; color: var(--muted); position: sticky; top: 0; z-index: 10; }
-.att-table .emp-col { position: sticky; left: 0; background: #fff; z-index: 11; text-align: left; padding: 10px 15px; min-width: 180px; box-shadow: 2px 0 5px rgba(0,0,0,0.05); }
-.att-table th.emp-col { z-index: 12; background: #f8fafc; }
-.day-head { min-width: 35px; }
-.day-name { display: block; font-size: 8px; opacity: 0.6; margin-top: 2px; }
-.weekend { background: #f1f5f9 !important; color: #94a3b8; }
-.att-cell { width: 35px; height: 38px; cursor: pointer; font-size: 11px; font-weight: 800; user-select: none; }
-.att-cell:hover { filter: brightness(0.9); transform: scale(1.05); z-index: 2; }
-/* Status Colors */
-.st-P { background: #dcfce7; color: #166534; } /* Present */
-.st-A { background: #fee2e2; color: #991b1b; } /* Absent */
-.st-L { background: #fef3c7; color: #92400e; } /* Leave */
-.st-H { background: #e0f2fe; color: #0369a1; } /* Half-day */
-.st-O { background: #f1f5f9; color: #475569; } /* Off */
-.att-legend { display: flex; gap: 12px; padding: 10px 20px; border-top: 1px solid var(--border); background: #fff; }
-.leg-item { display: flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
-.leg-box { width: 12px; height: 12px; border-radius: 3px; }
+/* FLAWLESS LEDGER STYLES */
+.att-ledger-card { 
+    background: #fff; border: 1px solid var(--border); border-radius: 12px; 
+    box-shadow: var(--shadow-md); overflow: hidden; margin-top: 20px; 
+}
+
+/* Scrollable Container */
+.att-grid-viewport { 
+    overflow: auto; max-height: calc(100vh - 310px); position: relative; 
+    scrollbar-width: thin; scrollbar-color: var(--primary) transparent;
+}
+
+/* The Table */
+.tbl-ledger { border-collapse: separate; border-spacing: 0; width: 100%; table-layout: fixed; }
+
+/* STICKY COLUMN: Employee Identity */
+.sticky-emp { 
+    position: sticky; left: 0; background: #fff !important; z-index: 40; 
+    width: 260px; min-width: 260px; padding: 12px 16px !important;
+    border-right: 2px solid var(--border) !important;
+    box-shadow: 4px 0 10px rgba(0,0,0,0.03); /* Creates depth when scrolling */
+}
+
+/* STICKY HEADER: Dates */
+.sticky-head { 
+    position: sticky; top: 0; background: #f8fafc; z-index: 30; 
+    height: 60px; text-align: center; border-bottom: 1px solid var(--border);
+}
+
+/* THE TOP-LEFT CORNER (Identity + Dates intersection) */
+th.sticky-emp.sticky-head { z-index: 50; background: #f1f5f9 !important; }
+
+/* Date Typography */
+.ledger-d-num { font-size: 14px; font-weight: 800; color: var(--text); display: block; margin-bottom: -2px; }
+.ledger-d-day { font-size: 8px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+
+/* Status Chips (Executive Style) */
+.att-cell { padding: 0 !important; text-align: center; border-bottom: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; }
+.status-pill {
+    width: 30px; height: 30px; border-radius: 9px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 800; cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid transparent;
+}
+.status-pill:hover:not(.future) { transform: translateY(-2px) scale(1.1); box-shadow: var(--shadow-md); }
+
+/* Color Palette */
+.st-P .status-pill { background: #dcfce7; color: #15803d; border-color: #bbf7d0; } /* Present */
+.st-A .status-pill { background: #fee2e2; color: #b91c1c; border-color: #fecaca; } /* Absent */
+.st-L .status-pill { background: #e0f2fe; color: #0369a1; border-color: #bae6fd; } /* Leave */
+.st-H .status-pill { background: #fef3c7; color: #92400e; border-color: #fde68a; } /* Sat Half */
+.st-O .status-pill { background: #f1f5f9; color: #64748b; border-color: #e2e8f0; } /* Sun Off */
+
+.future { opacity: 0.25; cursor: not-allowed; filter: grayscale(1); border: 1.5px dashed #cbd5e1; background: transparent; }
+.is-today { background: var(--primary-light) !important; border-bottom: 2px solid var(--primary) !important; }
 </style>
 </head>
 <body>
@@ -1272,50 +1305,63 @@ input:checked+.slider:before{transform:translateX(14px)}
 <div class="page" id="p-attendance">
   <div class="page-header">
     <div>
-      <div class="page-title">Monthly Attendance Registry</div>
-      <div class="page-sub">Direct manipulation of daily status for the organization</div>
-    </div>
-    <div class="flex-row">
-      <button class="btn btn-primary" onclick="saveAttendance()"><i data-lucide="save" size="14"></i> Commit Changes</button>
+      <div class="page-title">Attendance Registry</div>
+      <p class="page-sub">Centralized monthly ledger for personnel presence.</p>
     </div>
   </div>
 
-  <div class="att-container">
-    <div class="att-toolbar">
-      <div class="flex-row">
-        <div class="form-group" style="margin:0">
-          <select id="att-month" class="sel" onchange="initAttendanceGrid()"></select>
-        </div>
-        <div class="form-group" style="margin:0">
-          <select id="att-year" class="sel" onchange="initAttendanceGrid()"></select>
-        </div>
-      </div>
-      <div class="search-container" style="max-width:250px">
-        <div class="search-inner" style="height:34px">
-          <i data-lucide="search" size="14" class="search-lead-icon"></i>
-          <input type="text" placeholder="Filter employees..." oninput="filterAttendance(this.value)">
-        </div>
-      </div>
+  <!-- CONTROL BAR -->
+  <div class="card" style="padding: 20px; background: #fff; margin-bottom: 20px; display: flex; align-items: flex-end; gap: 16px;">
+    <div class="form-group" style="width: 200px; margin:0">
+      <label>Target Month</label>
+      <select id="att-m-select" class="form-ctrl">
+        <option value="">Select Month...</option>
+        <option value="0">January</option><option value="1">February</option>
+        <option value="2">March</option><option value="3">April</option>
+        <option value="4">May</option><option value="5">June</option>
+        <option value="6">July</option><option value="7">August</option>
+        <option value="8">September</option><option value="9">October</option>
+        <option value="10">November</option><option value="11">December</option>
+      </select>
     </div>
+    <div class="form-group" style="width: 140px; margin:0">
+      <label>Fiscal Year</label>
+      <select id="att-y-select" class="form-ctrl">
+        <option value="2025">2025</option>
+        <option value="2026">2026</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" style="height: 40px; padding: 0 24px" onclick="buildMatrix()">
+      <i data-lucide="layout-grid" size="14"></i> Generate Ledger
+    </button>
+  </div>
 
-    <div class="att-grid-wrap">
-      <table class="att-table" id="attendance-matrix">
-        <thead id="att-thead"></thead>
-        <tbody id="att-tbody"></tbody>
+  <!-- THE LEDGER CONTAINER -->
+  <div id="ledger-container" class="att-ledger-card" style="display:none;">
+    <div class="att-grid-viewport">
+      <table class="tbl-ledger">
+        <thead id="ledger-head"></thead>
+        <tbody id="ledger-body"></tbody>
       </table>
     </div>
-
-    <div class="att-legend">
-      <div class="leg-item"><div class="leg-box st-P"></div> Present (P)</div>
-      <div class="leg-item"><div class="leg-box st-A"></div> Absent (A)</div>
-      <div class="leg-item"><div class="leg-box st-L"></div> Leave (L)</div>
-      <div class="leg-item"><div class="leg-box st-H"></div> Half-Day (H)</div>
-      <div class="leg-item"><div class="leg-box st-O"></div> Off (O)</div>
-      <div style="margin-left:auto" class="pagination-info">Click cell to toggle status</div>
+    
+    <div class="card-footer" style="padding: 15px 24px; background: #fcfdfe; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;">
+       <div class="flex-row" style="gap: 15px;">
+          <div class="badge badge-success">P: Present</div>
+          <div class="badge badge-warning" style="background:#fef3c7; color:#92400e">H: Sat-Half</div>
+          <div class="badge badge-danger">A: Absent</div>
+          <div class="badge badge-neutral">O: Sunday-Off</div>
+       </div>
+       <button class="btn btn-success btn-sm" onclick="saveAttendance()"><i data-lucide="save" size="14"></i> Commit to Database</button>
     </div>
   </div>
-</div>
 
+  <!-- EMPTY STATE -->
+  <div id="ledger-empty" style="padding: 80px 0; text-align: center; color: var(--muted);">
+    <i data-lucide="table-2" size="48" style="opacity: 0.1; margin-bottom: 12px;"></i>
+    <p style="font-weight: 700; font-size: 0.9rem;">Select month and year to generate matrix</p>
+  </div>
+</div>
 <!-- LEAVE TYPES -->
 <div class="page" id="p-leave-types">
   <div class="page-header"><div><div class="page-title">Leave Types</div><div class="page-sub">Configure leave categories and entitlements</div></div><button class="btn btn-primary"><i data-lucide="plus" size="13"></i>Add Leave Type</button></div>
@@ -2456,7 +2502,92 @@ function selRole(el, name){
   lcIcons(grid);
 }
 
+const ATT_CODES = ['P', 'H', 'A', 'L', 'O'];
 
+function buildMatrix() {
+  const m = document.getElementById('att-m-select').value;
+  const y = document.getElementById('att-y-select').value;
+
+  if (m === "" || y === "") {
+    alert("Please select both month and year.");
+    return;
+  }
+
+  // UI State
+  document.getElementById('ledger-container').style.display = 'block';
+  document.getElementById('ledger-empty').style.display = 'none';
+
+  const month = parseInt(m);
+  const year = parseInt(y);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const now = new Date();
+
+  // 1. Generate Header
+  let headHtml = `<tr><th class="sticky-emp sticky-head" style="text-align:left; font-size:10px; letter-spacing:1px; color:var(--muted)">EMPLOYEE IDENTITY</th>`;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dObj = new Date(year, month, d);
+    const dayName = dObj.toLocaleDateString('en-US', { weekday: 'short' });
+    const isToday = (d === now.getDate() && month === now.getMonth() && year === now.getFullYear());
+    
+    headHtml += `<th class="sticky-head ${isToday ? 'is-today' : ''}" style="width:50px">
+                    <span class="ledger-d-num">${d}</span>
+                    <span class="ledger-d-day">${dayName}</span>
+                 </th>`;
+  }
+  headHtml += `</tr>`;
+  document.getElementById('ledger-head').innerHTML = headHtml;
+
+  // 2. Generate Rows
+  let bodyHtml = '';
+  // 'names' is your global employee array from the main code
+  names.slice(0, 35).forEach((name, idx) => {
+    const initials = name.split(' ').map(n => n[0]).join('');
+    const empId = `EMP-10${idx + 100}`;
+    
+    bodyHtml += `<tr>
+      <td class="sticky-emp">
+        <div class="flex-row" style="gap:12px">
+          <div class="avatar avatar-sm" style="background:var(--primary-light); color:var(--primary); font-weight:800;">${initials}</div>
+          <div style="line-height:1.2">
+            <div style="font-size:11px; font-weight:800; color:var(--text)">${name}</div>
+            <div style="font-size:9px; color:var(--muted); font-family:'JetBrains Mono'">${empId}</div>
+          </div>
+        </div>
+      </td>`;
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dObj = new Date(year, month, d);
+      const isSat = dObj.getDay() === 6;
+      const isSun = dObj.getDay() === 0;
+      const isFuture = dObj > now;
+
+      // Logic: Sat=H, Sun=O, others=P
+      let status = isSat ? 'H' : (isSun ? 'O' : 'P');
+      
+      bodyHtml += `<td class="att-cell st-${status}">
+                    <div class="status-pill ${isFuture ? 'future' : ''}" 
+                         onclick="${isFuture ? '' : 'cycleStatus(this)'}">
+                         ${isFuture ? '' : status}
+                    </div>
+                  </td>`;
+    }
+    bodyHtml += `</tr>`;
+  });
+
+  document.getElementById('ledger-body').innerHTML = bodyHtml;
+  lcIcons(document.getElementById('p-attendance'));
+}
+
+function cycleStatus(el) {
+  let current = el.textContent.trim();
+  let nextIdx = (ATT_CODES.indexOf(current) + 1) % ATT_CODES.length;
+  let next = ATT_CODES[nextIdx];
+
+  const parent = el.parentElement;
+  ATT_CODES.forEach(code => parent.classList.remove('st-' + code));
+  parent.classList.add('st-' + next);
+  el.textContent = next;
+}
 </script>
 </body>
 </html>
