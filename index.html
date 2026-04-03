@@ -2743,23 +2743,22 @@ function initPage(id){
     case 'asset-tracking':
       buildTable('tbl-assets', {
         columns: [
-          { key: 'id', label: 'Asset Code' },
+          { key: 'id', label: 'Item Code' },
           { key: 'name', label: 'Asset Name' },
           { key: 'cat', label: 'Category' },
           { key: 'val', label: 'Asset Value' },
           { key: 'user', label: 'Custodian' },
-          { key: 'war', label: 'Warranty' },
-          { key: 'gua', label: 'Guarantee' }, 
+          { key: 'war', label: 'Warranty' }, 
           { 
             key: '_', 
             label: 'Actions', 
             render: (v, row) => `
-              <div class="flex-row">
-                <button class="btn btn-xs btn-secondary" onclick="openReassignModal('${row.name}','${row.user}')" title="Reassign">
-                  <i data-lucide="shuffle" size="10"></i>
-                </button>
+              <div style="display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 8px; width: 100%;">
                 <button class="btn btn-xs btn-secondary" title="View Details">
                   <i data-lucide="eye" size="10"></i>
+                </button>
+                <button class="btn btn-xs btn-secondary" onclick="openReassignModal('${row.name}','${row.user}')" title="Reassign">
+                  <i data-lucide="shuffle" size="10"></i>
                 </button>
               </div>`
           }
@@ -2775,8 +2774,7 @@ function initPage(id){
             cat: b('neutral', cats),
             val: `ETB ${price.toLocaleString()}`,
             user: names[i % names.length],
-            war: `202${randInt(6, 8)}-12-31`,
-            gua: i % 3 === 0 ? b('success', 'Full Cover') : b('info', 'Limited') 
+            war: `202${randInt(6, 8)}-12-31` 
           };
         })
       });
