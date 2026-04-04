@@ -508,138 +508,41 @@ input[type="radio"]{accent-color:var(--primary);width:18px;height:18px;cursor:po
 .slider:before{position:absolute;content:"";height:12px;width:12px;left:3px;bottom:3px;background:#fff;transition:.2s;border-radius:50%}
 input:checked+.slider{background:var(--primary)}
 input:checked+.slider:before{transform:translateX(14px)}
+
 /* Social Media Hover Animation */
-.social-link-row {
-  transition: all 0.2s ease-in-out;
-  cursor: pointer;
-}
-
-.social-link-row:hover {
-  background: var(--primary-light) !important; /* Your theme's light green */
-  border-color: var(--primary) !important;       /* Your theme's solid green */
-  transform: translateX(6px);                   /* Simple slide right effect */
-}
+.social-link-row { transition: all 0.2s ease-in-out; cursor: pointer; }
+.social-link-row:hover { background: var(--primary-light) !important; border-color: var(--primary) !important; transform: translateX(6px); }
 /* Submenu job positions styling */
-.submenu-jobs {
-  padding-left: 0;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 8px;
-  position: relative;
-}
-
-.submenu-jobs li {
-  list-style: none;
-  display: inline-block;
-  padding: 0;
-  margin: 0;
-}
-
-.submenu-jobs li::before,
-.submenu-jobs li::after {
-  display: none !important;
-}
-
-.oc-staff {
-  transition: all 0.2s ease;
-}
-
-.oc-staff:hover {
-  transform: translateY(-4px);
-  border-color: var(--primary) !important;
-  box-shadow: var(--shadow-md);
-}
+.submenu-jobs { padding-left: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 8px; position: relative; }
+.submenu-jobs li { list-style: none; display: inline-block; padding: 0; margin: 0; }
+.submenu-jobs li::before, .submenu-jobs li::after { display: none !important; }
+.oc-staff { transition: all 0.2s ease; }
+.oc-staff:hover { transform: translateY(-4px); border-color: var(--primary) !important; box-shadow: var(--shadow-md); }
 /* REFINED ATTENDANCE SYSTEM */
-.att-meta-bar {
-    display: none; /* Hidden until generated */
-    align-items: center; 
-    justify-content: space-between; 
-    padding: 12px 20px; 
-    background: #fff; 
-    border: 1px solid var(--border); 
-    border-bottom: none;
-    border-radius: 12px 12px 0 0;
-    margin-top: 20px;
-}
-
-.att-ledger-card { 
-    background: #fff; border: 1px solid var(--border); border-radius: 0 0 12px 12px; 
-    box-shadow: var(--shadow-md); overflow: hidden;
-}
-
+.att-meta-bar { display: none; align-items: center; justify-content: space-between; padding: 12px 20px; background: #fff; border: 1px solid var(--border); border-bottom: none; border-radius: 12px 12px 0 0; margin-top: 20px; }
+.att-ledger-card { background: #fff; border: 1px solid var(--border); border-radius: 0 0 12px 12px; box-shadow: var(--shadow-md); overflow: hidden; }
 /* FLAWLESS VIEWPORT & SCROLLBAR */
-.att-grid-viewport { 
-    overflow: auto; max-height: calc(100vh - 340px); position: relative; 
-    scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent;
-}
-
-/* Webkit Scrollbar override for consistent grayish look */
+.att-grid-viewport { overflow: auto; max-height: calc(100vh - 340px); position: relative; scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
 .att-grid-viewport::-webkit-scrollbar { width: 6px; height: 6px; }
 .att-grid-viewport::-webkit-scrollbar-track { background: transparent; }
-.att-grid-viewport::-webkit-scrollbar-thumb { 
-    background: #cbd5e1; border-radius: 10px; border: 1px solid transparent; background-clip: content-box; 
-}
+.att-grid-viewport::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; border: 1px solid transparent; background-clip: content-box; }
 .att-grid-viewport::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-
 /* Sticky Identity Column */
-.sticky-emp { 
-    position: sticky; left: 0; background: #fff !important; z-index: 40; 
-    width: 260px; min-width: 260px; padding: 12px 16px !important;
-    border-right: 2px solid var(--border) !important;
-}
-
-/* Intersection of sticky headers */
+.sticky-emp { position: sticky; left: 0; background: #fff !important; z-index: 40; width: 260px; min-width: 260px; padding: 12px 16px !important; border-right: 2px solid var(--border) !important; }
 th.sticky-emp.sticky-head { z-index: 50; background: #f8fafc !important; }
 /* THEME-ALIGNED MATRIX HEADERS */
-.sticky-head { 
-    background: #f8fafc !important; /* System-standard header background */
-    border-bottom: 2px solid var(--border) !important;
-    height: 70px; 
-    vertical-align: middle;
-}
-
+.sticky-head { background: #f8fafc !important; border-bottom: 2px solid var(--border) !important; height: 70px; vertical-align: middle; }
 /* Date Number (Large & Bold) */
-.ledger-d-num { 
-    font-size: 15px; 
-    font-weight: 800; 
-    color: var(--text); 
-    display: block; 
-    line-height: 1;
-    margin-bottom: 2px;
-}
-
+.ledger-d-num { font-size: 15px; font-weight: 800; color: var(--text); display: block; line-height: 1; margin-bottom: 2px; }
 /* Day Name (Muted, Uppercase, Spaced) */
-.ledger-d-day { 
-    font-size: 9px; 
-    font-weight: 800; 
-    color: var(--muted); 
-    text-transform: uppercase; 
-    letter-spacing: 0.1em; /* Pro spacing */
-}
-
+.ledger-d-day { font-size: 9px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
 /* "Employee Identity" Label Styling */
-.id-label-theme {
-    font-size: 10px;
-    font-weight: 800;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    padding-left: 16px;
-}
-
+.id-label-theme { font-size: 10px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.15em; padding-left: 16px; }
 /* Today's Column Highlight - Theme Colors */
-.is-today { 
-    background: var(--primary-light) !important; 
-    border-bottom: 3px solid var(--primary) !important; 
-}
+.is-today { background: var(--primary-light) !important; border-bottom: 3px solid var(--primary) !important; }
 .is-today .ledger-d-num { color: var(--primary); }
-
 /* Column Separator */
-.att-day-col {
-    border-right: 1px solid #f1f5f9;
-}
+.att-day-col { border-right: 1px solid #f1f5f9; }
 /* Legend Badges */
 .att-leg-pill { font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.02em; border: 1px solid transparent; }
 .pill-p { background: #dcfce7; color: #15803d; border-color: #bbf7d0; }
@@ -647,357 +550,76 @@ th.sticky-emp.sticky-head { z-index: 50; background: #f8fafc !important; }
 .pill-a { background: #fee2e2; color: #b91c1c; border-color: #fecaca; }
 .pill-o { background: #f1f5f9; color: #64748b; border-color: #e2e8f0; }
 /* RESTORED ENTERPRISE TYPOGRAPHY */
-.ledger-d-num { 
-    font-size: 14px; 
-    font-weight: 800; 
-    color: var(--text); 
-    display: block; 
-    line-height: 1; 
-    margin-bottom: 2px;
-}
-.ledger-d-day { 
-    font-size: 8px; 
-    font-weight: 700; 
-    color: var(--muted); 
-    text-transform: uppercase; 
-    letter-spacing: 0.5px;
-}
-
+.ledger-d-num { font-size: 14px; font-weight: 800; color: var(--text); display: block; line-height: 1; margin-bottom: 2px; }
+.ledger-d-day { font-size: 8px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
 /* RESTORED STATUS CHIPS */
-.status-pill {
-    width: 32px; 
-    height: 32px; 
-    border-radius: 10px; /* Modern squircle look */
-    margin: 0 auto;
-    display: flex; 
-    align-items: center; 
-    justify-content: center;
-    font-size: 11px; 
-    font-weight: 800;
-    transition: all 0.2s ease;
-    cursor: pointer;
-    border: 1px solid transparent;
-}
-
-/* Color Palette Restoration */
+.status-pill { width: 32px; height: 32px; border-radius: 10px; margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; transition: all 0.2s ease; cursor: pointer; border: 1px solid transparent; }
 .st-P .status-pill { background: #dcfce7; color: #15803d; border-color: #bbf7d0; }
 .st-H .status-pill { background: #fef3c7; color: #92400e; border-color: #fde68a; }
 .st-A .status-pill { background: #fee2e2; color: #b91c1c; border-color: #fecaca; }
 .st-L .status-pill { background: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
 .st-O .status-pill { background: #f1f5f9; color: #64748b; border-color: #e2e8f0; }
-
-.status-pill:hover:not(.future) { 
-    transform: translateY(-2px); 
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); 
-}
-
+.status-pill:hover:not(.future) { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
 /* Header Intersection Polish */
-th.sticky-emp.sticky-head { 
-    background: #f8fafc !important; 
-    vertical-align: middle;
-    border-bottom: 1px solid var(--border);
-}
+th.sticky-emp.sticky-head { background: #f8fafc !important; vertical-align: middle; border-bottom: 1px solid var(--border); }
 /* THEME-ALIGNED DOUBLE-STICKY MATRIX */
-.att-grid-viewport { 
-    overflow: auto; 
-    max-height: calc(100vh - 320px); 
-    position: relative; 
-    scrollbar-width: thin; 
-    scrollbar-color: #cbd5e1 transparent;
-    /* This allows the table headers to pin correctly */
-    border-radius: 0 0 12px 12px;
-}
-
-/* 1. HORIZONTAL STICKINESS (The Dates) */
-.sticky-head { 
-    position: sticky; 
-    top: 0; /* Pins to the top of the viewport */
-    z-index: 30; /* Above the table body rows */
-    background: #f8fafc !important; 
-    height: 70px;
-    border-bottom: 2px solid var(--border) !important;
-}
-
-/* 2. VERTICAL STICKINESS (The Names) */
-.sticky-emp { 
-    position: sticky; 
-    left: 0; /* Pins to the left of the viewport */
-    z-index: 40; /* Higher than the sticky header to stay on top when scrolling sideways */
-    background: #fff !important; 
-    width: 260px; 
-    min-width: 260px; 
-    padding: 12px 16px !important;
-    border-right: 2px solid var(--border) !important;
-    box-shadow: 4px 0 8px rgba(0,0,0,0.02);
-}
-
-/* 3. THE INTERSECTION (The top-left "Employee Identity" cell) */
-th.sticky-emp.sticky-head { 
-    z-index: 50; /* Highest priority: Pins to both top and left */
-    top: 0;
-    left: 0;
-    background: #f8fafc !important; 
-    border-bottom: 2px solid var(--border) !important;
-}
-
+.att-grid-viewport { overflow: auto; max-height: calc(100vh - 320px); position: relative; scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; border-radius: 0 0 12px 12px; }
+.sticky-head { position: sticky; top: 0; z-index: 30; background: #f8fafc !important; height: 70px; border-bottom: 2px solid var(--border) !important; }
+.sticky-emp { position: sticky; left: 0; z-index: 40; background: #fff !important; width: 260px; min-width: 260px; padding: 12px 16px !important; border-right: 2px solid var(--border) !important; box-shadow: 4px 0 8px rgba(0,0,0,0.02); }
+th.sticky-emp.sticky-head { z-index: 50; top: 0; left: 0; background: #f8fafc !important; border-bottom: 2px solid var(--border) !important; }
 /* Typographic Polish for the Sticky Titles */
-.id-label-theme {
-    font-size: 10px;
-    font-weight: 800;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    padding-left: 12px;
-}
-
+.id-label-theme { font-size: 10px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; padding-left: 12px; }
 .ledger-d-num { font-size: 15px; font-weight: 800; color: var(--text); display: block; line-height: 1; }
 .ledger-d-day { font-size: 9px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
 /* Force Attendance filter to show dropdowns */
-#p-attendance .card {
-    overflow: visible !important;
-}
-#as-drop-att-name {
-    display: none;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background: white;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-    max-height: 200px;
-    overflow-y: auto;
-    z-index: 9999;
-}
-#as-drop-att-name.active {
-    display: block;
-}
+#p-attendance .card { overflow: visible !important; }
+#as-drop-att-name { display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-height: 200px; overflow-y: auto; z-index: 9999; }
+#as-drop-att-name.active { display: block; }
 /* notifications */
-.ydy-toast {
-    margin-top: 50px;
-    pointer-events: auto;
-    width: 320px;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    border-left: 4px solid var(--primary);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    border-radius: 12px;
-    padding: 16px;
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    animation: toastSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    position: relative;
-    overflow: hidden;
-}
-
-@keyframes toastSlideIn {
-    from { transform: translateX(120%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-}
-
-.ydy-toast.exit {
-    animation: toastSlideOut 0.3s ease forwards;
-}
-
-@keyframes toastSlideOut {
-    to { transform: translateX(120%); opacity: 0; }
-}
-
-.toast-icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.toast-content {
-    flex: 1;
-}
-
-.toast-title {
-    font-size: 0.85rem;
-    font-weight: 800;
-    color: var(--text);
-    margin-bottom: 2px;
-}
-
-.toast-msg {
-    font-size: 0.75rem;
-    color: var(--muted);
-    line-height: 1.4;
-}
-
+.ydy-toast { margin-top: 50px; pointer-events: auto; width: 320px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-left: 4px solid var(--primary); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); border-radius: 12px; padding: 16px; display: flex; align-items: flex-start; gap: 12px; animation: toastSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; position: relative; overflow: hidden; }
+@keyframes toastSlideIn { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+.ydy-toast.exit { animation: toastSlideOut 0.3s ease forwards; }
+@keyframes toastSlideOut { to { transform: translateX(120%); opacity: 0; } }
+.toast-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.toast-content { flex: 1; }
+.toast-title { font-size: 0.85rem; font-weight: 800; color: var(--text); margin-bottom: 2px; }
+.toast-msg { font-size: 0.75rem; color: var(--muted); line-height: 1.4; }
 /* Types */
 .toast-success { border-left-color: var(--success); }
 .toast-success .toast-icon { background: var(--success-bg); color: var(--success); }
-
 .toast-error { border-left-color: var(--danger); }
 .toast-error .toast-icon { background: var(--danger-bg); color: var(--danger); }
-
 .toast-warning { border-left-color: var(--warning); }
 .toast-warning .toast-icon { background: var(--warning-bg); color: var(--warning); }
-
 .toast-info { border-left-color: var(--info); }
 .toast-info .toast-icon { background: var(--info-bg); color: var(--info); }
-
-.toast-progress {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    height: 3px;
-    background: rgba(0,0,0,0.05);
-    width: 100%;
-}
-.toast-progress-fill {
-    height: 100%;
-    background: inherit;
-    width: 100%;
-    transform-origin: left;
-    background: var(--primary);
-    opacity: 0.3;
-}
+.toast-progress { position: absolute; bottom: 0; left: 0; height: 3px; background: rgba(0,0,0,0.05); width: 100%; }
+.toast-progress-fill { height: 100%; background: inherit; width: 100%; transform-origin: left; background: var(--primary); opacity: 0.3; }
 /* REFINED ATTENDANCE EMPTY STATE */
-.att-empty-state-container {
-    margin-top: 30px;
-    padding: 80px 20px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: radial-gradient(circle at center, #f8fafc 0%, #f1f5f9 100%);
-    border-radius: 20px;
-    border: 1px dashed var(--border);
-}
-
-.att-empty-glass-card {
-    max-width: 480px;
-    text-align: center;
-    padding: 40px;
-    background: rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(10px);
-    border: 1px solid #fff;
-    border-radius: 24px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.03);
-}
-
-.att-empty-icon-stack {
-    position: relative;
-    width: 80px;
-    height: 80px;
-    margin: 0 auto 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.icon-main {
-    position: relative;
-    z-index: 2;
-    width: 64px;
-    height: 64px;
-    background: var(--primary);
-    color: white;
-    border-radius: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 10px 20px rgba(21, 178, 1, 0.2);
-}
-
-.icon-ring {
-    position: absolute;
-    inset: 0;
-    border: 2px solid var(--primary);
-    border-radius: 20px;
-    opacity: 0;
-    z-index: 1;
-}
-
+.att-empty-state-container { margin-top: 30px; padding: 80px 20px; display: flex; justify-content: center; align-items: center; background: radial-gradient(circle at center, #f8fafc 0%, #f1f5f9 100%); border-radius: 20px; border: 1px dashed var(--border); }
+.att-empty-glass-card { max-width: 480px; text-align: center; padding: 40px; background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(10px); border: 1px solid #fff; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.03); }
+.att-empty-icon-stack { position: relative; width: 80px; height: 80px; margin: 0 auto 24px; display: flex; align-items: center; justify-content: center; }
+.icon-main { position: relative; z-index: 2; width: 64px; height: 64px; background: var(--primary); color: white; border-radius: 18px; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 20px rgba(21, 178, 1, 0.2); }
+.icon-ring { position: absolute; inset: 0; border: 2px solid var(--primary); border-radius: 20px; opacity: 0; z-index: 1; }
 .pulse { animation: att-pulse 2.5s infinite; }
 .delay-1 { animation: att-pulse 2.5s 1.2s infinite; }
-
-@keyframes att-pulse {
-    0% { transform: scale(0.8); opacity: 0.5; }
-    100% { transform: scale(1.5); opacity: 0; }
-}
-
-.att-empty-title {
-    font-size: 1.25rem;
-    font-weight: 800;
-    color: var(--text);
-    margin-bottom: 12px;
-    letter-spacing: -0.02em;
-}
-
-.att-empty-text {
-    font-size: 0.85rem;
-    color: var(--muted);
-    line-height: 1.6;
-    margin-bottom: 32px;
-}
-
-.att-empty-steps {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-}
-
-.att-step {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-}
-
-.step-num {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.65rem;
-    font-weight: 800;
-    color: var(--primary);  
-    background: var(--primary-light);
-    padding: 2px 8px;
-    border-radius: 6px;
-}
-
-.step-label {
-    font-size: 0.6rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--muted);
-}
-
-.att-step-line {
-    width: 20px;
-    height: 1px;
-    background: var(--border);
-    margin-top: -15px;
-}
+@keyframes att-pulse { 0% { transform: scale(0.8); opacity: 0.5; } 100% { transform: scale(1.5); opacity: 0; } }
+.att-empty-title { font-size: 1.25rem; font-weight: 800; color: var(--text); margin-bottom: 12px; letter-spacing: -0.02em; }
+.att-empty-text { font-size: 0.85rem; color: var(--muted); line-height: 1.6; margin-bottom: 32px; }
+.att-empty-steps { display: flex; align-items: center; justify-content: center; gap: 12px; }
+.att-step { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.step-num { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; font-weight: 800; color: var(--primary); background: var(--primary-light); padding: 2px 8px; border-radius: 6px; }
+.step-label { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.att-step-line { width: 20px; height: 1px; background: var(--border); margin-top: -15px; }
 /* Styling for the Permission Table Hierarchy */
-#perm-grid tr td {
-  padding: 10px 16px !important;
-}
-
-#perm-grid tr:hover td {
-  background: #fcfdfe;
-}
-
-/* Make parent rows stand out slightly */
-#perm-grid tr[style*="background: #f8fafc"] td {
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-}
+#perm-grid tr td { padding: 10px 16px !important; }
+#perm-grid tr:hover td { background: #fcfdfe; }
+#perm-grid tr[style="background: #f8fafc"] td { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
 </style>
 </head>
 <body>
 
-<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeMobileSidebar()"></div>
-
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeMobileSidebar()"></div> 
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-brand">
     <div class="brand-icon"><i data-lucide="layers" size="16"></i></div>
@@ -1253,7 +875,7 @@ th.sticky-emp.sticky-head {
         <p class="db-hero-sub">Corporate Registry</p>
       </div>
       <img src="assets/bgt.png" class="db-hero-center-img" alt="Banner Illustration">
-      <button class="btn-glass-pro-slim" onclick="openEditCompanyModal(this)"><i data-lucide="edit" size="14"></i><span>Update records</span></button>
+      <button class="btn-glass-pro-slim" ><i data-lucide="edit" size="14"></i><span>Update records</span></button>
     </header>
 
     <!-- Replace the existing profile-main-grid content with this -->
@@ -1635,7 +1257,7 @@ th.sticky-emp.sticky-head {
     <div class="stat-card" style="border-left:4px solid var(--primary);"><div class="stat-label"> Compliance rate</div><div class="stat-value">72.4%</div></div>
     <div class="stat-card" style="border-left:4px solid var(--danger);"><div class="stat-label">Missing  Files</div><div class="stat-value">48</div></div> 
     <div class="stat-card" style="border-left:4px solid var(--success);"><div class="stat-label">Non-Compliant Staff</div><div class="stat-value">12</div></div>
-    <div class="stat-card" style="border-left:4px solid var(--success);"><div class="stat-label">Verified This month</div><div class="stat-value">156</div></div>
+    <div class="stat-card" style="border-left:4px solid var(--success);"><div class="stat-label">Compliant Staff</div><div class="stat-value">156</div></div>
   </div>
   <div class="card">
     <div class="filter-bar">
@@ -2220,52 +1842,7 @@ th.sticky-emp.sticky-head {
   </div>
 </div>
 
-<div class="modal-overlay" id="modal-edit-company" onclick="closeEditCompanyModal(event)">
-  <div class="modal-box" style="max-width:850px;">
-    <div class="modal-header">
-      <div><div style="font-size:1.1rem;font-weight:800;">Update Company Information</div></div>
-      <button class="icon-btn" onclick="closeEditCompanyModal()"><i data-lucide="x" size="15"></i></button>
-    </div>
-    <div class="modal-body">
-      <div class="form-grid fg-3">
-        <!-- GROUP 1 -->
-        <div style="grid-column:span 3;"><div class="section-label" style="margin:0; color:var(--primary);">Legal & Incorporation</div></div>
-        <div class="form-group"><label>CEO</label><input type="text" id="edit-ceo"></div>
-        <div class="form-group"><label>Legal Name</label><input type="text" id="edit-legal-name"></div>
-        <div class="form-group"><label>Trading Name</label><input type="text" id="edit-trading-name"></div>
-        <div class="form-group"><label>Entity Type</label><input type="text" id="edit-entity-type"></div>
-        <div class="form-group"><label>Incorporate Date</label><input type="text" id="edit-inc-date"></div>
-        <div class="form-group"><label>Registration No.</label><input type="text" id="edit-reg-no"></div>
-        <div class="form-group"><label>Tax ID (TIN)</label><input type="text" id="edit-tin"></div>
-        <div class="form-group"><label>VAT Reg Number</label><input type="text" id="edit-vat"></div>
-        <div class="form-group"><label>Trade License No.</label><input type="text" id="edit-license"></div>
-
-        <!-- GROUP 2 -->
-        <div style="grid-column:span 3;"><div class="section-label" style="color:var(--primary);">Operational Policies</div></div>
-        <div class="form-group"><label>Standard Work Week</label><input type="text" id="edit-workweek"></div>
-        <div class="form-group"><label>Probation Period</label><input type="text" id="edit-probation"></div>
-        <div class="form-group"><label>Retirement Policy</label><input type="text" id="edit-retirement"></div>
-
-        <!-- GROUP 3 -->
-        <div style="grid-column:span 3;"><div class="section-label" style="color:var(--primary);">System & Treasury</div></div>
-        <div class="form-group"><label>Main Bank</label><input type="text" id="edit-bank"></div>
-        <div class="form-group"><label>Account (Primary)</label><input type="text" id="edit-acc-no"></div>
-        <div class="form-group"><label>Base Currency</label><input type="text" id="edit-currency"></div>
-        <div class="form-group"><label>Fiscal Start</label><input type="text" id="edit-fiscal"></div>
-
-        <!-- GROUP 4 -->
-        <div style="grid-column:span 3;"><div class="section-label" style="color:var(--primary);">Digital Identity</div></div>
-        <div class="form-group"><label>Official Website</label><input type="text" id="edit-website"></div>
-        <div class="form-group"><label>Helpdesk Email</label><input type="email" id="edit-email"></div>
-        <div class="form-group"><label>Corporate Phone</label><input type="text" id="edit-phone"></div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeEditCompanyModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="saveCompanyProfile()"><i data-lucide="save" size="14"></i>Save Changes</button>
-    </div>
-  </div>
-</div>
+ 
 
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -2535,9 +2112,6 @@ function saveNewAsset(){const name=document.getElementById('as-new-name').value;
 function openReassignModal(assetName,currentCustodian){document.getElementById('reassign-display-name').textContent=assetName;document.getElementById('reassign-display-curr').textContent=currentCustodian;document.getElementById('as-input-reassign').value='';openModal('modal-reassign-asset');}
 function closeReassignModal(e){closeModal('modal-reassign-asset',e);}
 function saveReassignment(){const o=document.getElementById('as-input-reassign').value,a=document.getElementById('reassign-display-name').textContent;if(!o){alert('Please select a new custodian.');return;}alert(`Reassignment Successful: ${a} has been transferred to ${o}.`);closeReassignModal();}
-function openEditCompanyModal(){openModal('modal-edit-company');}
-function closeEditCompanyModal(e){closeModal('modal-edit-company',e);}
-function saveCompanyProfile(){const btn=document.querySelector('#modal-edit-company .btn-primary');const orig=btn.innerHTML;btn.innerHTML=`<i data-lucide="loader-2" class="spin" size="14"></i> Saving...`;lcIcons(btn.parentElement);setTimeout(()=>{alert('Success: Company master data has been updated.');btn.innerHTML=orig;lcIcons(btn.parentElement);closeEditCompanyModal();},800);}
 function openJobModal(){openModal('modal-add-job-position');}
 function closeJobModal(e){closeModal('modal-add-job-position',e);}
 function saveJobPosition(){const title=document.getElementById('job-title').value.trim();if(!title){alert('Job Title is required.');return;}const btn=document.querySelector('#modal-add-job-position .btn-primary');btn.innerHTML=`<i data-lucide="loader-2" class="spin" size="13"></i> Saving...`;lcIcons(btn.parentElement);setTimeout(()=>{alert(`Success: ${title} created.`);document.getElementById('job-title').value='';document.getElementById('as-input-job-dept').value='';closeJobModal();btn.innerHTML=`<i data-lucide="check" size="13"></i>Create Position`;lcIcons(btn.parentElement);},600);}
@@ -2841,7 +2415,7 @@ function initPage(id){
     case 'departments':buildTable('tbl-departments',{columns:[{key:'name',label:'Department Name'},{key:'head',label:'Head of Department'},{key:'emp',label:'Employees'},{key:'status',label:'Status'},ac],rows:gen(32,i=>({code:`D${String(i+1).padStart(3,'0')}`,name:depts[i%depts.length]+' '+(i>=10?String.fromCharCode(65+Math.floor(i/10)):''),head:names[i%names.length],emp:randInt(20,150),status:statusBadge.active}))});break;
     case 'job-positions':buildTable('tbl-job-positions',{columns:[{key:'title',label:'Job Title'},{key:'dept',label:'Department'},{key:'count',label:'Headcount'},ac],rows:gen(28,i=>({  title:['Software Engineer','Sales Manager','HR Business Partner','Finance Analyst','Product Manager','UX Designer','DevOps Engineer','Data Scientist','Legal Counsel','Support Lead'][i%10],dept:rand(depts),grade:['L1','L2','L3','L4','M1','M2','S1','S2'][i%8],min:fmtMoney(randInt(40,80)*1000),max:fmtMoney(randInt(80,150)*1000),count:randInt(2,40)}))});break;
     case 'branch-offices':buildTable('tbl-branch-offices',{columns:[ {key:'name',label:'Branch Name'},{key:'manager',label:'Branch Manager'},{key:'phone',label:'Phone'},{key:'email',label:'Email'},{key:'location',label:'Location'},{key:'emp',label:'Staff'},{key:'status',label:'Status'},ac],rows:gen(12,i=>({ name:['HQ','North','South','East','West','APAC','EMEA','LATAM','Canada','Australia','UK','Singapore'][i]+' Office',location:['New York','Chicago','Atlanta','Boston','San Jose','Singapore','London','São Paulo','Toronto','Sydney','Manchester','Tokyo'][i],manager:names[i%names.length],emp:randInt(30,320),status:statusBadge.active}))});break;
-    case 'employee-directory':buildTable('tbl-employees',{columns:[{key:'id',label:'Emp ID'},{key:'fname',label:'First Name'},{key:'mname',label:'Middle Name'},{key:'lname',label:'Last Name'},{key:'uname',label:'Username'},{key:'gender',label:'Gender'},{key:'dob',label:'Date of Birth'},{key:'hire',label:'Hired Date'},{key:'status',label:'Status'},{key:'marital',label:'Marital Status'},{key:'phone',label:'Phone'},{key:'email',label:'Email'},{key:'dept',label:'Department'},{key:'position',label:'Job Position'},{key:'branch',label:'Branch name'},{key:'type',label:'Emp Type'} , {key:'bank',label:'Bank Account'} , {key:'tin',label:'Tin number'},{key:'created',label:'Created At'},ac],rows:gen(60,i=>{const isActive=i%8!==0,fn=names[i%names.length].split(' ')[0],ln=names[i%names.length].split(' ')[1];return{id:`E${String(i+1).padStart(4,'0')}`,fname:fn,mname:['A.','M.','D.','S.','K.'][i%5],lname:ln,uname:(fn[0]+ln).toLowerCase()+randInt(10,99),gender:i%2===0?'Male':'Female',dob:`19${randInt(70,99)}-${String(randInt(1,12)).padStart(2,'0')}-${String(randInt(1,28)).padStart(2,'0')}`,hire:`202${randInt(0,5)}-${String(randInt(1,12)).padStart(2,'0')}-${String(randInt(1,28)).padStart(2,'0')}`,status:isActive?statusBadge.active:statusBadge.inactive,marital:['Single','Married','Divorced','Widowed'][i%4],phone:`+1 555-${randInt(100,999)}-${randInt(1000,9999)}`,email:`${fn.toLowerCase()}.${ln.toLowerCase()}@hrm.com`,dept:rand(depts),position:['Software Engineer','Project Manager','HR Specialist','Accountant','Sales Lead'][i%5],type:i%4===0?'Contract':'Full-Time', bank:`BE${randInt(10,99)} 0000 ${randInt(1000,9999)} ${randInt(10,99)}`,created:'2025-01-10 08:30'};})});break;
+    case 'employee-directory':buildTable('tbl-employees',{columns:[{key:'id',label:'Emp ID'},{key:'fname',label:'First Name'},{key:'mname',label:'Middle Name'},{key:'lname',label:'Last Name'},{key:'uname',label:'Username'},{key:'gender',label:'Gender'},{key:'dob',label:'Date of Birth'},{key:'hire',label:'Hired Date'},{key:'status',label:'Status'},{key:'marital',label:'Marital Status'},{key:'phone',label:'Phone'},{key:'email',label:'Email'},{key:'dept',label:'Department'},{key:'position',label:'Job Position'},{key:'branch',label:'Branch name'},{key:'type',label:'Emp Type'} , {key:'bankname',label:'Bank name'}, {key:'bankacc',label:'Bank Account'} , {key:'tin',label:'Tin number'},{key:'created',label:'Created At'},ac],rows:gen(60,i=>{const isActive=i%8!==0,fn=names[i%names.length].split(' ')[0],ln=names[i%names.length].split(' ')[1];return{id:`E${String(i+1).padStart(4,'0')}`,fname:fn,mname:['A.','M.','D.','S.','K.'][i%5],lname:ln,uname:(fn[0]+ln).toLowerCase()+randInt(10,99),gender:i%2===0?'Male':'Female',dob:`19${randInt(70,99)}-${String(randInt(1,12)).padStart(2,'0')}-${String(randInt(1,28)).padStart(2,'0')}`,hire:`202${randInt(0,5)}-${String(randInt(1,12)).padStart(2,'0')}-${String(randInt(1,28)).padStart(2,'0')}`,status:isActive?statusBadge.active:statusBadge.inactive,marital:['Single','Married','Divorced','Widowed'][i%4],phone:`+1 555-${randInt(100,999)}-${randInt(1000,9999)}`,email:`${fn.toLowerCase()}.${ln.toLowerCase()}@hrm.com`,dept:rand(depts),position:['Software Engineer','Project Manager','HR Specialist','Accountant','Sales Lead'][i%5],type:i%4===0?'Contract':'Full-Time', bankacc:`BE${randInt(10,99)} 0000 ${randInt(1000,9999)} ${randInt(10,99)}`,created:'2025-01-10 08:30'};})});break;
     case 'employment-types':buildTable('tbl-employment-types',{columns:[ {key:'name',label:'Type Name'},{key:'desc',label:'Description'},{key:'count',label:'Employees'},ac],rows:[{ name:'Permanent / Full-Time',desc:'Regular employee with full benefits',benefits:'Yes',count:912},{ name:'Fixed-Term Contract',desc:'Time-bound employment agreement',benefits:'Partial',count:248},{  name:'Part-Time',desc:'Less than 40 hours per week',benefits:'Partial',count:55},{ name:'Internship',desc:'Student or graduate trainee',benefits:'No',count:33},{ name:'Temporary / Casual',desc:'Short-term project-based',benefits:'No',count:0}]});break;
     case 'probation-tracker':buildTable('tbl-probation',{columns:[ {key:'name',label:'Employee'},{key:'dept',label:'Department'},{key:'start',label:'Probation Start'},{key:'end',label:'Probation End'},{key:'days',label:'Days Left'},{key:'status',label:'Probation Status'},ac],rows:gen(22,i=>({ name:names[i%names.length],dept:rand(depts),start:`Jan ${randInt(5,20)}, 2026`,end:`Apr ${randInt(5,20)}, 2026`,days:randInt(0,50),status:i<8?b('warning','Ending Soon'):b('info','Active')}))});break;
     case 'contract-renewals':buildTable('tbl-contract-renewals',{columns:[ {key:'name',label:'Employee'},{key:'dept',label:'Department'} ,{key:'start',label:'Start'},{key:'expiry',label:'Expiry'},{key:'days',label:'Days to Expiry'},{key:'status',label:'Status'},ac],rows:gen(18,i=>({ name:names[i%names.length],dept:rand(depts),start:`Apr ${randInt(1,28)}, 2025`,expiry:`Apr ${randInt(1,28)}, 2026`,days:randInt(-5,90),status:i<3?b('danger','Critical'):i<8?b('warning','Due Soon'):b('success','Active')}))});break;
@@ -2895,7 +2469,7 @@ function initPage(id){
     case 'daily-attendance':buildTable('tbl-attendance',{columns:[ {key:'name',label:'Employee'},{key:'dept',label:'Dept'},{key:'shift',label:'Shift'},{key:'in',label:'Check In'},{key:'out',label:'Check Out'},{key:'hours',label:'Hours'},{key:'ot',label:'OT'},{key:'status',label:'Status'},ac],rows:gen(50,i=>({ name:names[i%names.length],dept:rand(depts),shift:'Day',in:`0${randInt(8,9)}:${['00','15','30','45'][i%4]}`,out:`17:${['00','15','30'][i%3]}`,hours:randInt(7,9)+'.0',ot:i%5===0?'1.5':'0',status:i%8===0?b('warning','Late'):i%15===0?b('danger','Absent'):b('success','Present')}))});break;
     case 'overtime-requests':buildTable('tbl-overtime',{columns:[ {key:'emp',label:'Employee'},{key:'dept',label:'Dept'},{key:'date',label:'Date'},{key:'hours',label:'OT Hours'},{key:'reason',label:'Reason'},{key:'submitted',label:'Submitted'},{key:'status',label:'Status'},ac],rows:gen(25,i=>({ emp:names[i%names.length],dept:rand(depts),date:`Mar ${randInt(1,20)}, 2026`,hours:randInt(1,4)+'.0',reason:['Project deadline','Client request','Coverage','System migration','Month-end close'][i%5],submitted:`Mar ${randInt(1,18)}, 2026`,status:[statusBadge.pending,statusBadge.approved,statusBadge.rejected][i%3]}))});break;
     case 'attendance-reports':buildTable('tbl-attendance-reports',{columns:[{key:'dept',label:'Department'},{key:'total',label:'Total Emp'} ,{key:'absent',label:'Absent Days'},{key:'leave',label:'Leave Days'},{key:'late',label:'Late Arrivals'},{key:'ot',label:'Total OT Hrs'},{key:'rate',label:'Attendance Rate'},ac],rows:gen(10,i=>({dept:depts[i],total:randInt(40,300) ,absent:randInt(10,80),leave:randInt(20,100),late:randInt(5,30),ot:randInt(20,200),rate:randInt(90,99)+'%'}))});break;
-    case 'leave-types':buildTable('tbl-leave-types',{columns:[{key:'code',label:'Code'},{key:'name',label:'Leave Type'},{key:'days',label:'Days/Year'},{key:'carry',label:'Carryover'},{key:'paid',label:'Paid'},{key:'approval',label:'Needs Approval'},ac],rows:[{code:'AL',name:'Annual Leave',days:20,carry:'5 days',paid:'Yes',approval:'Yes'},{code:'SL',name:'Sick Leave',days:10,carry:'0 days',paid:'Yes',approval:'No (with cert)'},{code:'ML',name:'Maternity Leave',days:90,carry:'N/A',paid:'Yes',approval:'Yes'},{code:'PL',name:'Paternity Leave',days:14,carry:'N/A',paid:'Yes',approval:'Yes'},{code:'BL',name:'Bereavement Leave',days:5,carry:'N/A',paid:'Yes',approval:'Yes'},{code:'UL',name:'Unpaid Leave',days:'—',carry:'N/A',paid:'No',approval:'Yes'},{code:'SL2',name:'Study/Exam Leave',days:5,carry:'N/A',paid:'Partial',approval:'Yes'},{code:'PH',name:'Public Holiday',days:12,carry:'N/A',paid:'Yes',approval:'N/A'}]});break;
+    case 'leave-types':buildTable('tbl-leave-types',{columns:[ {key:'name',label:'Leave Type'},{key:'days',label:'Days/Year'},{key:'carry',label:'Carryover'},{key:'paid',label:'Paid'},{key:'approval',label:'Needs Approval'},ac],rows:[{ name:'Annual Leave',days:20,carry:'5 days',paid:'Yes',approval:'Yes'},{ name:'Sick Leave',days:10,carry:'0 days',paid:'Yes',approval:'No (with cert)'},{ name:'Maternity Leave',days:90,carry:'N/A',paid:'Yes',approval:'Yes'},{ name:'Paternity Leave',days:14,carry:'N/A',paid:'Yes',approval:'Yes'},{ name:'Bereavement Leave',days:5,carry:'N/A',paid:'Yes',approval:'Yes'},{ name:'Unpaid Leave',days:'—',carry:'N/A',paid:'No',approval:'Yes'},{ name:'Study/Exam Leave',days:5,carry:'N/A',paid:'Partial',approval:'Yes'},{ name:'Public Holiday',days:12,carry:'N/A',paid:'Yes',approval:'N/A'}]});break;
     case 'leave-requests':buildTable('tbl-leave-requests',{columns:[ {key:'emp',label:'Employee'},{key:'dept',label:'Department'},{key:'type',label:'Leave Type'},{key:'from',label:'From'},{key:'to',label:'To'},{key:'days',label:'Days'},{key:'reason',label:'Reason'},{key:'status',label:'Status'},ac],rows:gen(40,i=>({ emp:names[i%names.length],dept:rand(depts),type:['Annual','Sick','Maternity','Bereavement','Unpaid'][i%5],from:`Mar ${randInt(18,25)}, 2026`,to:`Mar ${randInt(26,31)}, 2026`,days:randInt(1,7),reason:['Vacation','Medical','Personal'][i%3],status:[statusBadge.approved,statusBadge.rejected][i%2]}))});break;
     case 'leave-entitlement':buildTable('tbl-leave-entitlement',{columns:[{key:'id',label:'Emp ID'},{key:'name',label:'Employee'},{key:'dept',label:'Department'},{key:'al_total',label:'AL Total'},{key:'al_used',label:'AL Used'},{key:'al_bal',label:'AL Balance'},{key:'sl_used',label:'SL Used'},{key:'sl_bal',label:'SL Balance'},{key:'carry',label:'Carried Over'},ac],rows:gen(48,i=>({id:`E${String(i+1).padStart(4,'0')}`,name:names[i%names.length],dept:rand(depts),al_total:20,al_used:randInt(0,18),al_bal:randInt(2,20),sl_used:randInt(0,8),sl_bal:randInt(2,10),carry:randInt(0,5)}))});break;
     case 'medical-claims':buildTable('tbl-medical',{columns:[{key:'id',label:'Claim ID'},{key:'emp',label:'Employee'},{key:'dept',label:'Department'},{key:'category',label:'Category'},{key:'amount',label:'Amount'},{key:'submitted',label:'Submitted'},{key:'receipt',label:'Receipt'},{key:'status',label:'Status'},ac],rows:gen(35,i=>({id:`MC-${String(i+1).padStart(3,'0')}`,emp:names[i%names.length],dept:rand(depts),category:['Doctor Visit','Specialist','Prescription','Dental','Vision','Hospital'][i%6],amount:fmtMoney(randInt(50,1500)),submitted:`Mar ${randInt(1,18)}, 2026`,receipt:'Yes',status:[statusBadge.pending,statusBadge.approved,statusBadge.rejected][i%3]}))});break;
