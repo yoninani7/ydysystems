@@ -1,371 +1,353 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Login | YDY HRM Enterprise</title>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/lucide@latest"></script>
-<style>
-:root {
-    --primary: #15b201;
-    --primary-light: #f1fcf0;
-    --primary-dark: #0f8a00;
-    --bg: #f8fafc;
-    --surface: #ffffff;
-    --border: #e2e8f0;
-    --text: #0f172a;
-    --muted: #64748b;
-    --radius: 12px;
-    --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
-}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BGT Enterprise | Secure Access</title>
+    <!-- Premium Font Stack -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #15b201;
+            --primary-dark: #0e8a00;
+            --primary-light: #f1fcf0;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --bg-body: #f8fafc;
+            --radius: 14px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
-body {
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    background-color: var(--bg);
-    color: var(--text);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-}
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+        }
 
-.login-container {
-    display: grid;
-    grid-template-columns: 1.1fr 0.9fr;
-    width: 100%;
-    max-width: 1050px;
-    min-height: 640px;
-    background: var(--surface);
-    border-radius: 24px;
-    overflow: hidden;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08);
-    margin: 20px;
-}
+        .auth-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            height: 100vh;
+            width: 100%;
+        }
 
-/* Visual Side (Left) */
-.login-visual {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-    padding: 60px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    position: relative;
-    color: white;
-    overflow: hidden;
-}
+        /* --- LEFT SIDE: BRAND --- */
+        .brand-panel {
+            background: linear-gradient(135deg, #15b201 0%, #0d8a00 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 80px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
 
-.login-visual::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    opacity: 0.1;
-    background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0);
-    background-size: 32px 32px;
-}
+        /* Subtle Bull Watermark Background */
+        .brand-panel::before {
+            content: '';
+            position: absolute;
+            bottom: -10%; 
+            right: 0;
+            width: 350px;
+            height: 350px;
+            background: white;
+            opacity: 0.1;
+            border-radius: 50%;
+            pointer-events: none;
+        }
 
-.visual-content {
-    position: relative;
-    z-index: 2;
-}
+        .brand-content { position: relative; z-index: 5; max-width: 400px; }
 
-.visual-image {
-    width: 100%;
-    max-width: 400px;
-    height: auto;
-    margin-bottom: 40px;
-    filter: drop-shadow(0 20px 30px rgba(0,0,0,0.2));
-    animation: float 6s ease-in-out infinite;
-}
+        .logo-box {
+            background: white;
+            display: inline-flex;
+            padding: 10px 18px;
+            border-radius: 12px;
+            margin-bottom: 40px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+        }
+        
+        .logo-box span {
+            color: var(--primary);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 800;
+            font-size: 24px;
+            letter-spacing: 1px;
+        }
 
-@keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-20px); }
-}
+        .brand-panel h1 {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 3.5rem;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 20px;
+            letter-spacing: -0.04em;
+        }
 
-.visual-title {
-    font-size: 2.2rem;
-    font-weight: 800;
-    line-height: 1.1;
-    margin-bottom: 16px;
-    letter-spacing: -0.03em;
-}
+        .brand-panel p {
+            font-size: 1.1rem;
+            opacity: 0.85;
+            line-height: 1.5;
+            font-weight: 400;
+        }
 
-.visual-sub {
-    font-size: 1rem;
-    opacity: 0.9;
-    line-height: 1.6;
-    max-width: 380px;
-}
+        /* --- RIGHT SIDE: FORM --- */
+        .form-panel {
+            background: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center; /* Vertically Centers */
+            align-items: center;     /* Horizontally Centers */
+            padding: 40px;
+            position: relative;
+        }
 
-/* Form Side (Right) */
-.login-form-side {
-    padding: 60px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    background: white;
-}
+        .form-card {
+            width: 100%;
+            max-width: 400px;
+            position: relative;
+        }
 
-.brand-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 48px;
-}
+        /* View Switching Logic */
+        .view {
+            display: none;
+            animation: slideIn 0.5s ease-out forwards;
+        }
+        .view.active { display: block; }
 
-.logo-circle {
-    width: 42px;
-    height: 42px;
-    background: var(--primary-light);
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 8px;
-}
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
-.logo-circle img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-}
+        .form-header { margin-bottom: 35px; }
+        .form-header h2 { 
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 2rem; 
+            font-weight: 800; 
+            letter-spacing: -0.02em;
+            margin-bottom: 8px;
+        }
+        .form-header p { color: var(--text-muted); font-size: 0.95rem; }
 
-.brand-name {
-    font-weight: 800;
-    font-size: 1.1rem;
-    color: var(--text);
-    letter-spacing: -0.02em;
-}
+        /* Modern Input Styling */
+        .input-group { margin-bottom: 24px; position: relative; }
+        
+        .input-group label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            padding-left: 2px;
+        }
 
-.form-header h1 {
-    font-size: 1.75rem;
-    font-weight: 800;
-    margin-bottom: 8px;
-    color: var(--text);
-}
+        .input-ctrl {
+            width: 100%;
+            height: 58px;
+            background: #f8fafc;
+            border: 2px solid #f1f5f9;
+            border-radius: var(--radius);
+            padding: 0 20px;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: var(--transition);
+        }
 
-.form-header p {
-    color: var(--muted);
-    font-size: 0.88rem;
-    margin-bottom: 32px;
-}
+        .input-ctrl:focus {
+            outline: none;
+            background: white;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px var(--primary-light);
+        }
 
-.form-group {
-    margin-bottom: 20px;
-}
+        .form-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 35px;
+            font-size: 0.9rem;
+        }
 
-.form-group label {
-    display: block;
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--muted);
-    margin-bottom: 8px;
-}
+        .checkbox-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-muted);
+            font-weight: 500;
+            cursor: pointer;
+        }
 
-.input-wrapper {
-    position: relative;
-}
+        .checkbox-wrap input {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary);
+        }
 
-.input-wrapper i {
-    position: absolute;
-    left: 14px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--muted);
-    transition: color 0.2s;
-}
+        /* Premium Button */
+        .btn-primary {
+            width: 100%;
+            height: 60px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            transition: var(--transition);
+            box-shadow: 0 10px 20px -5px rgba(21, 178, 1, 0.3);
+        }
 
-.form-ctrl {
-    width: 100%;
-    padding: 14px 14px 14px 44px;
-    background: #fcfdfe;
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius);
-    font-family: inherit;
-    font-size: 0.95rem;
-    font-weight: 500;
-    color: var(--text);
-    transition: all 0.2s;
-}
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px -5px rgba(21, 178, 1, 0.4);
+        }
 
-.form-ctrl:focus {
-    outline: none;
-    border-color: var(--primary);
-    background: white;
-    box-shadow: 0 0 0 4px var(--primary-light);
-}
+        .btn-link {
+            background: none;
+            border: none;
+            color: var(--primary);
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.9rem;
+        }
 
-.form-ctrl:focus + i {
-    color: var(--primary);
-}
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 0.85rem;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
 
-.form-options {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 32px;
-    font-size: 0.85rem;
-}
+        .footer-note {
+            position: absolute;
+            bottom: 40px;
+            color: #cbd5e1;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
 
-.remember-me {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-    font-weight: 600;
-}
+        /* --- RESPONSIVE --- */
+        @media (max-width: 1024px) {
+            .brand-panel { padding: 40px; }
+            .brand-panel h1 { font-size: 2.8rem; }
+        }
 
-.remember-me input {
-    accent-color: var(--primary);
-    width: 16px;
-    height: 16px;
-}
-
-.forgot-link {
-    color: var(--primary);
-    text-decoration: none;
-    font-weight: 700;
-}
-
-.forgot-link:hover {
-    text-decoration: underline;
-}
-
-.btn-login {
-    width: 100%;
-    background: var(--primary);
-    color: white;
-    border: none;
-    padding: 16px;
-    border-radius: var(--radius);
-    font-size: 1rem;
-    font-weight: 700;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    transition: all 0.2s;
-    box-shadow: 0 4px 12px rgba(21, 178, 1, 0.2);
-}
-
-.btn-login:hover {
-    background: var(--primary-dark);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 15px rgba(21, 178, 1, 0.3);
-}
-
-.btn-login:active {
-    transform: translateY(0);
-}
-
-.login-footer {
-    margin-top: 40px;
-    text-align: center;
-    font-size: 0.8rem;
-    color: var(--muted);
-}
-
-/* Mobile Responsive */
-@media (max-width: 900px) {
-    .login-container {
-        grid-template-columns: 1fr;
-        max-width: 500px;
-    }
-    .login-visual {
-        display: none;
-    }
-    .login-form-side {
-        padding: 40px;
-    }
-}
-</style>
+        @media (max-width: 850px) {
+            .auth-container { grid-template-columns: 1fr; }
+            .brand-panel { display: none; }
+        }
+    </style>
 </head>
 <body>
 
-<div class="login-container">
-    <!-- Left Side: Illustration & Branding -->
-    <div class="login-visual">
-        <div class="visual-content">
-            <img src="assets/bgt.png" alt="System Illustration" class="visual-image">
-            <h2 class="visual-title">The Next Generation of HR Management.</h2>
-            <p class="visual-sub">Centralize your workforce data, streamline compliance, and empower your personnel with YDY Enterprise Intelligence.</p>
-        </div>
-    </div>
-
-    <!-- Right Side: Form -->
-    <div class="login-form-side">
-        <div class="brand-wrapper">
-            <div class="logo-circle">
-                <img src="assets/bgt.png" alt="Logo">
+<div class="auth-container">
+    <!-- Sidebar -->
+    <aside class="brand-panel">
+        <div class="brand-content">
+            <div class="logo-box">
+                <img src="assets/bgt.png" alt="BGT Logo">
             </div>
-            <span class="brand-name">YDY Systems</span>
+            <h1>User Portal.</h1>
+            <p>Welcome back. Secure access for Bull Green Trading members.</p>
         </div>
+    </aside>
 
-        <div class="form-header">
-            <h1>Welcome Back</h1>
-            <p>Please enter your credentials to access your dashboard.</p>
-        </div>
-
-        <form onsubmit="handleLogin(event)">
-            <div class="form-group">
-                <label for="email">Work Email</label>
-                <div class="input-wrapper">
-                    <input type="email" id="email" class="form-ctrl" placeholder="name@company.com" required>
-                    <i data-lucide="mail" size="18"></i>
+    <!-- Centered Form Panel -->
+    <main class="form-panel">
+        <div class="form-card">
+            
+            <!-- VIEW: LOGIN -->
+            <div class="view active" id="login-view">
+                <div class="form-header">
+                    <h2>Personnel Login</h2>
+                    <p>Authorize your session to continue.</p>
                 </div>
-            </div>
 
-            <div class="form-group">
-                <label for="password">Password</label>
-                <div class="input-wrapper">
-                    <input type="password" id="password" class="form-ctrl" placeholder="••••••••" required>
-                    <i data-lucide="lock" size="18"></i>
+                <div class="input-group">
+                    <label>Corporate Email</label>
+                    <input type="email" class="input-ctrl" placeholder="name@bullgreentrading.com">
                 </div>
+
+                <div class="input-group">
+                    <label>Security Password</label>
+                    <input type="password" class="input-ctrl" placeholder="••••••••">
+                </div>
+
+                <div class="form-options">
+                    <label class="checkbox-wrap">
+                        <input type="checkbox" checked> Keep me active
+                    </label>
+                    <button class="btn-link" onclick="toggleView('forgot-view')">Forgot credentials?</button>
+                </div>
+
+                <button class="btn-primary">
+                    Access Workspace
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
+                </button>
             </div>
 
-            <div class="form-options">
-                <label class="remember-me">
-                    <input type="checkbox"> Remember me
-                </label>
-                <a href="#" class="forgot-link">Forgot password?</a>
+            <!-- VIEW: FORGOT PASSWORD -->
+            <div class="view" id="forgot-view">
+                <div class="back-btn" onclick="toggleView('login-view')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                    Back to login
+                </div>
+                <div class="form-header">
+                    <h2>Recover Access</h2>
+                    <p>Enter your email to receive recovery instructions.</p>
+                </div>
+
+                <div class="input-group">
+                    <label>Work Email</label>
+                    <input type="email" class="input-ctrl" placeholder="e.g. j.doe@bullgreentrading.com">
+                </div>
+
+                <button class="btn-primary">
+                    Send Recovery Link
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+                </button>
             </div>
 
-            <button type="submit" class="btn-login" id="login-btn">
-                <span>Sign In to Platform</span>
-                <i data-lucide="arrow-right" size="18"></i>
-            </button>
-        </form>
-
-        <div class="login-footer">
-            &copy; 2026 YDY HRM Enterprise Ltd. <br>
-            <span style="font-family: 'JetBrains Mono'; font-size: 10px; opacity: 0.7;">Secure Encrypted Connection</span>
         </div>
-    </div>
+
+        <footer class="footer-note">
+            Bullgreen trading plc &bull; &copy; 2026 YDY Systems
+        </footer>
+    </main>
 </div>
 
 <script>
-    // Initialize Lucide Icons
-    lucide.createIcons();
-
-    function handleLogin(e) {
-        e.preventDefault();
-        const btn = document.getElementById('login-btn');
-        
-        // Visual feedback for clicking
-        btn.innerHTML = `<span class="spinner"></span> <span>Authenticating...</span>`;
-        btn.style.opacity = "0.8";
-        btn.style.pointerEvents = "none";
-
-        // Mock redirection to the dashboard
-        setTimeout(() => {
-            window.location.href = 'index.html#dashboard';
-        }, 1200);
+    function toggleView(viewId) {
+        // Hide all views
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        // Show target view
+        document.getElementById(viewId).classList.add('active');
     }
 </script>
 
