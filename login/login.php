@@ -28,13 +28,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pdo = get_pdo();
 
         // 4. Fetch user by email OR username — single query, no early exit
-        $stmt = $pdo->prepare(
-            'SELECT user_id, username, email, password_hash, status
-               FROM system_users
-              WHERE (email = :id OR username = :id)
-              LIMIT 1'
-        );
-        $stmt->execute([':id' => $identifier]);
+        // NEW CODE (Fixed)
+$stmt = $pdo->prepare(
+    'SELECT user_id, username, email, password_hash, status
+       FROM system_users
+      WHERE (email = :email OR username = :user)
+      LIMIT 1'
+);
+$stmt->execute([
+    ':email' => $identifier,
+    ':user'  => $identifier
+]);
         $user = $stmt->fetch();
 
         // 5. Check account lockout (stored in a separate table for accuracy)
@@ -366,13 +370,7 @@ $csrf = csrf_token();
         .btn-primary.is-loading svg { display: none; }
         .btn-primary.is-loading .spinner { display: block; }
 
-        .register-link {
-            text-align: center; margin-top: 28px;
-            color: var(--text-muted); font-size: 0.9rem;
-        }
-        .register-link a { color: var(--primary); font-weight: 700; text-decoration: none; }
-        .register-link a:hover { text-decoration: underline; }
-
+        
         .footer-note {
             position: absolute; bottom: 40px;
             color: #cbd5e1; font-size: 0.7rem;
@@ -458,9 +456,7 @@ $csrf = csrf_token();
                     </button>
                 </form>
 
-                <div class="register-link">
-                    Don't have an account? <a href="register.php">Create one</a>
-                </div>
+              
             </div>
 
             <!-- FORGOT PASSWORD VIEW -->
