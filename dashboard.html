@@ -694,6 +694,7 @@ th.sticky-emp.sticky-head { z-index: 50; top: 0; left: 0; background: #f8fafc !i
 .btn-upload-pro:hover {
     background: var(--primary-dark);
 }
+
 </style>
 </head>
 <body>
@@ -1142,13 +1143,37 @@ th.sticky-emp.sticky-head { z-index: 50; top: 0; left: 0; background: #f8fafc !i
 <!-- EMPLOYEE DIRECTORY -->
 <div class="page" id="p-employee-directory">
   <div class="page-header">
-    <div><div class="page-title">Employee Profile</div><div class="page-sub">1,248 employees across all branches</div></div>
-    <div class="flex-row"><select class="sel"><option>All Departments</option><option>Engineering</option><option>Sales</option><option>HR</option><option>Finance</option></select>
-    <button class="btn btn-primary" onclick="goPage('add-employee', this)"><i data-lucide="user-plus" size="13"></i>Add Employee</button></div>
+    <div>
+      <div class="page-title">Employee Profile</div>
+      <div class="page-sub">1,248 employees across all branches</div>
+    </div>
+    
+    <!-- Corrected Positioning Container -->
+    <div class="flex-row" style="gap: 12px;">
+      
+      <!-- Department Filter -->
+      <div class="as-combo-container" style="width: 220px;">
+        <input type="text" id="filter-dept-val" class="sel" style="width: 100%;" 
+               placeholder="Filter by Department" 
+               onfocus="showAsDrop('as-drop-dept-filter')" readonly>
+        
+        <div class="as-combo-results" id="as-drop-dept-filter"> 
+          <div class="as-res-item" onclick="selectAsItem('filter-dept-val','as-drop-dept-filter','Engineering')">Engineering</div>
+          <div class="as-res-item" onclick="selectAsItem('filter-dept-val','as-drop-dept-filter','Sales')">Sales</div>
+          <div class="as-res-item" onclick="selectAsItem('filter-dept-val','as-drop-dept-filter','HR')">HR</div>
+          <div class="as-res-item" onclick="selectAsItem('filter-dept-val','as-drop-dept-filter','Finance')">Finance</div>
+        </div> 
+      </div>
+
+      <!-- Action Button -->
+      <button class="btn btn-primary" onclick="goPage('add-employee', this)">
+        <i data-lucide="user-plus" size="13"></i> Add Employee
+      </button>
+    </div>
   </div>
+   
   <div id="tbl-employees"></div>
 </div>
-
 <!-- ADD NEW EMPLOYEE -->
 <div class="page" id="p-add-employee">
   <div class="page-header" style="margin-bottom:24px;">
@@ -1222,11 +1247,27 @@ th.sticky-emp.sticky-head { z-index: 50; top: 0; left: 0; background: #f8fafc !i
             <div class="identity-divider"></div>
             <div class="demo-grid-row">
               <div class="form-group"><label>Date of Birth *</label><input type="date" class="form-ctrl master-req" id="o-dob"></div>
-              <div class="form-group"><label>Gender *</label><select class="form-ctrl master-req" id="o-gender"><option value="">Select...</option><option>Male</option><option>Female</option></select></div>
+              <div class="form-group"><label>Gender *</label><div class="as-combo-container">
+  <input type="text" id="o-gender" class="form-ctrl master-req" placeholder="Select Gender..." 
+         onfocus="showAsDrop('as-drop-gender')" readonly>
+  <div class="as-combo-results" id="as-drop-gender">
+    <div class="as-res-item" onclick="selectAsItem('o-gender','as-drop-gender','Male')">Male</div>
+    <div class="as-res-item" onclick="selectAsItem('o-gender','as-drop-gender','Female')">Female</div>
+  </div>
+</div></div>
               <div class="form-group"><label>Nationality *</label><input type="text" class="form-ctrl master-req" id="o-nat" value="Ethiopian" disabled></div>
             </div>
             <div class="demo-grid-row">
-              <div class="form-group"><label>Marital Status</label><select class="form-ctrl" id="o-marital"><option>Single</option><option>Married</option><option>Divorced</option><option>Widowed</option></select></div>
+              <div class="form-group"><label>Marital Status</label><div class="as-combo-container">
+  <input type="text" id="o-marital" class="form-ctrl" placeholder="Select Marital Status..." 
+         onfocus="showAsDrop('as-drop-marital')" readonly>
+  <div class="as-combo-results" id="as-drop-marital">
+    <div class="as-res-item" onclick="selectAsItem('o-marital','as-drop-marital','Single')">Single</div>
+    <div class="as-res-item" onclick="selectAsItem('o-marital','as-drop-marital','Married')">Married</div>
+    <div class="as-res-item" onclick="selectAsItem('o-marital','as-drop-marital','Divorced')">Divorced</div>
+    <div class="as-res-item" onclick="selectAsItem('o-marital','as-drop-marital','Widowed')">Widowed</div>
+  </div>
+</div></div>
               <div class="form-group" style="grid-column:span 2;"><label>Place of Birth (Region)</label><input type="text" class="form-ctrl" id="o-pob" placeholder="Enter region"></div>
             </div>
           </div>
@@ -1253,34 +1294,43 @@ th.sticky-emp.sticky-head { z-index: 50; top: 0; left: 0; background: #f8fafc !i
   <div class="form-grid fg-3">
     <div class="form-group">
       <label>Department *</label>
-      <select class="form-ctrl master-req" id="o-dept">
-        <option value="">Select...</option>
-        <option>Engineering</option>
-        <option>Finance</option>
-        <option>HR</option>
-        <option>Sales</option>
-        <option>Marketing</option>
-      </select>
+   <div class="as-combo-container">
+  <input type="text" id="o-dept" class="form-ctrl master-req" placeholder="Select Department..." 
+         onfocus="showAsDrop('as-drop-dept')" readonly>
+  <div class="as-combo-results" id="as-drop-dept">
+    <div class="as-res-item" onclick="selectAsItem('o-dept','as-drop-dept','Engineering')">Engineering</div>
+    <div class="as-res-item" onclick="selectAsItem('o-dept','as-drop-dept','Finance')">Finance</div>
+    <div class="as-res-item" onclick="selectAsItem('o-dept','as-drop-dept','HR')">HR</div>
+    <div class="as-res-item" onclick="selectAsItem('o-dept','as-drop-dept','Sales')">Sales</div>
+    <div class="as-res-item" onclick="selectAsItem('o-dept','as-drop-dept','Marketing')">Marketing</div>
+  </div>
+</div>
     </div>
     <div class="form-group">
       <label>Job Position *</label>
-      <select class="form-ctrl master-req" id="o-pos">
-        <option value="">Select...</option>
-        <option>Senior Dev</option>
-        <option>Analyst</option>
-        <option>Marketing Specialist</option>
-      </select>
+     <div class="as-combo-container">
+  <input type="text" id="o-pos" class="form-ctrl master-req" placeholder="Select Position..." 
+         onfocus="showAsDrop('as-drop-pos')" readonly>
+  <div class="as-combo-results" id="as-drop-pos">
+    <div class="as-res-item" onclick="selectAsItem('o-pos','as-drop-pos','Senior Dev')">Senior Dev</div>
+    <div class="as-res-item" onclick="selectAsItem('o-pos','as-drop-pos','Analyst')">Analyst</div>
+    <div class="as-res-item" onclick="selectAsItem('o-pos','as-drop-pos','Marketing Specialist')">Marketing Specialist</div>
+  </div>
+</div>
     </div>
     <div class="form-group">
       <label>Employment Type *</label>
-      <select class="form-ctrl master-req" id="o-etype" onchange="updateEmploymentFields(this.value)">
-        <option value="">Select...</option>
-        <option value="full-time">Permanent / Full-Time</option>
-        <option value="contract">Fixed-Term Contract</option>
-        <option value="part-time">Part-Time</option>
-        <option value="internship">Internship</option>
-        <option value="temporary">Temporary / Casual</option>
-      </select>
+      <div class="as-combo-container">
+  <input type="text" id="o-etype" class="form-ctrl master-req" placeholder="Select Employment Type..." 
+         onfocus="showAsDrop('as-drop-etype')" readonly>
+  <div class="as-combo-results" id="as-drop-etype">
+    <div class="as-res-item" onclick="selectAsItem('o-etype','as-drop-etype','Permanent / Full-Time'); updateEmploymentFields('full-time')">Permanent / Full-Time</div>
+    <div class="as-res-item" onclick="selectAsItem('o-etype','as-drop-etype','Fixed-Term Contract'); updateEmploymentFields('contract')">Fixed-Term Contract</div>
+    <div class="as-res-item" onclick="selectAsItem('o-etype','as-drop-etype','Part-Time'); updateEmploymentFields('part-time')">Part-Time</div>
+    <div class="as-res-item" onclick="selectAsItem('o-etype','as-drop-etype','Internship'); updateEmploymentFields('internship')">Internship</div>
+    <div class="as-res-item" onclick="selectAsItem('o-etype','as-drop-etype','Temporary / Casual'); updateEmploymentFields('temporary')">Temporary / Casual</div>
+  </div>
+</div>
     </div>
   </div>
 
@@ -1295,7 +1345,15 @@ th.sticky-emp.sticky-head { z-index: 50; top: 0; left: 0; background: #f8fafc !i
         <div class="form-grid fg-2">
           <div class="form-group"><label>Gross Salary (ETB) *</label><input type="number" class="form-ctrl master-req" id="o-sal"></div>
           <div class="form-group"><label>Tax ID (TIN) *</label><input type="text" class="form-ctrl master-req" id="o-tin"></div>
-          <div class="form-group"><label>Bank Name *</label><select class="form-ctrl master-req" id="o-bank"><option value="">Select Bank...</option><option>CBE</option><option>Awash</option><option>Abyssinia</option></select></div>
+          <div class="form-group"><label>Bank Name *</label><div class="as-combo-container">
+  <input type="text" id="o-bank" class="form-ctrl master-req" placeholder="Select Bank..." 
+         onfocus="showAsDrop('as-drop-bank')" readonly>
+  <div class="as-combo-results" id="as-drop-bank">
+    <div class="as-res-item" onclick="selectAsItem('o-bank','as-drop-bank','CBE')">CBE</div>
+    <div class="as-res-item" onclick="selectAsItem('o-bank','as-drop-bank','Awash')">Awash</div>
+    <div class="as-res-item" onclick="selectAsItem('o-bank','as-drop-bank','Abyssinia')">Abyssinia</div>
+  </div>
+</div></div>
           <div class="form-group"><label>Account Number *</label><input type="text" class="form-ctrl master-req" id="o-acc"></div>
         </div>
       </section>
@@ -1303,7 +1361,14 @@ th.sticky-emp.sticky-head { z-index: 50; top: 0; left: 0; background: #f8fafc !i
         <div class="input-group-label">Compliance & Legal</div>
         <p class="input-group-sub">Final verification and emergency contact data.</p>
         <div class="form-grid fg-2">
-          <div class="form-group"><label>ID Type *</label><select class="form-ctrl master-req" id="o-idtype"><option>National ID</option><option>Passport</option></select></div>
+          <div class="form-group"><label>ID Type *</label><div class="as-combo-container">
+  <input type="text" id="o-idtype" class="form-ctrl master-req" placeholder="Select ID Type..." 
+         onfocus="showAsDrop('as-drop-idtype')" readonly>
+  <div class="as-combo-results" id="as-drop-idtype">
+    <div class="as-res-item" onclick="selectAsItem('o-idtype','as-drop-idtype','National ID')">National ID</div>
+    <div class="as-res-item" onclick="selectAsItem('o-idtype','as-drop-idtype','Passport')">Passport</div>
+  </div>
+</div></div>
           <div class="form-group"><label>ID Number *</label><input type="text" class="form-ctrl master-req" id="o-idno"></div>
           <div class="form-group"><label>Emergency Contact *</label><input type="text" class="form-ctrl master-req" id="o-ename"></div>
           <div class="form-group"><label>Emergency Phone *</label><input type="tel" class="form-ctrl master-req" id="o-ephone"></div>
@@ -1469,7 +1534,16 @@ th.sticky-emp.sticky-head { z-index: 50; top: 0; left: 0; background: #f8fafc !i
 <div class="page" id="p-job-vacancies">
   <div class="page-header">
     <div><div class="page-title">Job Vacancies</div><div class="page-sub">Positions across all departments</div></div>
-    <div class="flex-row"><select class="sel"><option>All Status</option><option>Open</option><option>On Hold</option><option>Filled</option></select><button class="btn btn-primary"><i data-lucide="plus" size="13"></i>Post Vacancy</button></div>
+    <div class="flex-row"><div class="as-combo-container" style="width: 160px;">
+  <input type="text" id="filter-vac-status" class="sel" placeholder="Filter by Status" 
+         onfocus="showAsDrop('as-drop-vac-status')" readonly>
+  <div class="as-combo-results" id="as-drop-vac-status">
+    <div class="as-res-item" onclick="selectAsItem('filter-vac-status','as-drop-vac-status','All Status')">All </div>
+    <div class="as-res-item" onclick="selectAsItem('filter-vac-status','as-drop-vac-status','Open')">Open</div>
+    <div class="as-res-item" onclick="selectAsItem('filter-vac-status','as-drop-vac-status','On Hold')">On Hold</div>
+    <div class="as-res-item" onclick="selectAsItem('filter-vac-status','as-drop-vac-status','Filled')">Filled</div>
+  </div>
+</div><button class="btn btn-primary"><i data-lucide="plus" size="13"></i>Post Vacancy</button></div>
   </div>
   <div id="tbl-vacancies"></div>
 </div>
@@ -1533,32 +1607,69 @@ th.sticky-emp.sticky-head { z-index: 50; top: 0; left: 0; background: #f8fafc !i
   
   <div class="form-group" style="width: 160px; margin:0">
     <label>Target Month</label>
-    <select id="att-m-select" class="form-ctrl">
-      <option value="">Select Month...</option>
-      <option value="0">January</option><option value="1">February</option>
-      <option value="2">March</option><option value="3">April</option>
-      <option value="4">May</option><option value="5">June</option>
-      <option value="6">July</option><option value="7">August</option>
-      <option value="8">September</option><option value="9">October</option>
-      <option value="10">November</option><option value="11">December</option>
-    </select>
+    <div class="as-combo-container" style="width: 160px;">
+  <!-- Visual Input -->
+  <input type="text" id="att-m-display" class="form-ctrl" placeholder="Select Month..." 
+         onfocus="showAsDrop('as-drop-month')" readonly>
+  
+  <!-- Hidden Input to store the 0-11 value for your JS buildMatrix function -->
+  <input type="hidden" id="att-m-select" value="">
+
+  <div class="as-combo-results" id="as-drop-month">
+    <div class="as-res-item" onclick="selectMonth('January', '0')">January</div>
+    <div class="as-res-item" onclick="selectMonth('February', '1')">February</div>
+    <div class="as-res-item" onclick="selectMonth('March', '2')">March</div>
+    <div class="as-res-item" onclick="selectMonth('April', '3')">April</div>
+    <div class="as-res-item" onclick="selectMonth('May', '4')">May</div>
+    <div class="as-res-item" onclick="selectMonth('June', '5')">June</div>
+    <div class="as-res-item" onclick="selectMonth('July', '6')">July</div>
+    <div class="as-res-item" onclick="selectMonth('August', '7')">August</div>
+    <div class="as-res-item" onclick="selectMonth('September', '8')">September</div>
+    <div class="as-res-item" onclick="selectMonth('October', '9')">October</div>
+    <div class="as-res-item" onclick="selectMonth('November', '10')">November</div>
+    <div class="as-res-item" onclick="selectMonth('December', '11')">December</div>
+  </div>
+</div>
+
   </div>
 
   <div class="form-group" style="width: 110px; margin:0">
     <label>Fiscal Year</label>
-    <select id="att-y-select" class="form-ctrl">
-      <option value="2025">2025</option>
-      <option value="2026" selected>2026</option>
-    </select>
+   <div class="as-combo-container" style="width: 110px;">
+  <!-- Visual Input (Shows 2026 by default as per your 'selected' attribute) -->
+  <input type="text" id="att-y-display" class="form-ctrl" placeholder="Year" value="2026"
+         onfocus="showAsDrop('as-drop-year')" readonly>
+  
+  <!-- Hidden Input to store the actual value for your JS functions -->
+  <input type="hidden" id="att-y-select" value="2026">
+
+  <div class="as-combo-results" id="as-drop-year">
+    <div class="as-res-item" onclick="selectYear('2025')">2025</div>
+    <div class="as-res-item" onclick="selectYear('2026')">2026</div>
+  </div>
+</div>
   </div>
   
   <div class="form-group" style="width: 180px; margin:0">
     <label>Department</label>
-    <select id="att-dept-select" class="form-ctrl">
-      <option value="All">All Departments</option>
-      <option>Engineering</option><option>Sales</option><option>HR</option>
-      <option>Finance</option><option>Marketing</option><option>Operations</option>
-    </select>
+   <div class="as-combo-container" style="width: 180px;">
+  <!-- Visual Input -->
+  <input type="text" id="att-dept-display" class="form-ctrl" placeholder="Department" value="All Departments"
+         onfocus="showAsDrop('as-drop-att-dept')" readonly>
+  
+  <!-- Hidden Input to maintain your existing JS logic (ID: att-dept-select) -->
+  <input type="hidden" id="att-dept-select" value="All">
+
+  <div class="as-combo-results" id="as-drop-att-dept">
+    <div class="as-res-item" onclick="selectAttDept('All Departments', 'All')">All Departments</div>
+    <div class="as-res-item" onclick="selectAttDept('Engineering', 'Engineering')">Engineering</div>
+    <div class="as-res-item" onclick="selectAttDept('Sales', 'Sales')">Sales</div>
+    <div class="as-res-item" onclick="selectAttDept('HR', 'HR')">HR</div>
+    <div class="as-res-item" onclick="selectAttDept('Finance', 'Finance')">Finance</div>
+    <div class="as-res-item" onclick="selectAttDept('Marketing', 'Marketing')">Marketing</div>
+    <div class="as-res-item" onclick="selectAttDept('Operations', 'Operations')">Operations</div>
+  </div>
+</div>
   </div>
 
   <!-- THE DROPDOWN -->
@@ -1646,7 +1757,19 @@ th.sticky-emp.sticky-head { z-index: 50; top: 0; left: 0; background: #f8fafc !i
 <div class="page" id="p-leave-requests">
   <div class="page-header">
     <div><div class="page-title">Leave Requests</div><div class="page-sub">Pending and approved leave applications</div></div>
-    <div class="flex-row"><select class="sel"><option>All Status</option><option>Pending</option><option>Approved</option><option>Rejected</option></select><button class="btn btn-primary"><i data-lucide="plus" size="13"></i>New Request</button></div>
+    <div class="flex-row"><div class="as-combo-container" style="width: 160px;">
+  <!-- Visual Input representing the filter selection -->
+  <input type="text" id="filter-status-val" class="sel" placeholder="All Status" 
+         onfocus="showAsDrop('as-drop-status-filter')" readonly>
+  
+  <!-- Custom Dropdown Results -->
+  <div class="as-combo-results" id="as-drop-status-filter">
+    <div class="as-res-item" onclick="selectAsItem('filter-status-val','as-drop-status-filter','All')">All</div>
+    <div class="as-res-item" onclick="selectAsItem('filter-status-val','as-drop-status-filter','Pending')">Pending</div>
+    <div class="as-res-item" onclick="selectAsItem('filter-status-val','as-drop-status-filter','Approved')">Approved</div>
+    <div class="as-res-item" onclick="selectAsItem('filter-status-val','as-drop-status-filter','Rejected')">Rejected</div>
+  </div>
+</div><button class="btn btn-primary"><i data-lucide="plus" size="13"></i>New Request</button></div>
   </div>
   <div id="tbl-leave-requests"></div>
 </div>
@@ -1749,7 +1872,20 @@ th.sticky-emp.sticky-head { z-index: 50; top: 0; left: 0; background: #f8fafc !i
   <div class="card"><div class="card-body">
     <div class="form-grid fg-3">
       <div class="form-group"><label>Report Name</label><input placeholder="e.g. Q1 Headcount by Grade"></div>
-      <div class="form-group"><label>Module</label><select><option>Employees</option><option>Payroll</option><option>Attendance</option><option>Leave</option><option>Performance</option></select></div>
+      <div class="form-group"><label>Module</label><div class="as-combo-container">
+  <!-- Visual Input representing the Module selection -->
+  <input type="text" id="report-module-val" class="form-ctrl" placeholder="Select Module..." 
+         onfocus="showAsDrop('as-drop-report-module')" readonly>
+  
+  <!-- Custom Dropdown Results -->
+  <div class="as-combo-results" id="as-drop-report-module">
+    <div class="as-res-item" onclick="selectAsItem('report-module-val','as-drop-report-module','Employees')">Employees</div>
+    <div class="as-res-item" onclick="selectAsItem('report-module-val','as-drop-report-module','Payroll')">Payroll</div>
+    <div class="as-res-item" onclick="selectAsItem('report-module-val','as-drop-report-module','Attendance')">Attendance</div>
+    <div class="as-res-item" onclick="selectAsItem('report-module-val','as-drop-report-module','Leave')">Leave</div>
+    <div class="as-res-item" onclick="selectAsItem('report-module-val','as-drop-report-module','Performance')">Performance</div>
+  </div>
+</div></div>
       <div class="form-group"><label>Date Range</label><input type="date"></div>
     </div>
     <div style="margin-top:16px;"><button class="btn btn-primary"><i data-lucide="play" size="13"></i>Generate Preview</button></div>
@@ -1858,7 +1994,20 @@ th.sticky-emp.sticky-head { z-index: 50; top: 0; left: 0; background: #f8fafc !i
 <div class="page" id="p-audit-logs">
   <div class="page-header">
     <div><div class="page-title">Audit Logs</div><div class="page-sub">Complete system activity trail</div></div>
-    <div class="flex-row"><select class="sel"><option>All Actions</option><option>Create</option><option>Update</option><option>Delete</option><option>Login</option></select></div>
+    <div class="flex-row"><div class="as-combo-container" style="width: 160px;">
+  <!-- Visual Input representing the Action filter -->
+  <input type="text" id="filter-audit-action" class="sel" placeholder="All Actions" 
+         onfocus="showAsDrop('as-drop-audit-action')" readonly>
+  
+  <!-- Custom Dropdown Results -->
+  <div class="as-combo-results" id="as-drop-audit-action">
+    <div class="as-res-item" onclick="selectAsItem('filter-audit-action','as-drop-audit-action','All Actions')">All Actions</div>
+    <div class="as-res-item" onclick="selectAsItem('filter-audit-action','as-drop-audit-action','Create')">Create</div>
+    <div class="as-res-item" onclick="selectAsItem('filter-audit-action','as-drop-audit-action','Update')">Update</div>
+    <div class="as-res-item" onclick="selectAsItem('filter-audit-action','as-drop-audit-action','Delete')">Delete</div>
+    <div class="as-res-item" onclick="selectAsItem('filter-audit-action','as-drop-audit-action','Login')">Login</div>
+  </div>
+</div></div>
   </div>
   <div id="tbl-audit"></div>
 </div>
@@ -1885,9 +2034,25 @@ th.sticky-emp.sticky-head { z-index: 50; top: 0; left: 0; background: #f8fafc !i
         </div>
         <div class="form-group">
           <label>Location</label>
-          <select id="dept-location"><option value="">Select...</option><option>Addis Ababa</option><option>Mekelle</option><option>Adama</option><option>Remote</option></select>
+          <div class="as-combo-container">
+  <input type="text" id="dept-location" class="form-ctrl" placeholder="Select Location..." 
+         onfocus="showAsDrop('as-drop-dept-loc')" readonly>
+  <div class="as-combo-results" id="as-drop-dept-loc">
+    <div class="as-res-item" onclick="selectAsItem('dept-location','as-drop-dept-loc','Addis Ababa')">Addis Ababa</div>
+    <div class="as-res-item" onclick="selectAsItem('dept-location','as-drop-dept-loc','Mekelle')">Mekelle</div>
+    <div class="as-res-item" onclick="selectAsItem('dept-location','as-drop-dept-loc','Adama')">Adama</div>
+    <div class="as-res-item" onclick="selectAsItem('dept-location','as-drop-dept-loc','Remote')">Remote</div>
+  </div>
+</div>
         </div>
-        <div class="form-group" style="grid-column:span 2;"><label>Status</label><select id="dept-status"><option>Active</option><option>Inactive</option></select></div>
+        <div class="form-group" style="grid-column:span 2;"><label>Status</label><div class="as-combo-container">
+  <input type="text" id="dept-status" class="form-ctrl" placeholder="Select Status..." 
+         onfocus="showAsDrop('as-drop-dept-status')" readonly>
+  <div class="as-combo-results" id="as-drop-dept-status">
+    <div class="as-res-item" onclick="selectAsItem('dept-status','as-drop-dept-status','Active')">Active</div>
+    <div class="as-res-item" onclick="selectAsItem('dept-status','as-drop-dept-status','Inactive')">Inactive</div>
+  </div>
+</div></div>
       </div>
     </div>
     <div class="modal-footer">
@@ -1939,7 +2104,14 @@ th.sticky-emp.sticky-head { z-index: 50; top: 0; left: 0; background: #f8fafc !i
             <div class="as-combo-results" id="as-drop-branch-mgr"></div>
           </div>
         </div>
-        <div class="form-group" style="grid-column:span 2;"><label>Status</label><select id="branch-status"><option>Active</option><option>Inactive</option></select></div>
+        <div class="form-group" style="grid-column:span 2;"><label>Status</label><div class="as-combo-container">
+  <input type="text" id="branch-status" class="form-ctrl" placeholder="Select Status..." 
+         onfocus="showAsDrop('as-drop-branch-status')" readonly>
+  <div class="as-combo-results" id="as-drop-branch-status">
+    <div class="as-res-item" onclick="selectAsItem('branch-status','as-drop-branch-status','Active')">Active</div>
+    <div class="as-res-item" onclick="selectAsItem('branch-status','as-drop-branch-status','Inactive')">Inactive</div>
+  </div>
+</div></div>
       </div>
     </div>
     <div class="modal-footer">
@@ -2304,6 +2476,21 @@ function saveBranch(){const name=document.getElementById('branch-name').value.tr
 function showAsDrop(id){const d=document.getElementById(id);if(!d.innerHTML.trim())populateAsDrop(id);d.classList.add('active');}
 function filterAsDrop(inputId,dropId){const val=document.getElementById(inputId).value.toLowerCase(),d=document.getElementById(dropId);if(!d.innerHTML.trim())populateAsDrop(dropId);d.querySelectorAll('.as-res-item').forEach(item=>{item.style.display=item.textContent.toLowerCase().includes(val)?'block':'none';});d.classList.add('active');}
 function selectAsItem(inputId,dropId,name){document.getElementById(inputId).value=name;document.getElementById(dropId).classList.remove('active');}
+function selectMonth(name, val) {
+  document.getElementById('att-m-display').value = name;
+  document.getElementById('att-m-select').value = val;
+  document.getElementById('as-drop-month').classList.remove('active');
+}
+function selectYear(val) {
+  document.getElementById('att-y-display').value = val;
+  document.getElementById('att-y-select').value = val;
+  document.getElementById('as-drop-year').classList.remove('active');
+}
+function selectAttDept(name, val) {
+  document.getElementById('att-dept-display').value = name;
+  document.getElementById('att-dept-select').value = val;
+  document.getElementById('as-drop-att-dept').classList.remove('active');
+}
 window.addEventListener('mousedown',e=>{if(!e.target.closest('.as-combo-container'))document.querySelectorAll('.as-combo-results').forEach(d=>d.classList.remove('active'));},{passive:true});
 
 // ── ONBOARDING WIZARD ──
@@ -3169,15 +3356,20 @@ function updateEmploymentFields(type) {
   let html = '';
 
   // Standard Probation options based on your company profile (90 days standard)
-  const probationHtml = `
-    <div class="form-group">
-      <label>Probation Period *</label>
-      <select class="form-ctrl master-req" id="o-probation">
-        <option value="90">90 Days (Standard)</option>
-        <option value="60">60 Days</option>
-        <option value="45">45 Days</option>
-        <option value="0">No Probation</option>
-      </select>
+  const probationHtml = ` 
+      <div class="form-group">
+  <label>Probation Period *</label>
+  <div class="as-combo-container">
+    <input type="text" id="o-probation" class="form-ctrl master-req" 
+           placeholder="Select Period..." value="90 Days (Standard)"
+           onfocus="showAsDrop('as-drop-probation')" readonly>
+    <div class="as-combo-results" id="as-drop-probation">
+      <div class="as-res-item" onclick="selectAsItem('o-probation','as-drop-probation','90 Days (Standard)')">90 Days (Standard)</div>
+      <div class="as-res-item" onclick="selectAsItem('o-probation','as-drop-probation','60 Days')">60 Days</div>
+      <div class="as-res-item" onclick="selectAsItem('o-probation','as-drop-probation','45 Days')">45 Days</div>
+      <div class="as-res-item" onclick="selectAsItem('o-probation','as-drop-probation','No Probation')">No Probation</div>
+    </div>
+  </div> 
     </div>
   `;
 
