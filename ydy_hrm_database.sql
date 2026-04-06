@@ -178,8 +178,7 @@ CREATE TABLE employees (
     bank_account_number     VARCHAR(60),
 
     -- ── Section E: Compliance & Legal (Onboarding Step 5) ──
-    id_type                 VARCHAR(60), 
-    id_expiry_date          DATE,
+    id_type                 VARCHAR(60),  
     emergency_contact_name  VARCHAR(150),
     emergency_contact_phone VARCHAR(25),
     emergency_contact_relation VARCHAR(50),
