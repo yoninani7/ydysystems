@@ -1,6 +1,6 @@
 <?php 
 declare(strict_types=1);
-require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/../config.php';
 
 // ── Redirect if already authenticated ────────────────────────────────────────
 if (!empty($_SESSION['user_id'])) {
@@ -397,10 +397,10 @@ $csrf = csrf_token();
 
 <div class="auth-container">
     <aside class="brand-panel">
-        <img src="assets/bgwhiter.png" alt="BGT Logo" style="position:absolute;top:0;right:-10px;width:100px;">
+        <img src="../assets/bgwhiter.png" alt="BGT Logo" style="position:absolute;top:0;right:-10px;width:100px;">
         <div class="brand-content">
             <div class="logo-box">
-                <img src="assets/bgt.png" alt="BGT Logo">
+                <img src="../assets/bgt.png" alt="BGT Logo">
             </div>
             <h1>Login Portal.</h1>
             <p>Welcome back. Secure access for Bull Green Trading members.</p>
@@ -408,7 +408,7 @@ $csrf = csrf_token();
     </aside>
 
     <main class="form-panel">
-        <img src="assets/bgwhitel.png" alt="BGT Logo" style="position:absolute;top:0;left:-10px;width:100px;">
+        <img src="../assets/bgwhitel.png" alt="BGT Logo" style="position:absolute;top:0;left:-10px;width:100px;">
         <div class="form-card">
 
             <!-- LOGIN VIEW -->
