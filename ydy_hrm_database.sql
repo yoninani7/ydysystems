@@ -145,13 +145,13 @@ CREATE TABLE employees (
     emp_code                VARCHAR(10)         NOT NULL,       -- E0001, E0002 …
 
     -- ── Section A: Personal Identity (Onboarding Step 1) ──
-    first_name              VARCHAR(80)         NOT NULL,
+    first_name              VARCHAR(80)          ,
     middle_name             VARCHAR(80),
-    last_name               VARCHAR(80)         NOT NULL,
-    gender                  ENUM('Male','Female','Other') NOT NULL,
-    date_of_birth           DATE                NOT NULL,
-    nationality             VARCHAR(80)         NOT NULL DEFAULT 'Ethiopian',
-    marital_status          ENUM('Single','Married','Divorced','Widowed') NOT NULL DEFAULT 'Single',
+    last_name               VARCHAR(80)          ,
+    gender                  ENUM('Male','Female','Other')  ,
+    date_of_birth           DATE                 ,
+    nationality             VARCHAR(80)         DEFAULT 'Ethiopian',
+    marital_status          ENUM('Single','Married','Divorced','Widowed')  DEFAULT 'Single',
     place_of_birth          VARCHAR(100),
     profile_photo_path      VARCHAR(255),
 
