@@ -1,6 +1,6 @@
 <?php 
 declare(strict_types=1);
-require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/../config.php';
 
 // Redirect authenticated users
 if (!empty($_SESSION['user_id'])) {
@@ -325,10 +325,10 @@ $csrf = csrf_token();
 
     <!-- Brand Panel -->
     <aside class="brand-panel">
-        <img src="assets/bgwhiter.png" alt="BGT Logo" style="position:absolute;top:0;right:-10px;width:100px;">
+        <img src="../assets/bgwhiter.png" alt="BGT Logo" style="position:absolute;top:0;right:-10px;width:100px;">
         <div class="brand-content">
             <div class="logo-box">
-                <img src="assets/bgt.png" alt="BGT Logo">
+                <img src="../assets/bgt.png" alt="BGT Logo">
             </div>
             <h1>Join BGT.</h1>
             <p>Create your secure workspace account to access the Bull Green Trading platform.</p>
