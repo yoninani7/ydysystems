@@ -1275,7 +1275,7 @@ th.sticky-emp.sticky-head { z-index: 50; top: 0; left: 0; background: #f8fafc !i
       </section>
       <section id="ob-step-2" class="form-section-content">
         <div class="input-group-label">Contact Channels</div>
-        <p class="input-group-sub">Global reachability and residential records.</p>
+        <p class="input-group-sub">Employee reachability and residential records.</p>
         <div class="form-grid fg-2">
           <div class="form-group"><label>Personal Phone *</label><input type="tel" class="form-ctrl master-req" id="o-phone"></div>
           <div class="form-group"><label>Personal Email *</label><input type="email" class="form-ctrl master-req" id="o-email"></div>
@@ -1288,7 +1288,7 @@ th.sticky-emp.sticky-head { z-index: 50; top: 0; left: 0; background: #f8fafc !i
 <section id="ob-step-3" class="form-section-content">
   <div class="form-header-pro">
     <div class="input-group-label">Employment Placement</div>
-    <p class="input-group-sub">Mapping the position within the corporate structure based on contract type.</p>
+    <p class="input-group-sub">Mapping the position within the corporate structure based on employment type.</p>
   </div>
   
   <div class="form-grid fg-3">
@@ -1361,18 +1361,9 @@ th.sticky-emp.sticky-head { z-index: 50; top: 0; left: 0; background: #f8fafc !i
         <div class="input-group-label">Compliance & Legal</div>
         <p class="input-group-sub">Final verification and emergency contact data.</p>
         <div class="form-grid fg-2">
-          <div class="form-group"><label>ID Type *</label><div class="as-combo-container">
-  <input type="text" id="o-idtype" class="form-ctrl master-req" placeholder="Select ID Type..." 
-         onfocus="showAsDrop('as-drop-idtype')" readonly>
-  <div class="as-combo-results" id="as-drop-idtype">
-    <div class="as-res-item" onclick="selectAsItem('o-idtype','as-drop-idtype','National ID')">National ID</div>
-    <div class="as-res-item" onclick="selectAsItem('o-idtype','as-drop-idtype','Passport')">Passport</div>
-  </div>
-</div>
-</div>
-          <div class="form-group"><label>Emergency Relation to employee *</label><input type="text" class="form-ctrl master-req" id="o-idno"></div>
-          <div class="form-group"><label>Emergency Contact *</label><input type="text" class="form-ctrl master-req" id="o-ename"></div>
+          <div class="form-group"><label>Emergency Contact *</label><input type="text" class="form-ctrl master-req" id="o-ename"></div> 
           <div class="form-group"><label>Emergency Phone *</label><input type="tel" class="form-ctrl master-req" id="o-ephone"></div>
+          <div class="form-group" style="grid-column: span 2;"><label>Emergency Relation to employee *</label><input type="text" class="form-ctrl master-req" id="o-idno"></div>
         </div>
       </section>
       <section id="ob-step-6" class="form-section-content">
