@@ -17,7 +17,7 @@ CREATE TABLE company_profile (
     id                      TINYINT UNSIGNED    NOT NULL DEFAULT 1,
 
     -- ── Legal & Incorporation ─────────────────────────────
-    legal_name              VARCHAR(150)        NOT NULL,
+    legal_name              VARCHAR(150),
     trading_name            VARCHAR(100),
     ceo_name                VARCHAR(100),
     head_office_address     TEXT,
@@ -65,14 +65,14 @@ CREATE TABLE company_profile (
 -- ============================================================
 CREATE TABLE branches (
     branch_id       SMALLINT UNSIGNED   NOT NULL AUTO_INCREMENT,
-    branch_name     VARCHAR(100)        NOT NULL,  
+    branch_name     VARCHAR(100),  
     location        TEXT,
     phone           VARCHAR(30),
     email           VARCHAR(150),
     -- manager is added via FK after employees table is created
     manager_emp_id  INT UNSIGNED,
-    status          ENUM('Active','Inactive') NOT NULL DEFAULT 'Active',
-    created_at      TIMESTAMP           NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    status          ENUM('Active','Inactive')   DEFAULT 'Active',
+    created_at      TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,
 
     PRIMARY KEY (branch_id),
     INDEX idx_branch_status  (status),          -- Filter active/inactive branches fast
@@ -86,9 +86,8 @@ CREATE TABLE branches (
 CREATE TABLE departments (
     dept_id         SMALLINT UNSIGNED   NOT NULL AUTO_INCREMENT,
     dept_name       VARCHAR(100)        NOT NULL,
-    head_emp_id     INT UNSIGNED,                               -- Global HOD
-    description     TEXT,
-    status          ENUM('Active','Inactive') NOT NULL DEFAULT 'Active',
+    head_emp_id     INT UNSIGNED,   
+    status          ENUM('Active','Inactive')   DEFAULT 'Active',
     created_at      TIMESTAMP           NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     PRIMARY KEY (dept_id),
@@ -125,8 +124,7 @@ CREATE TABLE job_positions (
 
     PRIMARY KEY (position_id),
     INDEX idx_pos_dept   (dept_id),                            -- Join to departments
-    INDEX idx_pos_title  (title),                              -- Search by job title
-    INDEX idx_pos_active (is_active),
+    INDEX idx_pos_title  (title),                              -- Search by job title 
 
     CONSTRAINT fk_pos_dept
         FOREIGN KEY (dept_id) REFERENCES departments(dept_id)
@@ -145,11 +143,11 @@ CREATE TABLE employees (
     emp_code                VARCHAR(10)         NOT NULL,       -- E0001, E0002 …
 
     -- ── Section A: Personal Identity (Onboarding Step 1) ──
-    first_name              VARCHAR(80)          ,
+    first_name              VARCHAR(80) ,
     middle_name             VARCHAR(80),
-    last_name               VARCHAR(80)          ,
-    gender                  ENUM('Male','Female','Other')  ,
-    date_of_birth           DATE                 ,
+    last_name               VARCHAR(80) ,
+    gender                  ENUM('Male','Female')  ,
+    date_of_birth           DATE ,
     nationality             VARCHAR(80)         DEFAULT 'Ethiopian',
     marital_status          ENUM('Single','Married','Divorced','Widowed')  DEFAULT 'Single',
     place_of_birth          VARCHAR(100),
@@ -180,8 +178,7 @@ CREATE TABLE employees (
     bank_account_number     VARCHAR(60),
 
     -- ── Section E: Compliance & Legal (Onboarding Step 5) ──
-    id_type                 ENUM('National ID','Passport','Other') NOT NULL DEFAULT 'National ID',
-    id_number               VARCHAR(60),
+    id_type                 VARCHAR(60), 
     id_expiry_date          DATE,
     emergency_contact_name  VARCHAR(150),
     emergency_contact_phone VARCHAR(25),
@@ -269,11 +266,9 @@ CREATE TABLE probation_records (
 -- ============================================================
 CREATE TABLE contract_renewals (
     renewal_id          INT UNSIGNED        NOT NULL AUTO_INCREMENT,
-    emp_id              INT UNSIGNED        NOT NULL,
-    contract_version    TINYINT UNSIGNED    NOT NULL DEFAULT 1, -- 1st, 2nd, 3rd renewal …
+    emp_id              INT UNSIGNED        NOT NULL,  
     start_date          DATE                NOT NULL,
-    end_date            DATE                NOT NULL,
-    salary_at_renewal   DECIMAL(14,2),
+    end_date            DATE                NOT NULL, 
     status              ENUM('Active','Expired','Terminated','Pending')
                                             NOT NULL DEFAULT 'Active',
     renewed_by_emp_id   INT UNSIGNED,                           -- HR user who processed it
@@ -1295,164 +1290,10 @@ CREATE TABLE audit_logs (
         FOREIGN KEY (user_id) REFERENCES system_users(user_id) ON DELETE SET NULL ON UPDATE CASCADE
 );
 
-
--- ============================================================
--- UTILITY VIEW ▸ v_employee_full
--- A pre-joined view used by most list pages.
--- Avoids writing the same 6-table JOIN everywhere.
--- ============================================================
-CREATE OR REPLACE VIEW v_employee_full AS
-SELECT
-    e.emp_id,
-    e.emp_code,
-    CONCAT(e.first_name, ' ', COALESCE(e.middle_name,''), ' ', e.last_name) AS full_name,
-    e.first_name,
-    e.middle_name,
-    e.last_name,
-    e.gender,
-    e.date_of_birth,
-    e.hire_date,
-    e.contract_end_date,
-    e.probation_end_date,
-    e.status                        AS emp_status,
-    e.gross_salary,
-    e.personal_phone,
-    e.personal_email,
-    d.dept_name,
-    jp.title                        AS job_title,
-    b.branch_name,
-    et.type_name                    AS employment_type,
-    CONCAT(m.first_name,' ',m.last_name) AS manager_name
-FROM       employees       e
-LEFT JOIN  departments     d  ON e.dept_id         = d.dept_id
-LEFT JOIN  job_positions   jp ON e.position_id     = jp.position_id
-LEFT JOIN  branches        b  ON e.branch_id       = b.branch_id
-LEFT JOIN  employment_types et ON e.type_id        = et.type_id
-LEFT JOIN  employees       m  ON e.reports_to_emp_id = m.emp_id;
-
-
--- ============================================================
--- UTILITY VIEW ▸ v_vault_compliance
--- Shows how many documents each employee has uploaded vs required.
--- Powers the compliance dashboard cards and the vault matrix.
--- ============================================================
-CREATE OR REPLACE VIEW v_vault_compliance AS
-SELECT
-    e.emp_id,
-    e.emp_code,
-    CONCAT(e.first_name,' ',e.last_name)            AS full_name,
-    d.dept_name,
-    COUNT(vdt.doc_type_id)                          AS total_required,
-    SUM(CASE WHEN ed.status = 'Uploaded' THEN 1 ELSE 0 END) AS uploaded_count,
-    SUM(CASE WHEN ed.status = 'Missing'  THEN 1 ELSE 0 END) AS missing_count,
-    ROUND(
-        SUM(CASE WHEN ed.status = 'Uploaded' THEN 1 ELSE 0 END)
-        / COUNT(vdt.doc_type_id) * 100, 1
-    )                                               AS compliance_pct
-FROM       employees           e
-LEFT JOIN  departments         d   ON e.dept_id     = d.dept_id
-CROSS JOIN vault_document_types vdt                             -- All required docs
-LEFT JOIN  employee_documents  ed  ON ed.emp_id     = e.emp_id
-                                  AND ed.doc_type_id = vdt.doc_type_id
-WHERE vdt.is_mandatory = 1
-  AND vdt.is_active    = 1
-  AND e.status         = 'Active'
-GROUP BY e.emp_id, e.emp_code, full_name, d.dept_name;
-
-
--- ============================================================
--- UTILITY VIEW ▸ v_contract_alerts
--- Employees whose contracts expire within the next 30 days.
--- Used by the Dashboard "Expiring contracts" stat card.
--- ============================================================
-CREATE OR REPLACE VIEW v_contract_alerts AS
-SELECT
-    e.emp_id,
-    e.emp_code,
-    CONCAT(e.first_name,' ',e.last_name)    AS full_name,
-    d.dept_name,
-    e.contract_end_date,
-    DATEDIFF(e.contract_end_date, CURDATE()) AS days_remaining
-FROM  employees   e
-LEFT JOIN departments d ON e.dept_id = d.dept_id
-WHERE e.status             = 'Active'
-  AND e.contract_end_date  IS NOT NULL
-  AND e.contract_end_date  BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
-ORDER BY days_remaining ASC;
-
-
--- ============================================================
--- UTILITY VIEW ▸ v_probation_alerts
--- Employees whose probation ends within 14 days.
--- ============================================================
-CREATE OR REPLACE VIEW v_probation_alerts AS
-SELECT
-    e.emp_id,
-    CONCAT(e.first_name,' ',e.last_name)    AS full_name,
-    d.dept_name,
-    p.probation_end,
-    DATEDIFF(p.probation_end, CURDATE())    AS days_remaining,
-    p.status                                AS prob_status
-FROM  probation_records p
-JOIN  employees         e ON p.emp_id   = e.emp_id
-LEFT JOIN departments   d ON e.dept_id  = d.dept_id
-WHERE p.status       = 'Active'
-  AND p.probation_end BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 14 DAY)
-ORDER BY days_remaining ASC;
-
-
+ 
 -- ============================================================
 -- RE-ENABLE FK CHECKS
 -- ============================================================
 SET FOREIGN_KEY_CHECKS = 1;
 
-
--- ============================================================
--- QUICK-REFERENCE: TABLE MAP BY UI PAGE
--- ──────────────────────────────────────────────────────────
--- Dashboard            → v_employee_full, v_contract_alerts,
---                         v_probation_alerts, v_vault_compliance
--- Company Profile      → company_profile
--- Org Chart            → departments, job_positions, employees (view)
--- Departments          → departments  + branches + employees (head)
--- Job Positions        → job_positions + departments
--- Branch Offices       → branches + employees (manager)
--- Employee Profile     → employees + all lookup tables + v_employee_full
--- Add Employee         → employees INSERT (6-step wizard maps to 5 sections)
--- Employment Types     → employment_types
--- Probation Tracker    → probation_records + v_probation_alerts
--- Contract Renewals    → contract_renewals + v_contract_alerts
--- Former Employees     → former_employees + employees (history)
--- Attachment Vault     → employee_documents + vault_document_types
---                         + v_vault_compliance
--- Asset Tracking       → assets + asset_categories
---                         + asset_assignment_history
--- Job Vacancies        → job_vacancies
--- Job Applicants       → job_applicants + job_vacancies
--- Interview Tracker    → interviews + job_applicants
--- Internship           → interns + departments + employees (mentor)
--- Record Attendance    → attendance_records
--- Daily Attendance     → attendance_records (filtered by date)
--- Attendance Reports   → attendance_monthly_summary
--- Leave Types          → leave_types
--- Leave Requests       → leave_requests + leave_types + employees
--- Leave Entitlement    → leave_entitlements
--- Medical Claims       → medical_claims
--- Overtime Requests    → overtime_requests
--- Training TNA         → training_needs_analysis
--- Training Schedule    → training_sessions + training_enrollments
--- Performance Reviews  → performance_reviews
--- 360° Feedback        → feedback_360
--- Promote/Demote       → promotions_demotions
--- Dept Transfers       → department_transfers
--- Disciplinary         → disciplinary_actions
--- Resignations         → resignations
--- Separation & Exit    → separations
--- Exit Clearance       → exit_clearance
--- HR Analytics         → Multiple aggregate queries on above tables
--- Custom Reports       → Ad-hoc queries — no dedicated table needed
--- User Management      → system_users + user_roles
--- Roles & Permissions  → roles + modules + role_permissions
---                         + user_permission_overrides
--- Audit Logs           → audit_logs
--- ============================================================
+ 
