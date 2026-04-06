@@ -1,16 +1,4 @@
-<?php
-/**
- * register.php — BGT Enterprise Account Registration
- *
- * Security features:
- *  • PDO prepared statements
- *  • CSRF token validation
- *  • password_hash() with PASSWORD_BCRYPT
- *  • Server-side input validation (length, format, strength)
- *  • Duplicate username/email check before insert
- *  • No auto-login after registration (admin may need to approve)
- */
-
+<?php 
 declare(strict_types=1);
 require_once __DIR__ . '/config.php';
 
