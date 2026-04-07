@@ -28,8 +28,8 @@ CREATE TABLE company_profile (
     trade_license_no    VARCHAR(100),
     -- Operational Policies
     work_week_desc      VARCHAR(200),                           -- e.g. 'Mon-Fri (40 hrs) + Sat Half-day'
-    probation_days      INT             DEFAULT 90,
-    retirement_age      INT             DEFAULT 60,
+    probation_days      VARCHAR(200),
+    retirement_age      VARCHAR(200),
     -- Treasury
     main_bank           VARCHAR(150),
     bank_account_primary VARCHAR(100),
@@ -37,12 +37,11 @@ CREATE TABLE company_profile (
     fiscal_start        VARCHAR(100),                           -- e.g. 'Hamle 01 (July 08)'
     -- Digital Identity
     website             VARCHAR(255),
-    helpdesk_email      VARCHAR(150),
+    corporate_email      VARCHAR(150),
     corporate_phone     VARCHAR(50),
-    linkedin_handle     VARCHAR(150),
-    telegram_handle     VARCHAR(150),
-    facebook_handle     VARCHAR(150),
-    software_version    VARCHAR(50)     DEFAULT 'v1.0.0-YDY',
+    socialmedia1     VARCHAR(150),
+    socialmedia2     VARCHAR(150),
+    socialmedia3     VARCHAR(150), 
     updated_at          TIMESTAMP       DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
@@ -75,8 +74,7 @@ CREATE TABLE branches (
 
 -- ── 1.4  Departments (head FK added after employees table) ────
 CREATE TABLE departments (
-    id               INT          PRIMARY KEY AUTO_INCREMENT,
-    code             VARCHAR(20),                               -- e.g. 'D001'
+    id               INT          PRIMARY KEY AUTO_INCREMENT, 
     name             VARCHAR(150) NOT NULL,
     head_employee_id INT          NULL,                         -- FK → employees (added below via ALTER)
     branch_id        INT          NULL,
@@ -935,37 +933,13 @@ CREATE INDEX idx_doc_status     ON employee_documents(status);
 -- ('tin',        'TIN Certification Document',       'Tax',          TRUE),
 -- ('medical',    'Health & Fitness Clearance',       'Compliance',   TRUE);
 
--- -- Asset Categories
--- INSERT INTO asset_categories (name) VALUES
--- ('IT Hardware'),
--- ('Fleet / Vehicles'),
--- ('Office Furniture'),
--- ('Networking Equipment'),
--- ('Security Equipment');
-
 -- -- Standard Roles (matches the roles-permissions UI)
 -- INSERT INTO roles (name, description) VALUES
 -- ('Super Admin',       'Full system authority — all modules unrestricted'),
 -- ('HRM User',          'Standard HR operations across all modules'),
 -- ('Department Manager','Limited visibility to own team data only');
 
--- -- Company Profile (single default row)
--- INSERT INTO company_profile (
---     legal_name, trading_name, ceo_name, head_office, entity_type,
---     establishment_date, registration_no, tin, vat_reg_number, trade_license_no,
---     work_week_desc, probation_days, retirement_age,
---     main_bank, bank_account_primary, base_currency, fiscal_start,
---     website, helpdesk_email, corporate_phone,
---     linkedin_handle, telegram_handle, facebook_handle
--- ) VALUES (
---     'YDY HRM Enterprise Ltd.', 'YDY Systems', 'YDY Systems',
---     'Mexico, Lideta, Addis Ababa', 'Private Ltd. Co',
---     '2010-10-12', 'MT/AA/14/667/09', '0019283746', '9928374-VAT-01', '01/01/14/19283',
---     'Mon — Fri (40 hrs) + Sat (Half day)', 90, 60,
---     'CBE (Commercial)', '1000192837465', 'ETB', 'Hamle 01 (July 08)',
---     'www.ydy-hrm.com', 'support@ydyhrm.com', '+251 11 667 89',
---     '/ydy-systems', '@YDY_Systems', '/YDY.Enterprise'
--- );
+- 
 
 
 SET FOREIGN_KEY_CHECKS = 1;  -- Re-enable after all tables are created
