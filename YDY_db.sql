@@ -77,8 +77,7 @@ CREATE TABLE departments (
     id               INT          PRIMARY KEY AUTO_INCREMENT, 
     name             VARCHAR(150) NOT NULL,
     head_employee_id INT          NULL,                         -- FK → employees (added below via ALTER)
-    branch_id        INT          NULL,
-    location         VARCHAR(150),
+    branch_id        INT          NULL, 
     status           ENUM('Active','Inactive') DEFAULT 'Active',
     created_at       TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
     updated_at       TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -90,10 +89,7 @@ CREATE TABLE departments (
 CREATE TABLE job_positions (
     id            INT           PRIMARY KEY AUTO_INCREMENT,
     title         VARCHAR(200)  NOT NULL,
-    department_id INT           NULL,
-    grade         VARCHAR(20),                                  -- L1, L2, M1, S1 etc.
-    min_salary    DECIMAL(15,2),
-    max_salary    DECIMAL(15,2),
+    department_id INT           NULL, 
     headcount     INT           DEFAULT 0,                      -- approved headcount slots
     status        ENUM('Active','Inactive') DEFAULT 'Active',
     created_at    TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
@@ -115,9 +111,9 @@ CREATE TABLE employees (
     employee_id               VARCHAR(20)  UNIQUE NOT NULL,     -- e.g. 'E0001'
 
     -- Step 1 : Personal Identity
-    first_name                VARCHAR(100) NOT NULL,
+    first_name                VARCHAR(100),
     middle_name               VARCHAR(100),
-    last_name                 VARCHAR(100) NOT NULL,
+    last_name                 VARCHAR(100) ,
     username                  VARCHAR(100) UNIQUE,
     date_of_birth             DATE,
     gender                    ENUM('Male','Female'),
@@ -185,8 +181,7 @@ CREATE TABLE employee_contracts (
     employee_id       INT          NOT NULL,
     employment_type_id INT         NOT NULL,
     start_date        DATE         NOT NULL,
-    end_date          DATE,
-    renewal_count     INT          DEFAULT 0,
+    end_date          DATE, 
     status            ENUM('Active','Expired','Renewed','Terminated') DEFAULT 'Active',
     notes             TEXT,
     created_at        TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
@@ -202,10 +197,7 @@ CREATE TABLE probation_records (
     employee_id    INT       NOT NULL,
     start_date     DATE      NOT NULL,
     end_date       DATE      NOT NULL,
-    status         ENUM('Active','Completed','Extended','Failed') DEFAULT 'Active',
-    reviewed_by    INT       NULL,
-    review_notes   TEXT,
-    confirmed_at   DATE      NULL,
+    status         ENUM('Active','Completed','Extended','Failed') DEFAULT 'Active',  
     created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
