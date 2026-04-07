@@ -524,9 +524,8 @@ CREATE TABLE interviews (
     interviewer_id  INT UNSIGNED,                               -- Internal employee doing the interview
     interview_date  DATE                NOT NULL,
     interview_time  TIME,
-    mode            ENUM('In-Person','Video Call','Phone','Written Test') NOT NULL DEFAULT 'In-Person',
-    round           TINYINT UNSIGNED    NOT NULL DEFAULT 1,     -- 1st, 2nd … round
-    score           TINYINT UNSIGNED,                           -- 0–100
+    mode            ENUM('In-Person','Video Call','Phone','Written Test') NOT NULL DEFAULT 'In-Person', 
+    score           TINYINT UNSIGNED,                      
     result          ENUM('Scheduled','Passed','Failed','On Hold','No Show') NOT NULL DEFAULT 'Scheduled',
     feedback        TEXT,
     created_at      TIMESTAMP           NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -585,13 +584,13 @@ CREATE TABLE interns (
 CREATE TABLE attendance_records (
     att_id          INT UNSIGNED        NOT NULL AUTO_INCREMENT,
     emp_id          INT UNSIGNED        NOT NULL,
-    att_date        DATE                NOT NULL,
+    att_date        DATE                ,
     check_in        TIME,
     check_out       TIME,
     hours_worked    DECIMAL(4,2),                               -- e.g. 8.50
-    overtime_hours  DECIMAL(4,2)        NOT NULL DEFAULT 0.00,
+    overtime_hours  DECIMAL(4,2)          DEFAULT 0.00,
     status          ENUM('Present','Absent','Late','On Leave','Half Day','Holiday','Sunday Off')
-                                        NOT NULL DEFAULT 'Present',
+                                          DEFAULT 'Present',
     recorded_by     INT UNSIGNED,                               -- HR user who entered/approved
     notes           VARCHAR(255),
     created_at      TIMESTAMP           NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -680,7 +679,7 @@ CREATE TABLE leave_types (
     lt_id           TINYINT UNSIGNED    NOT NULL AUTO_INCREMENT,
     type_name       VARCHAR(80)         NOT NULL,
     days_per_year   TINYINT UNSIGNED,                           -- NULL = unlimited / case-by-case
-    carryover_days  TINYINT UNSIGNED    NOT NULL DEFAULT 0,
+    carryover_days  TINYINT UNSIGNED      DEFAULT 0,
     is_paid         TINYINT(1)          NOT NULL DEFAULT 1,
     needs_approval  TINYINT(1)          NOT NULL DEFAULT 1,
     is_active       TINYINT(1)          NOT NULL DEFAULT 1,
@@ -753,7 +752,7 @@ CREATE TABLE medical_claims (
     dept_id         SMALLINT UNSIGNED,
     category        ENUM('Doctor Visit','Specialist','Prescription','Dental','Vision','Hospital','Other')
                                         NOT NULL DEFAULT 'Doctor Visit',
-    amount          DECIMAL(14,2)       NOT NULL,
+    amount          DECIMAL(14,2)       ,
     receipt_number  VARCHAR(80),
     receipt_path    VARCHAR(500),                               -- Scanned receipt file
     submitted_date  DATE                NOT NULL,

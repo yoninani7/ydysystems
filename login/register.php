@@ -1,127 +1,91 @@
 <?php
-declare(strict_types=1);
-
 /**
- * register.php - BGT Enterprise Secure Registration
- * Improvements: Transactional safety, FK validation, and robust exception handling.
+ * Registration Page Logic
  */
+require_once '../config.php'; // Ensure this path correctly points to your config file
 
-// config.php already contains session_start() and the CSRF functions
-require_once __DIR__ . '/../config.php';
+$errors = [];
+$success = "";
+$fields = ['username' => '', 'email' => ''];
 
-// 1. Redirect if already logged in
-// if (!empty($_SESSION['user_id'])) {
-//     redirect(LOGIN_REDIRECT);
-// }
-
-$errors  = [];
-$success = '';
-$fields  = ['username' => '', 'email' => '', 'emp_id' => ''];
+// Use the token function from your config.php
+$csrf = csrf_token();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    try {
-        // 2. CSRF Verification (Uses function from config.php)
-        if (!csrf_verify()) {
-            throw new Exception("Security token expired. Please refresh and try again.");
+    
+    // 1. Verify CSRF using your config utility
+    if (!csrf_verify()) {
+        $errors['global'] = "Security validation failed. Please try again.";
+    } else {
+        // 2. Collect and Clean Input using your config utility
+        $fields['username'] = clean($_POST['username'] ?? '');
+        $fields['email']    = clean($_POST['email'] ?? '');
+        $password           = $_POST['password'] ?? '';
+        $password_confirm   = $_POST['password_confirm'] ?? '';
+
+        // 3. Validation
+        if (empty($fields['username'])) {
+            $errors['username'] = "Username is required.";
+        } elseif (strlen($fields['username']) > 30) {
+            $errors['username'] = "Username is too long (max 30).";
         }
 
-       // 3. Data Collection
-            $username   = trim($_POST['username']         ?? '');
-            $email      = trim($_POST['email']            ?? '');
-            $password   = trim($_POST['password']         ?? '');
-            $password2  = trim($_POST['password_confirm'] ?? '');
-            $emp_id     = trim($_POST['emp_id']           ?? '');
-
-            $emp_id_value = ($emp_id === '') ? null : $emp_id; 
-
-            $fields = ['username' => $username, 'email' => $email, 'emp_id' => $emp_id];
-
-        // 4. Input Validation (Server-Side)
-        if ($username === '') {
-            $errors['username'] = 'Username is required.';
-        } elseif (!preg_match('/^[a-zA-Z0-9._-]{3,60}$/', $username)) {
-            $errors['username'] = '3-60 chars (letters, numbers, dots, dashes, underscores).';
-        }
-
-        if ($email === '') {
-            $errors['email'] = 'Email is required.';
-        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > 150) {
-            $errors['email'] = 'Please enter a valid email address.';
+        if (empty($fields['email'])) {
+            $errors['email'] = "Email is required.";
+        } elseif (!filter_var($fields['email'], FILTER_VALIDATE_EMAIL)) {
+            $errors['email'] = "Invalid email format.";
         }
 
         if (strlen($password) < 8) {
-            $errors['password'] = 'Password must be at least 8 characters.';
-        } elseif (!preg_match('/[A-Z]/', $password) || !preg_match('/[0-9]/', $password) || !preg_match('/[^a-zA-Z0-9]/', $password)) {
-            $errors['password'] = 'Include uppercase, number, and special character.';
+            $errors['password'] = "Password must be at least 8 characters.";
         }
 
-        if ($password !== $password2) {
-            $errors['password_confirm'] = 'Passwords do not match.';
+        if ($password !== $password_confirm) {
+            $errors['password_confirm'] = "Passwords do not match.";
         }
- 
-        // 6. Database Operations
+
+        // 4. Database Interaction
         if (empty($errors)) {
-            $pdo = get_pdo();
+            try {
+                $pdo = get_pdo();
 
-            // Start a transaction to ensure data integrity
-            $pdo->beginTransaction();
+                // Check for existing records (Unique constraints in your table)
+                $check = $pdo->prepare("SELECT username, email FROM users WHERE username = ? OR email = ?");
+                $check->execute([$fields['username'], $fields['email']]);
+                $existing = $check->fetch();
 
-            // Check if emp_id exists in the master employee table (if provided)
-            if ($emp_id_value !== null) {
-                $stmt = $pdo->prepare("SELECT id FROM employees WHERE id = ? LIMIT 1");
-                $stmt->execute([$emp_id_value]);
-                if (!$stmt->fetch()) {
-                    $errors['emp_id'] = 'This Employee ID is not recognized in our system.';
-                }
-            }
+                if ($existing) {
+                    if ($existing['username'] === $fields['username']) $errors['username'] = "Username already taken.";
+                    if ($existing['email'] === $fields['email']) $errors['email'] = "Email already registered.";
+                } else {
+                    // Hash password 
+                    $password_hash = password_hash($password, PASSWORD_BCRYPT);
 
-            if (empty($errors)) {
-                // Check uniqueness (Username and Email)
-                $chk = $pdo->prepare('SELECT username, email FROM system_users WHERE username = ? OR email = ?');
-                $chk->execute([$username, $email]);
-                while ($row = $chk->fetch()) {
-                    if ($row['username'] === $username) $errors['username'] = 'Username is already taken.';
-                    if ($row['email'] === $email) $errors['email'] = 'Email is already registered.';
-                }
-
-                if (empty($errors)) {
-                    $hash = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
+                    /**
+                     * Matching your CREATE TABLE structure:
+                     * role & status use DB defaults ('Super Admin', 'Active')
+                     * employee_id & department_id remain NULL
+                     */
+                    $sql = "INSERT INTO users (username, email, password_hash) 
+                            VALUES (:username, :email, :password_hash)";
                     
-                    $ins = $pdo->prepare(
-                        'INSERT INTO system_users (emp_id, username, email, password_hash, status, created_at)
-                         VALUES (:emp_id, :username, :email, :hash, "Active", NOW())'
-                    );
-                    
-                    $ins->execute([
-                        ':emp_id'   => $emp_id_value,
-                        ':username' => $username,
-                        ':email'    => $email,
-                        ':hash'     => $hash
+                    $stmt = $pdo->prepare($sql);
+                    $stmt->execute([
+                        ':username'      => $fields['username'],
+                        ':email'         => $fields['email'],
+                        ':password_hash' => $password_hash
                     ]);
 
-                    $pdo->commit();
-                    $success = 'Account created successfully. <a href="login.php" style="color: var(--primary);">Sign in now</a>.';
-                    $fields  = ['username' => '', 'email' => '', 'emp_id' => ''];
-                } else {
-                    $pdo->rollBack();
+                    $success = "Account created! You can now <a href='login.php' style='color:inherit; font-weight:700;'>Sign in</a>.";
+                    // Clear fields on success
+                    $fields = ['username' => '', 'email' => ''];
                 }
-            } else {
-                $pdo->rollBack();
+            } catch (Exception $e) {
+                $errors['global'] = "Registration failed: " . $e->getMessage();
             }
         }
-    } catch (PDOException $e) {
-        if (isset($pdo) && $pdo->inTransaction()) {
-            $pdo->rollBack();
-        }
-        error_log("Registration DB Error: " . $e->getMessage());
-        $errors['global'] = "A database error occurred. Please try again later.";
-    } catch (Exception $e) {
-        $errors['global'] = $e->getMessage();
     }
 }
-
-// Generate token using function from config.php
-$csrf = csrf_token();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -301,9 +265,9 @@ $csrf = csrf_token();
 
 <div class="auth-container">
     <aside class="brand-panel">
-         <img src="../assets/bgwhiter.png" alt="BGT Logo" style="position:absolute;top:0;right:-10px;width:100px;">
+         <img src="../assets/img/bgwhiter.png" alt="BGT Logo" style="position:absolute;top:0;right:-10px;width:100px;">
         <div class="brand-content">
-            <div class="logo-box"><img src="../assets/bgt.png" alt="BGT Logo"></div>
+            <div class="logo-box"><img src="../assets/img/bgt.png" alt="BGT Logo"></div>
             <h1>Join BGT.</h1>
             <p>Create your secure workspace account.</p>
         </div>

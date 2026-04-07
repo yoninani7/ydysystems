@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $pdo = get_pdo(); // If this fails, it jumps to the catch block below
             
-            $stmt = $pdo->prepare('SELECT user_id, username, email, password_hash, status FROM system_users WHERE (email = :email OR username = :username) LIMIT 1');
+            $stmt = $pdo->prepare('SELECT id, username, email, password_hash, status FROM users WHERE (email = :email OR username = :username) LIMIT 1');
             $stmt->execute([
                 ':email'    => $identifier,
                 ':username' => $identifier
@@ -259,10 +259,10 @@ $ethDate = getEthiopianDate();
 
 <div class="auth-container">
     <aside class="brand-panel">
-        <img src="../assets/bgwhiter.png" alt="BGT Logo" style="position:absolute;top:0;right:-10px;width:100px;">
+        <img src="../assets/img/bgwhiter.png" alt="BGT Logo" style="position:absolute;top:0;right:-10px;width:100px;">
         <div class="brand-content">
             <div class="logo-box">
-                <img src="../assets/bgt.png" alt="BGT Logo">
+                <img src="../assets/img/bgt.png" alt="BGT Logo">
             </div>
             <h1>Login Portal.</h1>
             <p>Welcome back. Secure access for Bull Green Trading members.</p>
@@ -274,7 +274,7 @@ $ethDate = getEthiopianDate();
         <span id="eth-date"><?= $ethDate ?></span>
         <span class="time-segment" id="eth-time"><?= date('h:i:s A') ?></span>
     </div>
-        <img src="../assets/bgwhitel.png" alt="BGT Logo" style="position:absolute;top:0;left:-10px;width:100px;">
+        <img src="../assets/img/bgwhitel.png" alt="BGT Logo" style="position:absolute;top:0;left:-10px;width:100px;">
         <div class="form-card">
 
             <!-- LOGIN VIEW -->

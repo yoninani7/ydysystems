@@ -162,7 +162,7 @@ CREATE TABLE employees (
     FOREIGN KEY (job_position_id)    REFERENCES job_positions(id)    ON DELETE SET NULL,
     FOREIGN KEY (employment_type_id) REFERENCES employment_types(id) ON DELETE SET NULL,
     FOREIGN KEY (branch_id)          REFERENCES branches(id)         ON DELETE SET NULL,
-    FOREIGN KEY (reports_to_id)      REFERENCES employees(id)        ON DELETE SET NULL
+    FOREIGN KEY (reports_to_id)      REFERENCES employees(id)        ON DELETE SET NULL 
 );
 
 -- Back-fill FKs that needed the employees table first
@@ -200,8 +200,7 @@ CREATE TABLE probation_records (
     status         ENUM('Active','Completed','Extended','Failed') DEFAULT 'Active',  
     created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
-    FOREIGN KEY (reviewed_by) REFERENCES employees(id) ON DELETE SET NULL
+    FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE 
 );
 
 
@@ -288,7 +287,7 @@ CREATE TABLE asset_assignments (
     id               INT       PRIMARY KEY AUTO_INCREMENT,
     asset_id         INT       NOT NULL,
     assigned_from_id INT       NULL,                            -- previous custodian
-    assigned_to_id   INT       NOT NULL,                        -- new custodian
+    assigned_to_id   INT       NULL,                        -- new custodian
     assigned_by      INT       NULL,                            -- HR user who performed it
     assigned_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     returned_at      TIMESTAMP NULL,
@@ -371,7 +370,7 @@ CREATE TABLE interviews (
 CREATE TABLE internships (
     id               INT          PRIMARY KEY AUTO_INCREMENT,
     intern_code      VARCHAR(30)  UNIQUE,                       -- 'INT-26-001'
-    full_name        VARCHAR(200) NOT NULL,
+    full_name        VARCHAR(200)  ,
     institution      VARCHAR(200),
     department_id    INT          NULL,
     mentor_id        INT          NULL,
@@ -761,7 +760,7 @@ CREATE TABLE report_templates (
     module     VARCHAR(100),                                    -- 'Employees', 'Payroll', etc.
     date_from  DATE         NULL,
     date_to    DATE         NULL,
-    filters    JSON         NULL,                               -- serialized filter config
+    filters    LONGTEXT         NULL,                               -- serialized filter config
     created_by INT          NULL,
     created_at TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
     -- created_by FK is added after users table below
@@ -771,13 +770,11 @@ CREATE TABLE report_templates (
 -- ── 11.2  System Users ────────────────────────────────────────
 CREATE TABLE users (
     id            INT          PRIMARY KEY AUTO_INCREMENT,
-    user_code     VARCHAR(30)  UNIQUE,                          -- 'USR-001'
-    employee_id   INT          NULL,                            -- linked employee record
-    name          VARCHAR(200) NOT NULL,
+    username     VARCHAR(100)  UNIQUE,                          -- 'USR-001'
+    employee_id   INT          NULL,                            -- linked employee record 
     email         VARCHAR(150) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
-    role          ENUM('Super Admin','HR Manager','Finance Officer','Department Head','Employee')
-                               DEFAULT 'Employee',
+    role          ENUM('Super Admin') DEFAULT 'Super Admin',
     department_id INT          NULL,
     status        ENUM('Active','Inactive') DEFAULT 'Active',
     last_login    TIMESTAMP    NULL,
@@ -839,8 +836,8 @@ CREATE TABLE audit_logs (
     action      ENUM('CREATE','UPDATE','DELETE','LOGIN','APPROVE','EXPORT','VIEW') NOT NULL,
     module      VARCHAR(100),
     record_ref  VARCHAR(100),                                   -- e.g. 'E-0042', 'AST-2001'
-    old_value   JSON          NULL,                             -- before state
-    new_value   JSON          NULL,                             -- after state
+    old_value   LONGTEXT          NULL,                             -- before state
+    new_value   LONGTEXT          NULL,                             -- after state
     ip_address  VARCHAR(45),
     logged_at   TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
@@ -931,7 +928,7 @@ CREATE INDEX idx_doc_status     ON employee_documents(status);
 -- ('HRM User',          'Standard HR operations across all modules'),
 -- ('Department Manager','Limited visibility to own team data only');
 
-- 
+
 
 
 SET FOREIGN_KEY_CHECKS = 1;  -- Re-enable after all tables are created
