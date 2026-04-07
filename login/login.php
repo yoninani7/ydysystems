@@ -191,37 +191,68 @@ $ethDate = getEthiopianDate();
     @keyframes liquidMove { 0% { background-position: 0% 0%; } 100% { background-position: 100% 100%; } }
     @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
     
-    @media (max-width: 850px) { .auth-container { grid-template-columns: 1fr; } .brand-panel { display: none; } }
     .btn-link { background: none; border: none; color: var(--primary); font-weight: 600; font-size: 0.9rem; cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: var(--transition); font-family: inherit; }
     .btn-link:hover { background: var(--primary-light); color: var(--primary-dark); }
     .back-btn { display: inline-flex; align-items: center; gap: 8px; color: var(--text-muted); font-weight: 600; font-size: 0.85rem; margin-bottom: 24px; cursor: pointer; transition: var(--transition); padding: 8px 12px; margin-left: -12px; border-radius: 8px; background: none; border: none; font-family: inherit; }
     .back-btn:hover { color: var(--text-main); background: #f1f5f9; }
     .eth-header {
-    position: absolute;
-    top: 30px;
-    right: 40px;
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.9);
-    padding: 12px 25px;
-    border-radius: 50px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    font-family: 'Inter', monospace;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: #1e293b;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
-    z-index: 100;
-    letter-spacing: 0.5px;
-}
-.eth-header .time-segment {
-    color: var(--primary);
-    border-left: 2px solid #e2e8f0;
-    padding-left: 15px;
-}
+        position: absolute;
+        top: 30px;
+        right: 40px;
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.9);
+        padding: 12px 25px;
+        border-radius: 50px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        font-family: 'Inter', monospace;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #1e293b;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+        z-index: 100;
+        letter-spacing: 0.5px;
+    }
+    .eth-header .time-segment {
+        color: var(--primary);
+        border-left: 2px solid #e2e8f0;
+        padding-left: 15px;
+    }
+
+    /* RESPONSIVE ADDITIONS (New) */
+    @media (max-width: 1200px) {
+        .brand-panel h1 { font-size: 2.8rem; }
+        .brand-content { padding: 30px; }
+    }
+
+    @media (max-width: 850px) {
+        body { overflow: auto; height: auto; }
+        .auth-container { grid-template-columns: 1fr; }
+        .brand-panel { display: none; } /* Keeping your original logic to hide brand on mobile */
+        .form-panel { min-height: 100vh; padding: 60px 20px; }
+        .eth-header { 
+            position: fixed; 
+            top: 15px; 
+            right: 15px; 
+            padding: 8px 15px; 
+            font-size: 0.8rem; 
+            gap: 10px;
+        }
+        .footer-note { position: relative; bottom: 0; margin-top: 40px; }
+    }
+
+    @media (max-width: 480px) {
+        .form-header h2 { font-size: 1.6rem; }
+        .form-options { flex-direction: column; align-items: flex-start; gap: 15px; }
+        .btn-primary { height: 54px; }
+        .input-ctrl { height: 54px; }
+        .logo-box img { width: 220px; }
+        #notification-hub { right: 10px; left: 10px; }
+        .bgt-toast { min-width: auto; width: 100%; }
+    }
 </style>
 </head>
 <body>
@@ -300,7 +331,7 @@ $ethDate = getEthiopianDate();
                     </div>
 
                     <button type="submit" class="btn-primary" id="login-btn">
-                        <span class="btn-text">Access Workspace</span>
+                        <span class="btn-text">Log in to Workspace</span>
                         <div class="spinner"></div>
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
                     </button>
