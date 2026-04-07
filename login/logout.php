@@ -1,14 +1,17 @@
 <?php 
 declare(strict_types=1);
+session_start(); 
+
+// This is correct because config.php is one level up (..)
 require_once __DIR__ . '/../config.php';
 
-// Remove remember-me token from DB if it exists
+// ... (Keep all your session clearing code here) ...
+
 if (!empty($_COOKIE['remember_token'])) {
     $pdo = get_pdo();
     $pdo->prepare('DELETE FROM remember_tokens WHERE token_hash = :hash')
         ->execute([':hash' => hash('sha256', $_COOKIE['remember_token'])]);
 
-    // Expire the cookie immediately
     setcookie('remember_token', '', [
         'expires'  => time() - 3600,
         'path'     => '/',
@@ -18,10 +21,8 @@ if (!empty($_COOKIE['remember_token'])) {
     ]);
 }
 
-// Destroy session data
 $_SESSION = [];
 
-// Expire the session cookie
 if (ini_get('session.use_cookies')) {
     $params = session_get_cookie_params();
     setcookie(
@@ -33,5 +34,7 @@ if (ini_get('session.use_cookies')) {
 
 session_destroy();
 
-// Back to login
-redirect('login.php');
+// CORRECTED REDIRECT:
+// Since you are already inside the 'login' folder, just point to login.php
+header("Location: login.php");
+exit;
