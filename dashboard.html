@@ -3561,14 +3561,42 @@ function showNotification(title, message, type = 'success') {
         setTimeout(() => toast.remove(), 300);
     }, 4000);
 }
-function handleLogout() {
-  // 1. Show the "Signing out" notification using your existing toast system
-  showNotification("Security", "Ending secure session. Redirecting...", "danger");
-   setTimeout(() => {
-        window.location.href = 'login/logout.php'; 
-    }, 1000);
+function handleLogout() { 
+  openConfirm("Logout Session", "Are you sure you want to Logout now?"); 
+  document.getElementById('confirm-btn-yes').onclick = function() {
+      // Proceed with logout
+      showNotification("Security", "Ending secure session. Redirecting...", "danger");
+      setTimeout(() => {
+          window.location.href = 'login/logout.php'; 
+      }, 1500);
+      
+      closeConfirm(); // Close after finishing
+  };
+}
+function openConfirm(title, message) {
+  document.getElementById('confirm-title').innerText = title;
+  document.getElementById('confirm-body').innerText = message;
+  document.getElementById('confirm-modal').classList.add('open');
+}
+
+function closeConfirm() {
+  document.getElementById('confirm-modal').classList.remove('open');
 }
 </script>
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal-box" style="max-width: 400px;">
+    <div class="modal-header">
+      <div id="confirm-title" style="font-weight: 800;">Confirm Action</div>
+    </div>
+    <div class="modal-body" id="confirm-body" style="font-size: 0.85rem;">
+      Are you sure?
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeConfirm()">Cancel</button>
+      <button class="btn btn-primary" id="confirm-btn-yes">Yes, Logout</button>
+    </div>
+  </div>
+</div>
 <!-- Toast Notification Container -->
 <div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none;"></div>
 </body>
