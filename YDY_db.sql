@@ -210,18 +210,18 @@ CREATE TABLE former_employees (
     id                INT           PRIMARY KEY AUTO_INCREMENT,
     original_emp_id   INT           NOT NULL,                   -- reference to employees.id
     employee_code     VARCHAR(20),
-    full_name         VARCHAR(200)  NOT NULL,
+    full_name         VARCHAR(200)  ,
     last_department   VARCHAR(150),
     last_job_position VARCHAR(200),
     last_salary       DECIMAL(15,2),
     exit_date         DATE,
     exit_type         ENUM('Resigned','Terminated','Retired','End of Contract','Deceased','Other'),
     exit_reason       TEXT,
-    service_years     DECIMAL(5,2),
+    duration     DECIMAL(5,2),
     rehire_eligible   ENUM('Yes','No') DEFAULT 'Yes',
     notes             TEXT,
     archived_at       TIMESTAMP     DEFAULT CURRENT_TIMESTAMP
-    -- No FK to employees; record must survive employee deletion
+    -- No FK to employees; record must survive employee deletion    
 );
 
 
@@ -245,7 +245,7 @@ CREATE TABLE employee_documents (
     file_path        VARCHAR(500),
     file_size_kb     INT,
     mime_type        VARCHAR(100),
-    status           ENUM('Uploaded','Verified','Expired','Missing') DEFAULT 'Uploaded',
+    status           ENUM('Uploaded','Missing') DEFAULT 'Uploaded',
     uploaded_at      TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
     updated_at       TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (employee_id)      REFERENCES employees(id)     ON DELETE CASCADE,
@@ -265,7 +265,7 @@ CREATE TABLE asset_categories (
 CREATE TABLE assets (
     id                     INT           PRIMARY KEY AUTO_INCREMENT,
     asset_code             VARCHAR(50)   UNIQUE NOT NULL,       -- 'AST-2001'
-    name                   VARCHAR(200)  NOT NULL,
+    name                   VARCHAR(200)  ,
     category_id            INT           NULL,
     serial_number          VARCHAR(150),
     asset_value            DECIMAL(15,2),
@@ -273,7 +273,7 @@ CREATE TABLE assets (
     previous_custodian_id  INT           NULL,
     location_branch_id     INT           NULL,
     warranty_expiry        DATE,
-    status                 ENUM('Active','In Repair','Disposed','Lost') DEFAULT 'Active',
+    status                 ENUM('Active','In Repair','Disposed','Lost') DEFAULT 'Active',   
     created_at             TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
     updated_at             TIMESTAMP     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (category_id)           REFERENCES asset_categories(id) ON DELETE SET NULL,
