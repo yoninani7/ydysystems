@@ -1,125 +1,127 @@
-<?php 
+<?php
 declare(strict_types=1);
+
+/**
+ * register.php - BGT Enterprise Secure Registration
+ * Improvements: Transactional safety, FK validation, and robust exception handling.
+ */
+
+// config.php already contains session_start() and the CSRF functions
 require_once __DIR__ . '/../config.php';
 
-// Redirect authenticated users
-if (!empty($_SESSION['user_id'])) {
-    redirect(LOGIN_REDIRECT);
-}
+// 1. Redirect if already logged in
+// if (!empty($_SESSION['user_id'])) {
+//     redirect(LOGIN_REDIRECT);
+// }
 
 $errors  = [];
 $success = '';
-$fields  = ['username' => '', 'email' => ''];   // repopulate on error
+$fields  = ['username' => '', 'email' => '', 'emp_id' => ''];
 
-// ── POST: process registration ────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
-    // 1. CSRF
-    csrf_verify();
-
-    // 2. Collect
-    $username   = trim($_POST['username']         ?? '');
-    $email      = trim($_POST['email']            ?? '');
-    $password   = trim($_POST['password']         ?? '');
-    $password2  = trim($_POST['password_confirm'] ?? '');
-    $emp_id     = trim($_POST['emp_id']           ?? '');   // optional
-
-    $fields = ['username' => $username, 'email' => $email];
-
-    // 3. Validate username
-    if ($username === '') {
-        $errors['username'] = 'Username is required.';
-    } elseif (strlen($username) < 3 || strlen($username) > 60) {
-        $errors['username'] = 'Username must be 3–60 characters.';
-    } elseif (!preg_match('/^[a-zA-Z0-9._-]+$/', $username)) {
-        $errors['username'] = 'Username may only contain letters, numbers, dots, dashes, and underscores.';
-    }
-
-    // 4. Validate email
-    if ($email === '') {
-        $errors['email'] = 'Email is required.';
-    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $errors['email'] = 'Please enter a valid email address.';
-    } elseif (strlen($email) > 150) {
-        $errors['email'] = 'Email must not exceed 150 characters.';
-    }
-
-    // 5. Validate password
-    if ($password === '') {
-        $errors['password'] = 'Password is required.';
-    } elseif (strlen($password) < 8) {
-        $errors['password'] = 'Password must be at least 8 characters.';
-    } elseif (!preg_match('/[A-Z]/', $password)) {
-        $errors['password'] = 'Password must contain at least one uppercase letter.';
-    } elseif (!preg_match('/[0-9]/', $password)) {
-        $errors['password'] = 'Password must contain at least one number.';
-    } elseif (!preg_match('/[^a-zA-Z0-9]/', $password)) {
-        $errors['password'] = 'Password must contain at least one special character.';
-    }
-
-    // 6. Confirm password
-    if (empty($errors['password']) && $password !== $password2) {
-        $errors['password_confirm'] = 'Passwords do not match.';
-    }
-
-    // 7. Optional emp_id — must be a positive integer if provided
-    $emp_id_value = null;
-    if ($emp_id !== '') {
-        if (!ctype_digit($emp_id) || (int)$emp_id <= 0) {
-            $errors['emp_id'] = 'Employee ID must be a positive number.';
-        } else {
-            $emp_id_value = (int)$emp_id;
-        }
-    }
-
-    // 8. DB uniqueness check + insert (only if no validation errors)
-    if (empty($errors)) {
-        $pdo = get_pdo();
-
-        // Check duplicates
-        $chk = $pdo->prepare(
-            'SELECT
-                SUM(username = :uname) AS uname_taken,
-                SUM(email    = :email) AS email_taken
-             FROM system_users'
-        );
-        $chk->execute([':uname' => $username, ':email' => $email]);
-        $taken = $chk->fetch();
-
-        if ((int)$taken['uname_taken'] > 0) {
-            $errors['username'] = 'That username is already taken.';
-        }
-        if ((int)$taken['email_taken'] > 0) {
-            $errors['email'] = 'An account with that email already exists.';
+    try {
+        // 2. CSRF Verification (Uses function from config.php)
+        if (!csrf_verify()) {
+            throw new Exception("Security token expired. Please refresh and try again.");
         }
 
+       // 3. Data Collection
+            $username   = trim($_POST['username']         ?? '');
+            $email      = trim($_POST['email']            ?? '');
+            $password   = trim($_POST['password']         ?? '');
+            $password2  = trim($_POST['password_confirm'] ?? '');
+            $emp_id     = trim($_POST['emp_id']           ?? '');
+
+            $emp_id_value = ($emp_id === '') ? null : $emp_id; 
+
+            $fields = ['username' => $username, 'email' => $email, 'emp_id' => $emp_id];
+
+        // 4. Input Validation (Server-Side)
+        if ($username === '') {
+            $errors['username'] = 'Username is required.';
+        } elseif (!preg_match('/^[a-zA-Z0-9._-]{3,60}$/', $username)) {
+            $errors['username'] = '3-60 chars (letters, numbers, dots, dashes, underscores).';
+        }
+
+        if ($email === '') {
+            $errors['email'] = 'Email is required.';
+        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > 150) {
+            $errors['email'] = 'Please enter a valid email address.';
+        }
+
+        if (strlen($password) < 8) {
+            $errors['password'] = 'Password must be at least 8 characters.';
+        } elseif (!preg_match('/[A-Z]/', $password) || !preg_match('/[0-9]/', $password) || !preg_match('/[^a-zA-Z0-9]/', $password)) {
+            $errors['password'] = 'Include uppercase, number, and special character.';
+        }
+
+        if ($password !== $password2) {
+            $errors['password_confirm'] = 'Passwords do not match.';
+        }
+ 
+        // 6. Database Operations
         if (empty($errors)) {
-            $hash = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
+            $pdo = get_pdo();
 
-            $ins = $pdo->prepare(
-                'INSERT INTO system_users
-                     (emp_id, username, email, password_hash, status, created_at)
-                 VALUES
-                     (:emp_id, :username, :email, :hash, :status, NOW())'
-            );
-            $ins->execute([
-                ':emp_id'   => $emp_id_value,
-                ':username' => $username,
-                ':email'    => $email,
-                ':hash'     => $hash,
-                ':status'   => 'Active',   // change to 'Inactive' if admin approval is required
-            ]);
+            // Start a transaction to ensure data integrity
+            $pdo->beginTransaction();
 
-            $success = 'Account created successfully. You can now <a href="login.php">sign in</a>.';
-            $fields  = ['username' => '', 'email' => ''];
+            // Check if emp_id exists in the master employee table (if provided)
+            if ($emp_id_value !== null) {
+                $stmt = $pdo->prepare("SELECT id FROM employees WHERE id = ? LIMIT 1");
+                $stmt->execute([$emp_id_value]);
+                if (!$stmt->fetch()) {
+                    $errors['emp_id'] = 'This Employee ID is not recognized in our system.';
+                }
+            }
+
+            if (empty($errors)) {
+                // Check uniqueness (Username and Email)
+                $chk = $pdo->prepare('SELECT username, email FROM system_users WHERE username = ? OR email = ?');
+                $chk->execute([$username, $email]);
+                while ($row = $chk->fetch()) {
+                    if ($row['username'] === $username) $errors['username'] = 'Username is already taken.';
+                    if ($row['email'] === $email) $errors['email'] = 'Email is already registered.';
+                }
+
+                if (empty($errors)) {
+                    $hash = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
+                    
+                    $ins = $pdo->prepare(
+                        'INSERT INTO system_users (emp_id, username, email, password_hash, status, created_at)
+                         VALUES (:emp_id, :username, :email, :hash, "Active", NOW())'
+                    );
+                    
+                    $ins->execute([
+                        ':emp_id'   => $emp_id_value,
+                        ':username' => $username,
+                        ':email'    => $email,
+                        ':hash'     => $hash
+                    ]);
+
+                    $pdo->commit();
+                    $success = 'Account created successfully. <a href="login.php" style="color: var(--primary);">Sign in now</a>.';
+                    $fields  = ['username' => '', 'email' => '', 'emp_id' => ''];
+                } else {
+                    $pdo->rollBack();
+                }
+            } else {
+                $pdo->rollBack();
+            }
         }
+    } catch (PDOException $e) {
+        if (isset($pdo) && $pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        error_log("Registration DB Error: " . $e->getMessage());
+        $errors['global'] = "A database error occurred. Please try again later.";
+    } catch (Exception $e) {
+        $errors['global'] = $e->getMessage();
     }
 }
 
+// Generate token using function from config.php
 $csrf = csrf_token();
-
-// ── Password strength indicator (JS-side) ─────────────────────────────────────
-// scored 0-4 based on: length ≥8, uppercase, number, special char
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -194,43 +196,27 @@ $csrf = csrf_token();
             line-height: 1; margin-bottom: 20px; letter-spacing: -0.04em;
         }
         .brand-panel p { font-size: 1.1rem; opacity: 0.85; line-height: 1.7; }
-        .brand-panel ul { list-style: none; margin-top: 24px; }
-        .brand-panel ul li {
-            display: flex; align-items: center; gap: 12px;
-            font-size: 0.95rem; opacity: 0.9; margin-bottom: 12px;
-        }
-        .brand-panel ul li::before {
-            content: "✓"; background: rgba(255,255,255,0.2);
-            width: 24px; height: 24px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 0.75rem; font-weight: 800; flex-shrink: 0;
-        }
 
         .form-panel {
             background: white; display: flex; flex-direction: column;
             justify-content: center; align-items: center;
-            padding: 60px 40px; position: relative;
+            padding: 30px 10px; position: relative;
         }
 
-        .form-card { width: 100%; max-width: 420px; }
-
-        .form-header { margin-bottom: 32px; }
+        .form-card { width: 100%; max-width: 520px; }
         .form-header h2 {
             font-family: 'Plus Jakarta Sans', sans-serif;
             font-size: 2rem; font-weight: 800;
             letter-spacing: -0.02em; margin-bottom: 8px;
         }
-        .form-header p { color: var(--text-muted); font-size: 0.95rem; }
+        .form-header p { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 32px;}
 
         .input-group { margin-bottom: 20px; }
         .input-group label {
             display: block; font-size: 0.75rem; font-weight: 700;
             text-transform: uppercase; letter-spacing: 0.05em;
             color: var(--text-muted); margin-bottom: 8px;
-        }
-        .input-group label .optional {
-            font-weight: 500; text-transform: none; opacity: 0.7; letter-spacing: 0;
-        }
+        } 
 
         .input-ctrl {
             width: 100%; height: 56px;
@@ -244,23 +230,40 @@ $csrf = csrf_token();
             border-color: var(--primary); box-shadow: 0 0 0 4px var(--primary-light);
         }
         .input-ctrl.has-error { border-color: #fda4af !important; background: #fff1f2 !important; }
-        .input-ctrl.is-valid { border-color: #86efac !important; background: #f0fdf4 !important; }
+
+        /* Password Toggle Styles */
+        .password-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .password-toggle-icon {
+            position: absolute;
+            right: 15px;
+            cursor: pointer;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            user-select: none;
+            z-index: 5;
+        }
+        .password-toggle-icon:hover {
+            color: var(--primary);
+        }
+        .input-ctrl-pass {
+            padding-right: 50px; /* Make room for the icon */
+        }
 
         .field-error {
-            display: flex; align-items: center; gap: 6px;
             color: #be123c; font-size: 0.8rem; font-weight: 500;
             margin-top: 6px; padding-left: 2px;
         }
 
-        /* Password strength bar */
         .strength-wrap { margin-top: 8px; }
-        .strength-bars {
-            display: flex; gap: 4px; margin-bottom: 4px;
-        }
-        .strength-bar {
-            height: 4px; flex: 1; background: #e2e8f0;
-            border-radius: 99px; transition: background 0.3s ease;
-        }
+        .strength-bars { display: flex; gap: 4px; margin-bottom: 4px; }
+        .strength-bar { height: 4px; flex: 1; background: #e2e8f0; border-radius: 99px; transition: background 0.3s ease; }
         .strength-bar.active-1 { background: #ef4444; }
         .strength-bar.active-2 { background: #f97316; }
         .strength-bar.active-3 { background: #eab308; }
@@ -271,223 +274,152 @@ $csrf = csrf_token();
 
         .btn-primary {
             width: 100%; height: 58px;
-            display: flex; align-items: center; justify-content: center; gap: 12px;
+            display: flex; align-items: center; justify-content: center;
             border: none; border-radius: var(--radius);
             background: var(--primary); color: white;
-            font-family: 'Inter', sans-serif; font-size: 0.95rem;
-            font-weight: 700; letter-spacing: 0.02em;
+            font-size: 0.95rem; font-weight: 700;
             cursor: pointer; transition: var(--transition);
-            position: relative; overflow: hidden; margin-top: 8px;
+            margin-top: 8px;
             box-shadow: 0 10px 25px -5px rgba(21, 178, 1, 0.3);
         }
         .btn-primary:hover { background: var(--primary-dark); transform: translateY(-2px); }
-        .btn-primary:active { transform: translateY(0); filter: brightness(0.9); }
 
         .success-banner {
             background: #f0fdf4; border: 1px solid #86efac; color: #166534;
-            padding: 14px 18px; border-radius: 10px;
-            font-size: 0.9rem; font-weight: 500; margin-bottom: 24px;
+            padding: 14px 18px; border-radius: 10px; font-size: 0.9rem; margin-bottom: 24px;
         }
-        .success-banner a { color: var(--primary); font-weight: 700; }
-
-        .divider {
-            display: flex; align-items: center; gap: 12px;
-            margin: 24px 0; color: var(--text-muted); font-size: 0.85rem;
-        }
-        .divider::before, .divider::after {
-            content: ''; flex: 1; height: 1px; background: var(--border);
+        .error-banner {
+            background: #fff1f2; border: 1px solid #fda4af; color: #be123c;
+            padding: 14px 18px; border-radius: 10px; margin-bottom: 24px;
+            font-size: 0.9rem; font-weight: 600;
         }
 
-        .login-link {
-            text-align: center; color: var(--text-muted); font-size: 0.9rem;
-        }
-        .login-link a { color: var(--primary); font-weight: 700; text-decoration: none; }
-        .login-link a:hover { text-decoration: underline; }
-
-        .footer-note {
-            text-align: center; margin-top: 32px;
-            color: #cbd5e1; font-size: 0.7rem;
-            font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;
-        }
-
-        @media (max-width: 850px) {
-            .auth-container { grid-template-columns: 1fr; }
-            .brand-panel { display: none; }
-        }
-        @media (max-width: 480px) {
-            .row-2col { grid-template-columns: 1fr; }
-        }
+        @media (max-width: 850px) { .auth-container { grid-template-columns: 1fr; } .brand-panel { display: none; } }
     </style>
 </head>
 <body>
 
 <div class="auth-container">
-
-    <!-- Brand Panel -->
     <aside class="brand-panel">
-        <img src="../assets/bgwhiter.png" alt="BGT Logo" style="position:absolute;top:0;right:-10px;width:100px;">
+         <img src="../assets/bgwhiter.png" alt="BGT Logo" style="position:absolute;top:0;right:-10px;width:100px;">
         <div class="brand-content">
-            <div class="logo-box">
-                <img src="../assets/bgt.png" alt="BGT Logo">
-            </div>
+            <div class="logo-box"><img src="../assets/bgt.png" alt="BGT Logo"></div>
             <h1>Join BGT.</h1>
-            <p>Create your secure workspace account to access the Bull Green Trading platform.</p>
-            <ul>
-                <li>Encrypted credentials with bcrypt hashing</li>
-                <li>Session-protected access control</li>
-                <li>Role-based permissions per employee</li>
-                <li>Full audit trail on every action</li>
-            </ul>
+            <p>Create your secure workspace account.</p>
         </div>
     </aside>
 
-    <!-- Registration Form -->
     <main class="form-panel">
         <div class="form-card">
-
             <div class="form-header">
                 <h2>Create Account</h2>
-                <p>Fill in the details below to register your BGT workspace account.</p>
+                <p>Register your BGT workspace account.</p>
             </div>
 
-            <?php if ($success): ?>
-            <div class="success-banner">
-                <?= $success ?>
-            </div>
+            <?php if (isset($errors['global'])): ?>
+                <div class="error-banner"><?= htmlspecialchars($errors['global']) ?></div>
             <?php endif; ?>
 
-            <form method="POST" action="register.php" id="reg-form" novalidate>
-                <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
+            <?php if ($success): ?>
+                <div class="success-banner"><?= $success ?></div>
+            <?php endif; ?>
 
-                <!-- Row: Username -->
+            <form method="POST" action="" id="reg-form" novalidate>
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf) ?>">
+
                 <div class="input-group">
                     <label>Username</label>
-                    <input type="text" name="username" id="f-username"
-                           class="input-ctrl <?= isset($errors['username']) ? 'has-error' : '' ?>"
-                           placeholder="e.g. john.doe"
-                           value="<?= htmlspecialchars($fields['username']) ?>"
-                           maxlength="60" autocomplete="username">
-                    <?php if (isset($errors['username'])): ?>
-                    <div class="field-error">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                        <?= htmlspecialchars($errors['username']) ?>
-                    </div>
-                    <?php endif; ?>
+                    <input type="text" name="username" class="input-ctrl <?= isset($errors['username']) ? 'has-error' : '' ?>"
+                           placeholder="e.g. john.doe" value="<?= htmlspecialchars($fields['username']) ?>">
+                    <?php if (isset($errors['username'])): ?><div class="field-error"><?= $errors['username'] ?></div><?php endif; ?>
                 </div>
 
-                <!-- Row: Email -->
                 <div class="input-group">
                     <label>Email Address</label>
-                    <input type="email" name="email" id="f-email"
-                           class="input-ctrl <?= isset($errors['email']) ? 'has-error' : '' ?>"
-                           placeholder="user@bullgreentrading.com"
-                           value="<?= htmlspecialchars($fields['email']) ?>"
-                           maxlength="150" autocomplete="email">
-                    <?php if (isset($errors['email'])): ?>
-                    <div class="field-error">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                        <?= htmlspecialchars($errors['email']) ?>
-                    </div>
-                    <?php endif; ?>
+                    <input type="email" name="email" class="input-ctrl <?= isset($errors['email']) ? 'has-error' : '' ?>"
+                           placeholder="user@bullgreentrading.com" value="<?= htmlspecialchars($fields['email']) ?>">
+                    <?php if (isset($errors['email'])): ?><div class="field-error"><?= $errors['email'] ?></div><?php endif; ?>
                 </div>
 
-                <!-- Row: Password + Confirm side by side -->
                 <div class="row-2col">
                     <div class="input-group">
                         <label>Password</label>
-                        <input type="password" name="password" id="f-password"
-                               class="input-ctrl <?= isset($errors['password']) ? 'has-error' : '' ?>"
-                               placeholder="Min 8 chars"
-                               autocomplete="new-password"
-                               oninput="updateStrength(this.value)">
-                        <?php if (isset($errors['password'])): ?>
-                        <div class="field-error">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                            <?= htmlspecialchars($errors['password']) ?>
-                        </div>
-                        <?php endif; ?>
-                        <div class="strength-wrap" id="strength-wrap" style="display:none;">
-                            <div class="strength-bars">
-                                <div class="strength-bar" id="sb1"></div>
-                                <div class="strength-bar" id="sb2"></div>
-                                <div class="strength-bar" id="sb3"></div>
-                                <div class="strength-bar" id="sb4"></div>
+                        <div class="password-container">
+                            <input type="password" name="password" id="f-password" 
+                                   class="input-ctrl input-ctrl-pass <?= isset($errors['password']) ? 'has-error' : '' ?>"
+                                   placeholder="Min. 8 characters"
+                                   oninput="updateStrength(this.value)">
+                            <div class="password-toggle-icon" onclick="togglePasswords()">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="eye-icon"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                             </div>
-                            <span class="strength-label" id="strength-label"></span>
                         </div>
                     </div>
-
                     <div class="input-group">
-                        <label>Confirm Password</label>
-                        <input type="password" name="password_confirm" id="f-confirm"
-                               class="input-ctrl <?= isset($errors['password_confirm']) ? 'has-error' : '' ?>"
-                               placeholder="Repeat password"
-                               autocomplete="new-password">
-                        <?php if (isset($errors['password_confirm'])): ?>
-                        <div class="field-error">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                            <?= htmlspecialchars($errors['password_confirm']) ?>
+                        <label>Confirm</label>
+                        <div class="password-container">
+                            <input type="password" name="password_confirm" id="f-password-confirm" 
+                                   class="input-ctrl input-ctrl-pass <?= isset($errors['password_confirm']) ? 'has-error' : '' ?>"
+                                   placeholder="Repeat password">
+                            <div class="password-toggle-icon" onclick="togglePasswords()">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="eye-icon"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            </div>
                         </div>
-                        <?php endif; ?>
                     </div>
                 </div>
+                <?php if (isset($errors['password'])): ?><div class="field-error"><?= $errors['password'] ?></div><?php endif; ?>
+                <?php if (isset($errors['password_confirm'])): ?><div class="field-error"><?= $errors['password_confirm'] ?></div><?php endif; ?>
 
-                <!-- Row: Employee ID (optional) -->
-                <div class="input-group">
-                    <label>Employee ID <span class="optional">(optional)</span></label>
-                    <input type="number" name="emp_id" id="f-empid"
-                           class="input-ctrl <?= isset($errors['emp_id']) ? 'has-error' : '' ?>"
-                           placeholder="Link to an existing employee record"
-                           min="1">
-                    <?php if (isset($errors['emp_id'])): ?>
-                    <div class="field-error">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                        <?= htmlspecialchars($errors['emp_id']) ?>
+                <div class="strength-wrap" id="strength-wrap" style="display:none; margin-bottom: 20px;">
+                    <div class="strength-bars">
+                        <div class="strength-bar" id="sb1"></div>
+                        <div class="strength-bar" id="sb2"></div>
+                        <div class="strength-bar" id="sb3"></div>
+                        <div class="strength-bar" id="sb4"></div>
                     </div>
-                    <?php endif; ?>
+                    <span class="strength-label" id="strength-label"></span>
                 </div>
-
-                <button type="submit" class="btn-primary">
-                    Create Account
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
-                </button>
+                 
+                <button type="submit" class="btn-primary">Create Account</button>
             </form>
 
-            <div class="divider">or</div>
-
-            <div class="login-link">
-                Already have an account? <a href="login.php">Sign in</a>
+            <div style="text-align: center; margin-top: 24px; color: var(--text-muted);">
+                Already have an account? <a href="login.php" style="color: var(--primary); font-weight: 700; text-decoration: none;">Sign in</a>
             </div>
-
-            <div class="footer-note">
-                Bull Green Trading PLC &bull; &copy; 2026 YDY Systems
-            </div>
-
-        </div><!-- /form-card -->
+        </div>
     </main>
-
-</div><!-- /auth-container -->
+</div>
 
 <script>
-// Real-time password strength meter
+/**
+ * Toggles visibility for both password inputs
+ */
+function togglePasswords() {
+    const p1 = document.getElementById('f-password');
+    const p2 = document.getElementById('f-password-confirm');
+    
+    // Determine the new type based on the first field
+    const newType = p1.type === 'password' ? 'text' : 'password';
+    
+    p1.type = newType;
+    p2.type = newType;
+}
+
 function updateStrength(val) {
     const wrap = document.getElementById('strength-wrap');
     const label = document.getElementById('strength-label');
     const bars = [
-        document.getElementById('sb1'),
-        document.getElementById('sb2'),
-        document.getElementById('sb3'),
-        document.getElementById('sb4'),
+        document.getElementById('sb1'), document.getElementById('sb2'),
+        document.getElementById('sb3'), document.getElementById('sb4'),
     ];
 
     if (!val) { wrap.style.display = 'none'; return; }
     wrap.style.display = 'block';
 
     let score = 0;
-    if (val.length >= 8)            score++;
-    if (/[A-Z]/.test(val))          score++;
-    if (/[0-9]/.test(val))          score++;
-    if (/[^a-zA-Z0-9]/.test(val))   score++;
+    if (val.length >= 8) score++;
+    if (/[A-Z]/.test(val)) score++;
+    if (/[0-9]/.test(val)) score++;
+    if (/[^a-zA-Z0-9]/.test(val)) score++;
 
     const labels = ['', 'Weak', 'Fair', 'Good', 'Strong'];
     label.textContent = labels[score];
@@ -497,13 +429,6 @@ function updateStrength(val) {
         if (i < score) b.classList.add('active-' + score);
     });
 }
-
-// Live confirm-match indicator
-document.getElementById('f-confirm')?.addEventListener('input', function () {
-    const pw = document.getElementById('f-password').value;
-    this.classList.toggle('is-valid', this.value === pw && this.value !== '');
-    this.classList.toggle('has-error', this.value !== pw && this.value !== '');
-});
 </script>
 
 </body>
