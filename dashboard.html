@@ -72,6 +72,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
   .sidebar.collapsed .dash-link:hover::after{content:attr(title);position:fixed;left:85px;background:var(--text);color:#fff;padding:6px 12px;border-radius:6px;font-size:.75rem;white-space:nowrap;z-index:9999}
   .sidebar.collapsed .nav-group:hover .dash-link span{display:block!important;position:absolute;left:72px;background:var(--text);color:#fff;padding:5px 12px;border-radius:6px;font-size:.75rem}
 }
+
 .main{flex:1;margin-left:var(--sidebar-w);display:flex;flex-direction:column;height:100vh;overflow:hidden;transition:margin-left var(--transition)}
 .main.sidebar-collapsed{margin-left:78px}
 @media(max-width:768px){.main{margin-left:0!important}}
@@ -694,7 +695,11 @@ th.sticky-emp.sticky-head { z-index: 50; top: 0; left: 0; background: #f8fafc !i
 .btn-upload-pro:hover {
     background: var(--primary-dark);
 }
-
+.btn-logout:hover {
+  background: var(--danger-bg) !important;
+  color: var(--danger) !important;
+  border-color: var(--danger) !important;
+}
 </style>
 </head>
 <body>
@@ -881,6 +886,9 @@ th.sticky-emp.sticky-head { z-index: 50; top: 0; left: 0; background: #f8fafc !i
           <div class="u-name">Admin User</div>
           <div class="u-role">Super Administrator</div>
         </div>
+      </div>
+      <div class="icon-btn btn-logout" onclick="handleLogout()" title="Log out">
+        <i data-lucide="log-out" size="15"></i>
       </div>
     </div>
   </div>
@@ -3457,7 +3465,13 @@ function showNotification(title, message, type = 'success') {
         setTimeout(() => toast.remove(), 300);
     }, 4000);
 }
-
+function handleLogout() {
+  // 1. Show the "Signing out" notification using your existing toast system
+  showNotification("Security", "Ending secure session. Redirecting...", "danger");
+   setTimeout(() => {
+        window.location.href = 'login/logout.php'; 
+    }, 1000);
+}
 </script>
 <!-- Toast Notification Container -->
 <div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none;"></div>
