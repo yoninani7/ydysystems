@@ -743,6 +743,7 @@ th.sticky-emp.sticky-head { z-index: 50; top: 0; left: 0; background: #f8fafc !i
         <div class="sub-link" onclick="goPage('probation-tracker',this)"><span class="sub-dot"></span><span>Probation Tracker</span></div>
         <div class="sub-link" onclick="goPage('contract-renewals',this)"><span class="sub-dot"></span><span>Contract Renewals</span></div>
         <div class="sub-link" onclick="goPage('former-employees',this)"><span class="sub-dot"></span><span>Former employees</span></div>
+        <div class="sub-link" onclick="goPage('retirement-planner',this)"><span class="sub-dot"></span><span>Retirement Planner</span></div>
         <div class="sub-link" onclick="goPage('document-vault',this)"><span class="sub-dot"></span><span>Attachment Vault</span></div>
         <div class="sub-link" onclick="goPage('asset-tracking',this)"><span class="sub-dot"></span><span>Asset Tracking</span></div>
       </div>
@@ -1426,6 +1427,49 @@ th.sticky-emp.sticky-head { z-index: 50; top: 0; left: 0; background: #f8fafc !i
   <div id="tbl-former-employees"></div>
 </div>
 
+<!-- RETIREMENT PLANNER -->
+<div class="page" id="p-retirement-planner">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Retirement & Succession Planner</div>
+      <div class="page-sub">Monitoring personnel reaching the statutory retirement age (60 years)</div>
+    </div>
+    <div class="flex-row">
+      <button class="btn btn-secondary"><i data-lucide="download" size="13"></i> Export Report</button>
+      <button class="btn btn-primary"><i data-lucide="bell" size="13"></i> Notify Managers</button>
+    </div>
+  </div>
+
+  <!-- Retirement Quick Stats -->
+  <div class="stats-row stats-3 mb-4">
+    <div class="stat-card" style="border-left: 4px solid var(--warning);">
+      <div class="stat-label">Upcoming (90 Days)</div>
+      <div class="stat-value" id="count-upcoming-ret">0</div>
+      <div class="stat-change" style="color:var(--muted);">Critical for succession</div>
+    </div>
+    <div class="stat-card" style="border-left: 4px solid var(--primary);">
+      <div class="stat-label">Retired this Fiscal Year</div>
+      <div class="stat-value">24</div>
+      <div class="stat-change stat-up">Processed via Pension</div>
+    </div>
+    <div class="stat-card" style="border-left: 4px solid var(--info);">
+      <div class="stat-label">Avg. Service period</div>
+      <div class="stat-value">28.5 Yrs</div>
+      <div class="stat-change">Lifetime Service</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+        <div class="card-title">Retirement Registry</div>
+        <div class="flex-row">
+            <span class="badge badge-warning" style="font-size: 10px;">Upcoming</span>
+            <span class="badge badge-neutral" style="font-size: 10px;">Already Retired</span>
+        </div>
+    </div>
+    <div id="tbl-retirement"></div>
+  </div>
+</div>
 <!-- ATTACHMENT VAULT -->
 <div class="page" id="p-document-vault">
   <div class="page-header"><div><div class="page-title">Attachment Vault & Compliance</div><div class="page-sub">Tracking mandatory company-specific documents for all personnel</div></div></div>
@@ -2751,6 +2795,58 @@ function initPage(id){
     case 'employment-types':buildTable('tbl-employment-types',{columns:[ {key:'name',label:'Type Name'},{key:'desc',label:'Description'},{key:'count',label:'Employees'},ac],rows:[{ name:'Permanent / Full-Time',desc:'Regular employee with full benefits',benefits:'Yes',count:912},{ name:'Fixed-Term Contract',desc:'Time-bound employment agreement',benefits:'Partial',count:248},{  name:'Part-Time',desc:'Less than 40 hours per week',benefits:'Partial',count:55},{ name:'Internship',desc:'Student or graduate trainee',benefits:'No',count:33},{ name:'Temporary / Casual',desc:'Short-term project-based',benefits:'No',count:0}]});break;
     case 'probation-tracker':buildTable('tbl-probation',{columns:[ {key:'name',label:'Employee'},{key:'dept',label:'Department'},{key:'start',label:'Probation Start'},{key:'end',label:'Probation End'},{key:'days',label:'Days Left'},{key:'status',label:'Probation Status'},ac],rows:gen(22,i=>({ name:names[i%names.length],dept:rand(depts),start:`Jan ${randInt(5,20)}, 2026`,end:`Apr ${randInt(5,20)}, 2026`,days:randInt(0,50),status:i<8?b('warning','Ending Soon'):b('info','Active')}))});break;
     case 'contract-renewals':buildTable('tbl-contract-renewals',{columns:[ {key:'name',label:'Employee'},{key:'dept',label:'Department'} ,{key:'start',label:'Start'},{key:'expiry',label:'Expiry'},{key:'days',label:'Days to Expiry'},{key:'status',label:'Status'},ac],rows:gen(18,i=>({ name:names[i%names.length],dept:rand(depts),start:`Apr ${randInt(1,28)}, 2025`,expiry:`Apr ${randInt(1,28)}, 2026`,days:randInt(-5,90),status:i<3?b('danger','Critical'):i<8?b('warning','Due Soon'):b('success','Active')}))});break;
+    case 'retirement-planner':
+      // Generate mock data specifically for retirement
+      const retirementRows = gen(20, i => {
+        const isRetired = i > 5; // First 5 are upcoming, rest are already retired
+        const today = new Date();
+        const retDate = new Date();
+        
+        if (!isRetired) {
+          // Set retirement date within the next 90 days
+          retDate.setDate(today.getDate() + randInt(10, 85));
+        } else {
+          // Set retirement date in the past
+          retDate.setDate(today.getDate() - randInt(10, 200));
+        }
+
+        return {
+          name: names[i % names.length],
+          dept: rand(depts),
+          age: isRetired ? 60 : 59,
+          tenure: randInt(20, 35) + " yrs",
+          date: retDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          status: isRetired ? b('neutral', 'Retired') : b('warning', 'Upcoming (90D)'),
+          pension: i % 3 === 0 ? b('success', 'Verified') : b('warning', 'In Progress')
+        };
+      });
+
+      // Update the counter in the stat card
+      document.getElementById('count-upcoming-ret').textContent = "5";
+
+      buildTable('tbl-retirement', {
+        columns: [
+          { key: 'name', label: 'Employee' },
+          { key: 'dept', label: 'Department' },
+          { key: 'age', label: 'Age' },
+          { key: 'tenure', label: 'Service Period' },
+          { key: 'date', label: 'Retirement Date' },
+          { key: 'status', label: 'Status' },
+          { key: 'pension', label: 'Pension Status' },
+          { 
+            key: '_', 
+            label: 'Actions', 
+            render: (v, row) => `
+              <div class="flex-row">
+                <button class="btn btn-xs btn-secondary" title="Succession Plan"><i data-lucide="user-plus" size="10"></i></button>
+                <button class="btn btn-xs btn-primary" title="Clearance"><i data-lucide="clipboard-check" size="10"></i></button>
+              </div>`
+          }
+        ],
+        rows: retirementRows,
+        perPage: 10
+      });
+      break;
     case 'former-employees': buildTable('tbl-former-employees', { columns: [ {key:'name',label:'Employee'},{key:'dept',label:'Last Department'},{key:'role',label:'Last Role'},{key:'exitDate',label:'Exit Date'},{key:'type',label:'Reason'},{key:'duration',label:'Duration'},{key:'rehire',label:'Rehire possibility'},ac], rows: gen(25, i => ({  name:names[i%names.length], dept:rand(depts), role:['Manager','Analyst','Dev','Lead'][i%4], exitDate:`Jan ${randInt(1,31)}, 2026`, type:(i%5===2)?b('danger','Terminated'):b('neutral','Resigned'), duration:randInt(1,10)+' yrs', rehire:(i%6===0)?b('danger','No'):b('success','Yes') })) }); break;
     case 'asset-tracking':
       buildTable('tbl-assets', {
