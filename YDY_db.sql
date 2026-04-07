@@ -309,7 +309,7 @@ CREATE TABLE asset_assignments (
 -- ── 3.1  Job Vacancies ───────────────────────────────────────
 CREATE TABLE job_vacancies (
     id                 INT          PRIMARY KEY AUTO_INCREMENT,
-    title              VARCHAR(200) NOT NULL,
+    title              VARCHAR(200),
     department_id      INT          NULL,
     branch_id          INT          NULL,
     employment_type_id INT          NULL,
