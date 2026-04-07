@@ -15,7 +15,7 @@ define('DB_PASS', '');     // ← change
 define('DB_CHARSET', 'utf8mb4');
 
 // Redirect users here after a successful login
-define('LOGIN_REDIRECT', 'index.html');
+define('LOGIN_REDIRECT', '../dashboard.html');
 
 // How long (seconds) a "remember me" session cookie lasts (30 days)
 define('REMEMBER_ME_TTL', 60 * 60 * 24 * 30);
@@ -38,36 +38,27 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// ── PDO singleton ─────────────────────────────────────────────────────────────
 function get_pdo(): PDO
 {
     static $pdo = null;
-
     if ($pdo === null) {
-        $dsn = sprintf(
-            'mysql:host=%s;port=%s;dbname=%s;charset=%s',
-            DB_HOST, DB_PORT, DB_NAME, DB_CHARSET
-        );
+        $dsn = sprintf('mysql:host=%s;port=%s;dbname=%s;charset=%s', DB_HOST, DB_PORT, DB_NAME, DB_CHARSET);
         $options = [
             PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES   => false,   // real prepared statements
+            PDO::ATTR_EMULATE_PREPARES   => false,
         ];
 
         try {
             $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
         } catch (PDOException $e) {
-            // Never expose DB errors to the browser
             error_log('DB connection failed: ' . $e->getMessage());
-            http_response_code(500);
-            exit('A server error occurred. Please try again later.');
+            // CHANGED: Throw an exception instead of exit()
+            throw new Exception("Database connection failed. Contact your admin.");
         }
     }
-
     return $pdo;
 }
-
-// ── CSRF helpers ──────────────────────────────────────────────────────────────
 
 /**
  * Generate (or retrieve existing) CSRF token for the current session.
@@ -82,17 +73,23 @@ function csrf_token(): string
 
 /**
  * Validate the CSRF token submitted with a form.
- * Exits with 403 on mismatch — safe to call from any POST handler.
+ * Returns TRUE if valid, FALSE if invalid.
  */
-function csrf_verify(): void
+function csrf_verify(): bool
 {
+    // 1. Check if token exists in both POST and SESSION
     $submitted = $_POST['csrf_token'] ?? '';
-    if (!hash_equals(csrf_token(), $submitted)) {
-        http_response_code(403);
-        exit('Invalid CSRF token.');
-    }
-}
+    $stored    = $_SESSION['csrf_token'] ?? '';
 
+    // 2. If either is empty, it's an invalid request
+    if ($submitted === '' || $stored === '') {
+        return false;
+    }
+
+    // 3. Use hash_equals to prevent timing attacks
+    // Returns true if they match, false otherwise
+    return hash_equals($stored, $submitted);
+}
 // ── Utility ───────────────────────────────────────────────────────────────────
 
 /**
