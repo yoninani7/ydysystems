@@ -298,6 +298,18 @@ CREATE TABLE asset_assignments (
     FOREIGN KEY (assigned_by)      REFERENCES employees(id) ON DELETE SET NULL
 );
 
+CREATE TABLE asset_history (
+    id              INT PRIMARY KEY AUTO_INCREMENT,
+    asset_id        INT NOT NULL,
+    from_employee_id INT NULL,
+    to_employee_id   INT NULL,
+    action_by       INT NULL, -- HR User
+    action_date     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    reason          VARCHAR(255),
+    FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE,
+    FOREIGN KEY (from_employee_id) REFERENCES employees(id) ON DELETE SET NULL,
+    FOREIGN KEY (to_employee_id) REFERENCES employees(id) ON DELETE SET NULL
+);
 
 -- ============================================================
 -- SECTION 3 : TALENT ACQUISITION
@@ -339,6 +351,7 @@ CREATE TABLE candidates (
     applied_date  DATE,
     current_stage ENUM('Applied','Screening','Interview','Assessment','Offer','Hired','Rejected')
                                DEFAULT 'Applied',
+
     notes         TEXT,
     created_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
     updated_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -470,6 +483,19 @@ CREATE TABLE attendance (
 );
 
 
+CREATE TABLE attendance_monthly_summary (
+    id              INT PRIMARY KEY AUTO_INCREMENT,
+    employee_id     INT NOT NULL,
+    att_year        SMALLINT NOT NULL,
+    att_month       TINYINT NOT NULL, -- 1-12
+    days_present    TINYINT DEFAULT 0,
+    days_absent     TINYINT DEFAULT 0,
+    days_late       TINYINT DEFAULT 0,
+    total_ot_hours  DECIMAL(10,2) DEFAULT 0.00,
+    attendance_rate DECIMAL(5,2), -- Percentage
+    FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
+    UNIQUE KEY uq_summary_period (employee_id, att_year, att_month)
+);
 -- ============================================================
 -- SECTION 6 : LEAVE MANAGEMENT
 -- (Sidebar → Leave Management → Leave Types /
@@ -788,6 +814,24 @@ ALTER TABLE report_templates
     ADD CONSTRAINT fk_report_user
     FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL;
 
+-- Track failed login attempts to prevent brute force
+CREATE TABLE login_attempts (
+    user_id         INT NOT NULL,
+    attempt_count   TINYINT UNSIGNED NOT NULL DEFAULT 1,
+    last_attempt_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Store hashed tokens for "Remember Me" sessions
+CREATE TABLE remember_tokens (
+    id          INT PRIMARY KEY AUTO_INCREMENT,
+    user_id     INT NOT NULL,
+    token_hash  CHAR(64) NOT NULL, -- SHA-256 hash
+    expires_at  DATETIME NOT NULL,
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
 
 -- ── 11.3  Roles (standard named roles) ───────────────────────
 CREATE TABLE roles (
@@ -835,8 +879,8 @@ CREATE TABLE audit_logs (
     action      ENUM('CREATE','UPDATE','DELETE','LOGIN','APPROVE','EXPORT','VIEW') NOT NULL,
     module      VARCHAR(100),
     record_ref  VARCHAR(100),                                   -- e.g. 'E-0042', 'AST-2001'
-    old_value   LONGTEXT          NULL,                             -- before state
-    new_value   LONGTEXT          NULL,                             -- after state
+    old_value   JSON          NULL,                             -- before state
+    new_value   JSON          NULL,                             -- after state
     ip_address  VARCHAR(45),
     logged_at   TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
