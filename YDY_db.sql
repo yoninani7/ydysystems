@@ -841,33 +841,38 @@ CREATE TABLE roles (
     created_at  TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
 );
 
-
+-- 1. Create the Modules Table with Hierarchy support
+CREATE TABLE modules (
+    id          INT PRIMARY KEY AUTO_INCREMENT,
+    module_key  VARCHAR(60) UNIQUE NOT NULL, -- e.g. 'm-org' (Category) or 'company-profile' (Sub)
+    name        VARCHAR(100) NOT NULL,
+    parent_id   INT DEFAULT NULL,             -- NULL means this is a Sidebar Category (Group)
+    sort_order  INT DEFAULT 0,
+    FOREIGN KEY (parent_id) REFERENCES modules(id) ON DELETE CASCADE
+);
 -- ── 11.4  Role Permissions (module-level access per role) ────
 CREATE TABLE role_permissions (
-    id          INT          PRIMARY KEY AUTO_INCREMENT,
-    role_id     INT          NOT NULL,
-    module_id   VARCHAR(50)  NOT NULL,                          -- 'm-org', 'm-emp', etc.
-    module_name VARCHAR(150),
-    submodule   VARCHAR(150) NULL,                              -- specific sub-page or NULL = whole module
-    can_access  BOOLEAN      DEFAULT TRUE,
-    updated_at  TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_role_module_sub (role_id, module_id, submodule),
-    FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE
+    id          INT PRIMARY KEY AUTO_INCREMENT,
+    role_id     INT NOT NULL,
+    module_id   INT NOT NULL,
+    can_access  BOOLEAN DEFAULT TRUE,        -- Single toggle instead of 4 checkboxes
+    updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_role_module (role_id, module_id),
+    FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE,
+    FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE
 );
-
 
 -- ── 11.5  Individual User Permission Overrides ────────────────
 --          Used when "Individual Roles" mode is selected in the UI
 CREATE TABLE user_permission_overrides (
-    id          INT          PRIMARY KEY AUTO_INCREMENT,
-    user_id     INT          NOT NULL,
-    module_id   VARCHAR(50)  NOT NULL,
-    module_name VARCHAR(150),
-    submodule   VARCHAR(150) NULL,
-    can_access  BOOLEAN      DEFAULT TRUE,
-    updated_at  TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_user_module_sub (user_id, module_id, submodule),
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    id          INT PRIMARY KEY AUTO_INCREMENT,
+    user_id     INT NOT NULL,
+    module_id   INT NOT NULL,
+    can_access  BOOLEAN DEFAULT TRUE,
+    updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_user_module (user_id, module_id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE
 );
 
 
