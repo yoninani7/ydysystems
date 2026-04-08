@@ -339,7 +339,6 @@ CREATE TABLE candidates (
     applied_date  DATE,
     current_stage ENUM('Applied','Screening','Interview','Assessment','Offer','Hired','Rejected')
                                DEFAULT 'Applied',
-    source        VARCHAR(100),                                 -- LinkedIn, Referral, Walk-in, etc.
     notes         TEXT,
     created_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
     updated_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
