@@ -63,14 +63,14 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
   .sidebar.collapsed .dash-link:hover .nav-trigger-left span{display:block!important;position:fixed;left:78px;width:160px;padding:12px 16px;background:var(--surface);color:var(--text);font-size:.8rem;font-weight:700;border:1px solid var(--border);border-left:4px solid var(--primary);border-radius:0 10px 10px 0;box-shadow:15px 10px 40px rgba(0,0,0,.15);z-index:9999;pointer-events:none;transform:translateX(0)}
   .sidebar.collapsed .nav-group{position:relative}
   .sidebar.collapsed .nav-group::after{content:'';position:absolute;top:0;right:-20px;width:25px;height:100%;z-index:10;display:none}
-  .sidebar.collapsed .nav-group:hover::after{display:block;z-index:5}
-  .sidebar.collapsed .nav-group:hover .submenu{display:flex!important;flex-direction:column;position:fixed;left:78px;width:230px;background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--primary);border-radius:0 12px 12px 12px;box-shadow:15px 10px 40px rgba(0,0,0,.15);padding:45px 8px 12px;opacity:1;visibility:visible;z-index:9999;max-height:calc(100vh - 20px)!important;overflow-y:auto!important;margin-left:-1px;transform:translateX(0);transition:opacity .2s ease}
-  .sidebar.collapsed .nav-group:hover .nav-trigger-left span{pointer-events:none;display:block!important;position:fixed;left:78px;z-index:10000;margin-left:-1px;width:222px;padding:12px 16px;background:#fafafa;color:var(--text);font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);border-radius:0 11px 0 0;transform:translateX(0)}
-  .sidebar.collapsed .nav-group:hover .sub-link{display:flex!important;padding:10px 12px!important;color:var(--muted)!important}
-  .sidebar.collapsed .nav-group:hover .sub-link span{display:block!important;font-size:.8rem!important}
-  .sidebar.collapsed .nav-group:hover .sub-dot{display:block!important}
+  .sidebar.collapsed .nav-group.flyout-active::after{display:block;z-index:5}
+  .sidebar.collapsed .nav-group.flyout-active .submenu{display:flex!important;flex-direction:column;position:fixed;left:78px;width:230px;background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--primary);border-radius:0 12px 12px 12px;box-shadow:15px 10px 40px rgba(0,0,0,.15);padding:45px 8px 12px;opacity:1;visibility:visible;z-index:9999;max-height:calc(100vh - 20px)!important;overflow-y:auto!important;margin-left:-1px;transform:translateX(0);transition:opacity .2s ease}
+  .sidebar.collapsed .nav-group.flyout-active .nav-trigger-left span{pointer-events:none;display:block!important;position:fixed;left:78px;z-index:10000;margin-left:-1px;width:222px;padding:12px 16px;background:#fafafa;color:var(--text);font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);border-radius:0 11px 0 0;transform:translateX(0)}
+  .sidebar.collapsed .nav-group.flyout-active .sub-link{display:flex!important;padding:10px 12px!important;color:var(--muted)!important}
+  .sidebar.collapsed .nav-group.flyout-active .sub-link span{display:block!important;font-size:.8rem!important}
+  .sidebar.collapsed .nav-group.flyout-active .sub-dot{display:block!important}
   .sidebar.collapsed .dash-link:hover::after{content:attr(title);position:fixed;left:85px;background:var(--text);color:#fff;padding:6px 12px;border-radius:6px;font-size:.75rem;white-space:nowrap;z-index:9999}
-  .sidebar.collapsed .nav-group:hover .dash-link span{display:block!important;position:absolute;left:72px;background:var(--text);color:#fff;padding:5px 12px;border-radius:6px;font-size:.75rem}
+  .sidebar.collapsed .nav-group.flyout-active .dash-link span{display:block!important;position:absolute;left:72px;background:var(--text);color:#fff;padding:5px 12px;border-radius:6px;font-size:.75rem}
 }
 
 .main{flex:1;margin-left:var(--sidebar-w);display:flex;flex-direction:column;height:100vh;overflow:hidden;transition:margin-left var(--transition)}
@@ -699,6 +699,18 @@ th.sticky-emp.sticky-head { z-index: 50; top: 0; left: 0; background: #f8fafc !i
   background: var(--danger-bg) !important;
   color: var(--danger) !important;
   border-color: var(--danger) !important;
+}
+.sidebar.collapsed .nav-group.flyout-active .submenu {
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 0s;
+}
+
+.sidebar.collapsed .nav-group .submenu {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  transition-delay: 300ms;
 }
 </style>
 </head>
@@ -2280,31 +2292,50 @@ window.addEventListener('resize', () => {
   }
 }, {passive:true});
 
-// ── THROTTLED collapsed sidebar flyout positioning ──
-let _hoverRaf = null;
-document.addEventListener('mouseover', (e) => {
-  if (!sidebar.classList.contains('collapsed')) return;
-  if (_hoverRaf) return;
-  _hoverRaf = requestAnimationFrame(() => {
-    _hoverRaf = null;
-    const navGroup = e.target.closest('.nav-group');
-    if (!navGroup) return;
-    const submenu = navGroup.querySelector('.submenu');
-    const label = navGroup.querySelector('.nav-trigger-left span');
-    if (!submenu || !label) return;
-    const rect = navGroup.getBoundingClientRect();
-    const vH = window.innerHeight;
-    submenu.style.visibility = 'hidden';
-    submenu.style.display = 'flex';
-    const menuH = submenu.offsetHeight;
-    submenu.style.display = '';
-    submenu.style.visibility = '';
-    let top = Math.min(rect.top, vH - menuH - 10);
-    if (top < 10) top = 10;
-    submenu.style.top = top + 'px';
-    label.style.top = top + 'px';
+// ── COLLAPSED SIDEBAR FLYOUT (with delay fix) ──
+let _flyoutTimer = null;
+let _activeGroup = null;
+
+function showFlyout(group) {
+  clearTimeout(_flyoutTimer);
+  if (_activeGroup && _activeGroup !== group) {
+    _activeGroup.classList.remove('flyout-active');
+  }
+  
+  // Dynamically calculate position
+  const rect = group.getBoundingClientRect();
+  const submenu = group.querySelector('.submenu');
+  const label = group.querySelector('.nav-trigger-left span');
+  
+  if (submenu) {
+    submenu.style.top = rect.top + 'px';
+  }
+  if (label) {
+    label.style.top = rect.top + 'px';
+  }
+
+  group.classList.add('flyout-active');
+  _activeGroup = group;
+}
+function hideFlyout() {
+  _flyoutTimer = setTimeout(() => {
+    if (_activeGroup) {
+      _activeGroup.classList.remove('flyout-active');
+      _activeGroup = null;
+    }
+  }, 400);
+}
+
+document.querySelectorAll('.nav-group').forEach(group => {
+  group.addEventListener('mouseenter', () => {
+    if (!sidebar.classList.contains('collapsed') || isMobile()) return;
+    showFlyout(group);
   });
-}, {passive:true});
+  group.addEventListener('mouseleave', () => {
+    if (!sidebar.classList.contains('collapsed') || isMobile()) return;
+    hideFlyout();
+  });
+});
 
 // ── NAVIGATION ──
 function toggleNav(el, id) {
