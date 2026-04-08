@@ -3294,16 +3294,18 @@ function selectUserForPerms(name) {
     renderPermissionGrid(false); // Passing 'false' makes checkboxes active/changeable
 }
 
+// Ensure the grid reflects the parent-child relationship on load
 function renderPermissionGrid(isSuperAdmin) {
     const grid = document.getElementById('perm-grid');
     let html = '';
 
     mods.forEach(m => {
-        // Parent row
+        // 1. RENDER THE CATEGORY (THE GROUP)
         html += `
-          <tr style="background: #f8fafc;">
+          <tr style="background: #f8fafc; border-bottom: 2px solid var(--border)">
             <td style="text-align:center; color:var(--primary)"><i data-lucide="${m.i}" size="14"></i></td>
-            <td colspan="2"><b style="font-size:.75rem; text-transform:uppercase; letter-spacing:0.05em;">${m.n}</b></td>
+            <td><b style="font-size:.75rem; text-transform:uppercase; letter-spacing:0.05em;">${m.n}</b></td>
+            <td style="font-size:.65rem; color:var(--muted)">Enable/Disable entire sidebar category.</td>
             <td style="text-align:center">
               <label class="switch">
                 <input type="checkbox" 
@@ -3317,18 +3319,18 @@ function renderPermissionGrid(isSuperAdmin) {
           </tr>
         `;
 
-        // Submodule rows
+        // 2. RENDER THE SUB-CATEGORIES (INDIVIDUALS)
         m.subs.forEach(sub => {
             html += `
-              <tr>
+              <tr class="child-row-${m.id}">
                 <td></td>
                 <td style="padding-left: 30px;">
                   <div style="display:flex; align-items:center; gap:8px;">
-                     <span style="width:6px; height:6px; border-radius:50%; background:var(--border);"></span>
-                     <span style="font-size:.75rem; font-weight:500;">${sub}</span>
+                     <span style="width:6px; height:6px; border-radius:50%; background:var(--primary);"></span>
+                     <span style="font-size:.75rem; font-weight:600;">${sub}</span>
                   </div>
                 </td>
-                <td style="font-size:.65rem; color:var(--muted)">Access to ${sub} interface.</td>
+                <td style="font-size:.65rem; color:var(--muted)">Individual access to the ${sub} page.</td>
                 <td style="text-align:center">
                   <label class="switch">
                     <input type="checkbox" 
@@ -3350,9 +3352,12 @@ function renderPermissionGrid(isSuperAdmin) {
 
 // Function to toggle all sub-modules when parent is clicked
 function toggleModuleGroup(moduleId, isChecked) {
+    // Find all checkboxes that belong to this category
     const children = document.querySelectorAll(`input[data-parent-ref="${moduleId}"]`);
     children.forEach(child => {
         child.checked = isChecked;
+        // Optionally: gray out the child rows if parent is unchecked
+        child.closest('tr').style.opacity = isChecked ? "1" : "0.5";
     });
 }
 
