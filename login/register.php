@@ -62,16 +62,21 @@ if (empty($errors)) {
             
             // --- NEW LOGIC TO MATCH YOUR DATABASE ---
             
-            // 1. Find the ID for the 'Super Admin' role from your 'roles' table
-            $roleQuery = $pdo->prepare("SELECT id FROM roles WHERE name = 'Super Admin' LIMIT 1");
-            $roleQuery->execute();
-            $roleRow = $roleQuery->fetch();
+            // 1. Find the ID for the 'Super Admin' role
+                $roleQuery = $pdo->prepare("SELECT id FROM roles WHERE name = 'Super Admin' LIMIT 1");
+                $roleQuery->execute();
+                $roleRow = $roleQuery->fetch();
 
-            if (!$roleRow) {
-                throw new Exception("Default role 'Super Admin' not found in database. Please seed the roles table.");
-            }
-            $target_role_id = $roleRow['id'];
-
+                if (!$roleRow) {
+                    // FALLBACK: If "Super Admin" isn't found, grab the first available role
+                    $fallbackQuery = $pdo->query("SELECT id FROM roles LIMIT 1");
+                    $roleRow = $fallbackQuery->fetch();
+                    
+                    if (!$roleRow) {
+                        throw new Exception("No roles found in the database. Please run the database seeds.");
+                    }
+                }
+                $target_role_id = $roleRow['id'];
             // 2. Hash the password
             $password_hash = password_hash($password, PASSWORD_BCRYPT);
 
