@@ -295,19 +295,6 @@ CREATE TABLE asset_assignments (
     FOREIGN KEY (assigned_by)      REFERENCES employees(id) ON DELETE SET NULL
 );
 
-CREATE TABLE asset_history (
-    id              INT PRIMARY KEY AUTO_INCREMENT,
-    asset_id        INT NOT NULL,
-    from_employee_id INT NULL,
-    to_employee_id   INT NULL,
-    action_by       INT NULL, -- HR User
-    action_date     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    reason          VARCHAR(255),
-    FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE,
-    FOREIGN KEY (from_employee_id) REFERENCES employees(id) ON DELETE SET NULL,
-    FOREIGN KEY (to_employee_id) REFERENCES employees(id) ON DELETE SET NULL
-);
-
 -- ============================================================
 -- SECTION 3 : TALENT ACQUISITION
 -- (Sidebar → Talent Acquisition → Job Vacancies / Candidates /
@@ -468,7 +455,7 @@ CREATE TABLE attendance (
     hours_worked   DECIMAL(4,2) NULL,
     overtime_hours DECIMAL(4,2) DEFAULT 0.00,
     is_late        BOOLEAN  DEFAULT FALSE,
-    month          TINYINT  NOT NULL,                           -- 0–11 matching JS Date.getMonth()
+    month          TINYINT  NOT NULL,                           
     year           SMALLINT NOT NULL,
     recorded_by    INT      NULL,                               -- HR user
     created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -796,17 +783,14 @@ CREATE TABLE users (
     employee_id   INT          NULL,
     email         VARCHAR(150) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL, 
-    -- Updated Role Column
-    role          VARCHAR(100) NOT NULL DEFAULT 'HRM User', 
+    role_id       INT          NOT NULL,  
     department_id INT          NULL,
     status        ENUM('Active','Inactive') DEFAULT 'Active',
     last_login    TIMESTAMP    NULL,
     created_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
     updated_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    
-    -- Link the Role Name string directly to the Roles table Name string
-    FOREIGN KEY (role) REFERENCES roles(name) ON UPDATE CASCADE,
-    
+     
+    FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE RESTRICT, 
     FOREIGN KEY (employee_id)   REFERENCES employees(id)   ON DELETE SET NULL,
     FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL
 );
@@ -1090,7 +1074,7 @@ SELECT
     TIMESTAMPDIFF(YEAR, e.date_of_birth, CURDATE()) AS current_age,
     TIMESTAMPDIFF(YEAR, e.hire_date, CURDATE()) AS years_of_service
 FROM employees e
-LEFT JOIN users u ON e.id = u.employee_id              -- Added this join
+LEFT JOIN users u ON e.id = u.employee_id              -- Added this join 
 LEFT JOIN departments d ON e.department_id = d.id
 LEFT JOIN job_positions jp ON e.job_position_id = jp.id
 LEFT JOIN branches b ON e.branch_id = b.id
