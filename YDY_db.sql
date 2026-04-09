@@ -206,14 +206,14 @@ CREATE TABLE former_employees (
     id                INT           PRIMARY KEY AUTO_INCREMENT,
     original_emp_id   INT           NOT NULL,                   -- reference to employees.id
     employee_code     VARCHAR(20),
-    full_name         VARCHAR(200)  ,
+    full_name         VARCHAR(200),
     last_department   VARCHAR(150),
     last_job_position VARCHAR(200),
     last_salary       DECIMAL(15,2),
     exit_date         DATE,
     exit_type         ENUM('Resigned','Terminated','Retired','End of Contract','Deceased','Other'),
     exit_reason       TEXT,
-    duration     DECIMAL(5,2),
+    years_of_service     DECIMAL(5,2),
     rehire_eligible   ENUM('Yes','No') DEFAULT 'Yes',
     notes             TEXT,
     archived_at       TIMESTAMP     DEFAULT CURRENT_TIMESTAMP
@@ -508,7 +508,7 @@ CREATE TABLE leave_entitlements (
     total_days         INT      DEFAULT 0,
     used_days          INT      DEFAULT 0,
     carried_over_days  INT      DEFAULT 0,
-    -- balance_days is calculated in PHP: total + carried - used
+    balance_days INT AS (total_days + carried_over_days - used_days) STORED,
     created_at         TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at         TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uq_emp_leave_year (employee_id, leave_type_id, fiscal_year),
@@ -777,28 +777,6 @@ CREATE TABLE report_templates (
 
 
 -- ── 11.2  System Users ────────────────────────────────────────
-CREATE TABLE users (
-    id            INT          PRIMARY KEY AUTO_INCREMENT,
-    username      VARCHAR(100) UNIQUE,
-    employee_id   INT          NULL,
-    email         VARCHAR(150) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL, 
-    role_id       INT          NOT NULL,  
-    department_id INT          NULL,
-    status        ENUM('Active','Inactive') DEFAULT 'Active',
-    last_login    TIMESTAMP    NULL,
-    created_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
-    updated_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-     
-    FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE RESTRICT, 
-    FOREIGN KEY (employee_id)   REFERENCES employees(id)   ON DELETE SET NULL,
-    FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL
-);
-
--- Back-fill created_by FK on report_templates
-ALTER TABLE report_templates
-    ADD CONSTRAINT fk_report_user
-    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL;
 
 -- Track failed login attempts to prevent brute force
 CREATE TABLE login_attempts (
@@ -861,6 +839,28 @@ CREATE TABLE user_permission_overrides (
     FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE
 );
 
+CREATE TABLE users (
+    id            INT          PRIMARY KEY AUTO_INCREMENT,
+    username      VARCHAR(100) UNIQUE,
+    employee_id   INT          NULL,
+    email         VARCHAR(150) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL, 
+    role_id       INT          NOT NULL,  
+    department_id INT          NULL,
+    status        ENUM('Active','Inactive') DEFAULT 'Active',
+    last_login    TIMESTAMP    NULL,
+    created_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+    updated_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+     
+    FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE RESTRICT, 
+    FOREIGN KEY (employee_id)   REFERENCES employees(id)   ON DELETE SET NULL,
+    FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL
+);
+
+-- Back-fill created_by FK on report_templates
+ALTER TABLE report_templates
+    ADD CONSTRAINT fk_report_user
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL;
 
 -- ── 11.6  Audit Logs ─────────────────────────────────────────
 CREATE TABLE audit_logs (
@@ -888,8 +888,7 @@ CREATE INDEX idx_emp_status     ON employees(status);
 CREATE INDEX idx_emp_hire_date  ON employees(hire_date);
 
 -- Attendance
-CREATE INDEX idx_att_month_year ON attendance(year, month);
-CREATE INDEX idx_att_emp_date   ON attendance(employee_id, attendance_date);
+CREATE INDEX idx_att_month_year ON attendance(year, month); 
 
 -- Leave
 CREATE INDEX idx_lr_employee    ON leave_requests(employee_id);
@@ -930,80 +929,7 @@ CREATE INDEX idx_att_stats ON attendance(status, year, month);
 -- This speeds up the "Can this person take leave?" check
 CREATE INDEX idx_leave_overlap ON leave_requests(employee_id, status, from_date, to_date);
  
-
--- -- triggers   
--- -- trigger for creating a user account upon employee onboarding
--- DELIMITER $$
-
--- -- 1. Create a trigger that runs AFTER a new row is added to the 'employees' table
--- CREATE TRIGGER trg_auto_create_user_account
--- AFTER INSERT ON employees
--- FOR EACH ROW
--- BEGIN
---     DECLARE base_uname VARCHAR(150);
---     DECLARE final_uname VARCHAR(150);
---     DECLARE counter INT DEFAULT 1;
---     DECLARE m_init CHAR(1) DEFAULT '';
---     DECLARE l_init CHAR(1) DEFAULT '';
---     DECLARE default_pwd_hash VARCHAR(255);
-
---     -- 2. GET INITIALS
---     -- Get first letter of middle name (if it exists)
---     IF NEW.middle_name IS NOT NULL AND NEW.middle_name <> '' THEN
---         SET m_init = LOWER(LEFT(NEW.middle_name, 1));
---     END IF;
-
---     -- Get first letter of last name (if it exists)
---     IF NEW.last_name IS NOT NULL AND NEW.last_name <> '' THEN
---         SET l_init = LOWER(LEFT(NEW.last_name, 1));
---     END IF;
-
---     -- 3. CONSTRUCT BASE USERNAME
---     -- Combination: firstname + first letter of middle + first letter of last
---     -- Example: 'Abebe' 'Bala' 'Chala' -> 'abebabc'
---     SET base_uname = LOWER(CONCAT(NEW.first_name, m_init, l_init));
-    
---     -- Remove any spaces if they exist in the names
---     SET base_uname = REPLACE(base_uname, ' ', '');
---     SET final_uname = base_uname;
-
---     -- 4. MANAGE DUPLICATES
---     -- If 'abebabc' already exists in the users table, try 'abebabc1', then 'abebabc2', etc.
---     WHILE EXISTS (SELECT 1 FROM users WHERE username = final_uname) DO
---         SET final_uname = CONCAT(base_uname, counter);
---         SET counter = counter + 1;
---     END WHILE;
-
---     -- 5. SET DEFAULT PASSWORD
---     -- This is the Bcrypt hash for "Test@123". 
---     -- Your PHP login code will be able to verify this.
---     SET default_pwd_hash = '$2y$10$8S3T.7v9R.gNf1IuV2x/u.x4VfP1U8R/pS8Jz3L5e7H5K5J5J5J5J';
-
---     -- 6. INSERT INTO USERS TABLE
---     -- This links the new employee to their new system login
---     INSERT INTO users (
---         username, 
---         employee_id, 
---         email, 
---         password_hash, 
---         role, 
---         department_id, 
---         status
---     ) 
---     VALUES (
---         final_uname, 
---         NEW.id, 
---         NEW.personal_email, 
---         default_pwd_hash, 
---         'HRM User',     -- Sets a default role
---         NEW.department_id, 
---         'Active'
---     );
--- END$$
-
--- -- Reset the delimiter back to normal
--- DELIMITER ;
-
+ 
 
 -- -- Employment Types (matches the UI dropdown exactly)
 -- INSERT INTO employment_types (name, description, benefits) VALUES
@@ -1021,8 +947,7 @@ CREATE INDEX idx_leave_overlap ON leave_requests(employee_id, status, from_date,
 -- ('Paternity Leave',   14,   0, 'Yes',     TRUE),
 -- ('Bereavement Leave',  5,   0, 'Yes',     TRUE),
 -- ('Unpaid Leave',      NULL, 0, 'No',      TRUE),
--- ('Study/Exam Leave',   5,   0, 'Partial', TRUE),
--- ('Public Holiday',    12,   0, 'Yes',     FALSE);
+-- ('Study/Exam Leave',   5,   0, 'Partial', TRUE);
 
 -- -- Document Types (matches VAULT_SCHEMA in the JS)
 -- INSERT INTO document_types (code, name, category, is_mandatory) VALUES
@@ -1305,16 +1230,18 @@ FROM dual;
     SELECT 
         u.id AS user_id,
         u.username,
-        u.role AS role_name, -- You now have the name string right here
+        r.name AS role_name,             -- FIX: Get the name from the roles table (r)
         m.module_key,
         m.name AS module_name,
-        -- Match the user's role name to the role name in permissions
+        -- Check User Override first, then Role Permission, default to 0 if neither found
         COALESCE(upo.can_access, rp.can_access, 0) AS final_access_allowed
     FROM users u
-    CROSS JOIN modules m
-    JOIN roles r ON u.role = r.name
-    LEFT JOIN role_permissions rp ON r.id = rp.role_id AND m.id = rp.module_id
-    LEFT JOIN user_permission_overrides upo ON u.id = upo.user_id AND m.id = upo.module_id;
+    JOIN roles r ON u.role_id = r.id     -- FIX: Join using the actual FK (role_id)
+    CROSS JOIN modules m                 -- Checks every user against every module
+    LEFT JOIN role_permissions rp 
+        ON r.id = rp.role_id AND m.id = rp.module_id
+    LEFT JOIN user_permission_overrides upo 
+        ON u.id = upo.user_id AND m.id = upo.module_id;
 
 CREATE OR REPLACE VIEW v_analytics_demographics AS
 SELECT 
