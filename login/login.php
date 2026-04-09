@@ -2,46 +2,60 @@
 declare(strict_types=1);
 require_once __DIR__ . '/../config.php';
 
-if (session_status() === PHP_SESSION_NONE) { session_start(); }
-if (!empty($_SESSION['user_id'])) { redirect(LOGIN_REDIRECT); }
+if (!empty($_SESSION['user_id'])) { 
+    redirect(LOGIN_REDIRECT); 
+}
 
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
-        // Everything inside here is "watched" for errors
-        csrf_verify(); 
+        // 1. CSRF Security Check
+        if (!csrf_verify()) {
+            throw new Exception("Security session expired. Please refresh the page.");
+        }
         
-        $identifier = trim($_POST['email'] ?? '');
-        $password   = trim($_POST['password'] ?? '');
+        // We call it 'login_identity' because it could be Username OR Email
+        $login_identity = trim($_POST['login_identity'] ?? '');
+        $password       = trim($_POST['password'] ?? '');
 
-        if ($identifier === '' || $password === '') {
-            $error = 'All fields are required.';
+        if ($login_identity === '' || $password === '') {
+            $error = 'Please enter your username/email and password.';
         } else {
-            $pdo = get_pdo(); // If this fails, it jumps to the catch block below
+            $pdo = get_pdo(); 
             
-            $stmt = $pdo->prepare('SELECT id, username, email, password_hash, status FROM users WHERE (email = :email OR username = :username) LIMIT 1');
-            $stmt->execute([
-                ':email'    => $identifier,
-                ':username' => $identifier
-            ]);
-            $user = $stmt->fetch();
+            // 2. Query handles both Email and Username lookups
+                $stmt = $pdo->prepare('
+                    SELECT id, username, email, password_hash, status 
+                    FROM users 
+                    WHERE email = :ident1 OR username = :ident2 
+                    LIMIT 1
+                ');
 
+                // Pass the same variable to both parameters
+                $stmt->execute([
+                    ':ident1' => $login_identity,
+                    ':ident2' => $login_identity
+                ]);
+                $user = $stmt->fetch();
+
+            // Mitigation for timing attacks (dummy hash if user not found)
             $hashToVerify = $user ? $user['password_hash'] : '$2y$10$vI8.3O6QxMa./s0.4RWPqOtLRe68W.E4mR0a/t1.x/W6f1y5';
             $locked = false;
 
             if ($user) {
+                // Check for account lockout
                 $lStmt = $pdo->prepare('SELECT attempt_count, last_attempt_at FROM login_attempts WHERE user_id = :uid');
-                $lStmt->execute([':uid' => $user['user_id']]);
+                $lStmt->execute([':uid' => $user['id']]);
                 $attempt = $lStmt->fetch();
 
                 if ($attempt) {
                     $elapsed = time() - strtotime($attempt['last_attempt_at']);
                     if ($attempt['attempt_count'] >= MAX_LOGIN_ATTEMPTS && $elapsed < LOCKOUT_SECONDS) {
                         $locked = true;
-                        $error = "Account locked. Try again in " . ceil((LOCKOUT_SECONDS - $elapsed) / 60) . " minute(s).";
+                        $error = "Too many failed attempts. Try again in " . ceil((LOCKOUT_SECONDS - $elapsed) / 60) . " minute(s).";
                     } elseif ($elapsed >= LOCKOUT_SECONDS) {
-                        $pdo->prepare('DELETE FROM login_attempts WHERE user_id = :uid')->execute([':uid' => $user['user_id']]);
+                        $pdo->prepare('DELETE FROM login_attempts WHERE user_id = :uid')->execute([':uid' => $user['id']]);
                     }
                 }
             }
@@ -49,36 +63,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!$locked) {
                 if ($user && password_verify($password, $hashToVerify)) {
                     if ($user['status'] !== 'Active') {
-                        $error = 'Account inactive. Please contact support.';
+                        $error = 'This account is currently inactive.';
                     } else {
-                        // SUCCESS
-                        $pdo->prepare('DELETE FROM login_attempts WHERE user_id = :uid')->execute([':uid' => $user['user_id']]);
-                        session_regenerate_id(true);
-                        $_SESSION['user_id'] = $user['user_id'];
-                        $_SESSION['username'] = $user['username'];
-                        $_SESSION['email'] = $user['email'];
-                        $pdo->prepare('UPDATE system_users SET last_login_at = NOW() WHERE user_id = :uid')->execute([':uid' => $user['user_id']]);
+                        // --- LOGIN SUCCESS ---
                         
+                        // Clear failed attempts
+                        $pdo->prepare('DELETE FROM login_attempts WHERE user_id = :uid')->execute([':uid' => $user['id']]);
+                        
+                        // Regenerate session for security
+                        session_regenerate_id(true);
+                        
+                        // Store essential data in Session
+                        $_SESSION['user_id']  = $user['id'];
+                        $_SESSION['username'] = $user['username']; // The actual username from DB
+                        $_SESSION['email']    = $user['email'];
+
+                        // Update last login timestamp (Match schema: table 'users', column 'last_login')
+                        $pdo->prepare('UPDATE users SET last_login = NOW() WHERE id = :uid')
+                            ->execute([':uid' => $user['id']]);
+                        
+                        // Remember Me functionality
                         if (!empty($_POST['remember_me'])) {
                             $token = bin2hex(random_bytes(32));
-                            $pdo->prepare('INSERT INTO remember_tokens (user_id, token_hash, expires_at) VALUES (:uid, :hash, DATE_ADD(NOW(), INTERVAL 30 DAY))')->execute([':uid'=>$user['user_id'], ':hash'=>hash('sha256', $token)]);
-                            setcookie('remember_token', $token, ['expires'=>time()+2592000, 'path'=>'/', 'secure'=>true, 'httponly'=>true, 'samesite'=>'Strict']);
+                            $pdo->prepare('INSERT INTO remember_tokens (user_id, token_hash, expires_at) VALUES (:uid, :hash, DATE_ADD(NOW(), INTERVAL 30 DAY))')
+                                ->execute([':uid' => $user['id'], ':hash' => hash('sha256', $token)]);
+                            
+                            setcookie('remember_token', $token, [
+                                'expires'  => time() + REMEMBER_ME_TTL,
+                                'path'     => '/',
+                                'httponly' => true,
+                                'samesite' => 'Strict'
+                            ]);
                         }
+                        
                         redirect(LOGIN_REDIRECT);
                     }
                 } else {
-                    $error = 'Invalid credentials. Please try again.';
+                    $error = 'Invalid username/email or password.';
                     if ($user) {
-                        $pdo->prepare('INSERT INTO login_attempts (user_id, attempt_count, last_attempt_at) VALUES (:uid, 1, NOW()) ON DUPLICATE KEY UPDATE attempt_count = attempt_count + 1, last_attempt_at = NOW()')->execute([':uid' => $user['user_id']]);
+                        // Record failed attempt
+                        $pdo->prepare('INSERT INTO login_attempts (user_id, attempt_count, last_attempt_at) VALUES (:uid, 1, NOW()) ON DUPLICATE KEY UPDATE attempt_count = attempt_count + 1, last_attempt_at = NOW()')
+                            ->execute([':uid' => $user['id']]);
                     }
                 }
             }
         }
     } catch (Exception $e) {
-        $error = $e->getMessage();
+        $error = "System Error: " . $e->getMessage();
     }
-
-}
+} 
 
 $csrf = csrf_token();
 function getEthiopianDate() {
@@ -135,8 +168,12 @@ $ethDate = getEthiopianDate();
     .brand-panel::before, .brand-panel::after { content: ""; position: absolute; bottom: 0; left: 0; width: 200%; height: 120px; background: rgba(255,255,255,0.05); backdrop-filter: blur(15px); -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 120" preserveAspectRatio="none"><path d="M0,120V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5,73.84-4.36,147.54,16.88,218.2,38.5,88.56,27.1,187.15,31.7,276,14.5,77.31-15,152.14-53,241-43.5V120H0Z" fill="black"/></svg>') repeat-x; mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 120" preserveAspectRatio="none"><path d="M0,120V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5,73.84-4.36,147.54,16.88,218.2,38.5,88.56,27.1,187.15,31.7,276,14.5,77.31-15,152.14-53,241-43.5V120H0Z" fill="black"/></svg>') repeat-x; -webkit-mask-size: calc(50% + 1px) 100%; mask-size: calc(50% + 1px) 100%; animation: waveLoop 20s linear infinite; z-index: 1; }
     .brand-panel::after { height: 100px; background: rgba(255,255,255,0.08); backdrop-filter: blur(30px); animation: waveLoop 30s linear infinite reverse; z-index: 2; }
     .brand-content { position: relative; z-index: 5; max-width: 600px; padding: 40px; }
-    .logo-box { background: white; display: inline-flex; padding: 10px 18px; border-radius: 12px; margin-bottom: 40px; box-shadow: 0 15px 30px rgba(0,0,0,0.1); }
+    .logo-box { background: white; display: inline-flex; padding: 10px 18px; border-radius: 12px; margin-bottom: 40px; box-shadow: 0 15px 30px rgba(0,0,0,0.1);   }
     .logo-box img { width: 300px; }
+    @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
     .brand-panel h1 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 3.5rem; font-weight: 800; line-height: 1; margin-bottom: 20px; letter-spacing: -0.04em; }
     .brand-panel p { font-size: 1.1rem; opacity: 0.85; line-height: 1.5; }
     
@@ -259,7 +296,7 @@ $ethDate = getEthiopianDate();
 
 <div class="auth-container">
     <aside class="brand-panel">
-        <img src="../assets/img/bgwhiter.png" alt="BGT Logo" style="position:absolute;top:0;right:-10px;width:100px;">
+        <img src="../assets/img/bgwhiter.png" alt="BGT Logo" style="position:absolute;top:0;right:-10px;width:100px; animation: float 1s ease-in-out infinite;">
         <div class="brand-content">
             <div class="logo-box">
                 <img src="../assets/img/bgt.png" alt="BGT Logo">
@@ -274,7 +311,7 @@ $ethDate = getEthiopianDate();
         <span id="eth-date"><?= $ethDate ?></span>
         <span class="time-segment" id="eth-time"><?= date('h:i:s A') ?></span>
     </div>
-        <img src="../assets/img/bgwhitel.png" alt="BGT Logo" style="position:absolute;top:0;left:-10px;width:100px;">
+        <img src="../assets/img/bgwhitel.png" alt="BGT Logo" style="position:absolute;top:0;left:-10px;width:100px;  animation: float 1s ease-in-out infinite;">
         <div class="form-card">
 
             <!-- LOGIN VIEW -->
@@ -296,10 +333,10 @@ $ethDate = getEthiopianDate();
 
                     <div class="input-group">
                         <label>Login Identity</label>
-                        <input type="text" name="email" id="email-field" class="input-ctrl"
-                               placeholder="Username / Email"
-                               value="<?= htmlspecialchars($_POST['email'] ?? '') ?>"
-                               autocomplete="username">
+                        <input type="text" name="login_identity" id="email-field" class="input-ctrl" 
+                                placeholder="Username / Email" 
+                                value="<?= htmlspecialchars($_POST['login_identity'] ?? '') ?>" 
+                                autocomplete="username">
                     </div>
 
                     <div class="input-group">
