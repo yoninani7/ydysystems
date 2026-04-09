@@ -6,6 +6,18 @@
 
 declare(strict_types=1);
 
+// 1. SECURITY: Hide errors from public & setup safety net
+ini_set('display_errors', '0');
+ini_set('display_startup_errors', '0');
+error_reporting(E_ALL);
+
+set_exception_handler(function ($e) {
+    error_log(sprintf("Uncaught Exception: %s in %s:%d", $e->getMessage(), $e->getFile(), $e->getLine()));
+    if (!headers_sent()) { http_response_code(500); }
+    echo "A system error occurred. Please try again later.";
+    exit;
+});
+
 // ── Environment ──────────────────────────────────────────────────────────────
 define('DB_HOST', 'localhost');
 define('DB_PORT', '3306');
