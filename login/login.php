@@ -24,20 +24,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $pdo = get_pdo(); 
             
-            // 2. Query handles both Email and Username lookups
-               $stmt = $pdo->prepare('
-                    SELECT id, username, email, password_hash, status, role, employee_id 
-                    FROM users 
-                    WHERE email = :ident1 OR username = :ident2 
-                    LIMIT 1
-                ');
+            // 2. Query handles both Email and Username lookups + Joins Roles for the name
+            $stmt = $pdo->prepare('
+                SELECT 
+                    u.id, 
+                    u.username, 
+                    u.email, 
+                    u.password_hash, 
+                    u.status, 
+                    u.employee_id,
+                    u.role_id,
+                    r.name AS role_name 
+                FROM users u
+                JOIN roles r ON u.role_id = r.id
+                WHERE u.email = :ident1 OR u.username = :ident2 
+                LIMIT 1
+            ');
 
-                // Pass the same variable to both parameters
-                $stmt->execute([
-                    ':ident1' => $login_identity,
-                    ':ident2' => $login_identity
-                ]);
-                $user = $stmt->fetch();
+            // Pass the same variable to both parameters
+            $stmt->execute([
+                ':ident1' => $login_identity,
+                ':ident2' => $login_identity
+            ]);
+            $user = $stmt->fetch();
 
             // Mitigation for timing attacks (dummy hash if user not found)
             $hashToVerify = $user ? $user['password_hash'] : '$2y$10$vI8.3O6QxMa./s0.4RWPqOtLRe68W.E4mR0a/t1.x/W6f1y5';
@@ -89,7 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $_SESSION['emp_id']      = $user['employee_id']; // For profile linking
                         $_SESSION['username']    = $user['username'];
                         $_SESSION['email']       = $user['email'];
-                        $_SESSION['role']        = $user['role'];        // e.g., 'Super Admin'
+                        $_SESSION['role'] = $user['role_name'];       // e.g., 'Super Admin'
                         $_SESSION['permissions'] = $userPermissions;     // The list of modules they can access
 
                         // 5. Update last login timestamp
