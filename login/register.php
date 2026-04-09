@@ -66,8 +66,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                      * role & status use DB defaults ('Super Admin', 'Active')
                      * employee_id & department_id remain NULL
                      */
-                    $sql = "INSERT INTO users (username, email, password_hash) 
-                            VALUES (:username, :email, :password_hash)";
+                    $sql = "INSERT INTO users (username, email, password_hash, role, status) 
+                            VALUES (:username, :email, :password_hash, 'Super Admin', 'Active')";
                     
                     $stmt = $pdo->prepare($sql);
                     $stmt->execute([
