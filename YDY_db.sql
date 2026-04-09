@@ -113,22 +113,19 @@ CREATE TABLE employees (
     -- Step 1 : Personal Identity
     first_name                VARCHAR(100),
     middle_name               VARCHAR(100),
-    last_name                 VARCHAR(100) ,
-    username                  VARCHAR(100) UNIQUE,
+    last_name                 VARCHAR(100) , 
     date_of_birth             DATE,
     gender                    ENUM('Male','Female'),
     nationality               VARCHAR(100) DEFAULT 'Ethiopian',
     marital_status            ENUM('Single','Married','Divorced','Widowed'),
     place_of_birth            VARCHAR(150),
-    profile_photo             VARCHAR(255),                     -- relative file path
-
+    profile_photo             VARCHAR(255),                     -- relative file path 
     -- Step 2 : Contact
     personal_phone            VARCHAR(50),
     personal_email            VARCHAR(150),
     permanent_address         TEXT,
     city                      VARCHAR(100),
-    postal_code               VARCHAR(20),
-
+    postal_code               VARCHAR(20), 
     -- Step 3 : Employment Placement
     department_id             INT          NULL,
     job_position_id           INT          NULL,
@@ -795,16 +792,21 @@ CREATE TABLE report_templates (
 -- ── 11.2  System Users ────────────────────────────────────────
 CREATE TABLE users (
     id            INT          PRIMARY KEY AUTO_INCREMENT,
-    username     VARCHAR(100)  UNIQUE,                          -- 'USR-001'
-    employee_id   INT          NULL,                            -- linked employee record 
+    username      VARCHAR(100) UNIQUE,
+    employee_id   INT          NULL,
     email         VARCHAR(150) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    role          ENUM('Super Admin') DEFAULT 'Super Admin',
+    password_hash VARCHAR(255) NOT NULL, 
+    -- Updated Role Column
+    role          VARCHAR(100) NOT NULL DEFAULT 'HRM User', 
     department_id INT          NULL,
     status        ENUM('Active','Inactive') DEFAULT 'Active',
     last_login    TIMESTAMP    NULL,
     created_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
     updated_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    -- Link the Role Name string directly to the Roles table Name string
+    FOREIGN KEY (role) REFERENCES roles(name) ON UPDATE CASCADE,
+    
     FOREIGN KEY (employee_id)   REFERENCES employees(id)   ON DELETE SET NULL,
     FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL
 );
@@ -836,7 +838,7 @@ CREATE TABLE remember_tokens (
 -- ── 11.3  Roles (standard named roles) ───────────────────────
 CREATE TABLE roles (
     id          INT          PRIMARY KEY AUTO_INCREMENT,
-    name        VARCHAR(100) UNIQUE NOT NULL,                   -- 'Super Admin', 'HRM User', etc.
+    name        VARCHAR(100) UNIQUE NOT NULL, -- This MUST be unique
     description TEXT,
     created_at  TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
 );
@@ -944,14 +946,138 @@ CREATE INDEX idx_att_stats ON attendance(status, year, month);
 -- This speeds up the "Can this person take leave?" check
 CREATE INDEX idx_leave_overlap ON leave_requests(employee_id, status, from_date, to_date);
  
+
+-- -- triggers   
+-- -- trigger for creating a user account upon employee onboarding
+-- DELIMITER $$
+
+-- -- 1. Create a trigger that runs AFTER a new row is added to the 'employees' table
+-- CREATE TRIGGER trg_auto_create_user_account
+-- AFTER INSERT ON employees
+-- FOR EACH ROW
+-- BEGIN
+--     DECLARE base_uname VARCHAR(150);
+--     DECLARE final_uname VARCHAR(150);
+--     DECLARE counter INT DEFAULT 1;
+--     DECLARE m_init CHAR(1) DEFAULT '';
+--     DECLARE l_init CHAR(1) DEFAULT '';
+--     DECLARE default_pwd_hash VARCHAR(255);
+
+--     -- 2. GET INITIALS
+--     -- Get first letter of middle name (if it exists)
+--     IF NEW.middle_name IS NOT NULL AND NEW.middle_name <> '' THEN
+--         SET m_init = LOWER(LEFT(NEW.middle_name, 1));
+--     END IF;
+
+--     -- Get first letter of last name (if it exists)
+--     IF NEW.last_name IS NOT NULL AND NEW.last_name <> '' THEN
+--         SET l_init = LOWER(LEFT(NEW.last_name, 1));
+--     END IF;
+
+--     -- 3. CONSTRUCT BASE USERNAME
+--     -- Combination: firstname + first letter of middle + first letter of last
+--     -- Example: 'Abebe' 'Bala' 'Chala' -> 'abebabc'
+--     SET base_uname = LOWER(CONCAT(NEW.first_name, m_init, l_init));
+    
+--     -- Remove any spaces if they exist in the names
+--     SET base_uname = REPLACE(base_uname, ' ', '');
+--     SET final_uname = base_uname;
+
+--     -- 4. MANAGE DUPLICATES
+--     -- If 'abebabc' already exists in the users table, try 'abebabc1', then 'abebabc2', etc.
+--     WHILE EXISTS (SELECT 1 FROM users WHERE username = final_uname) DO
+--         SET final_uname = CONCAT(base_uname, counter);
+--         SET counter = counter + 1;
+--     END WHILE;
+
+--     -- 5. SET DEFAULT PASSWORD
+--     -- This is the Bcrypt hash for "Test@123". 
+--     -- Your PHP login code will be able to verify this.
+--     SET default_pwd_hash = '$2y$10$8S3T.7v9R.gNf1IuV2x/u.x4VfP1U8R/pS8Jz3L5e7H5K5J5J5J5J';
+
+--     -- 6. INSERT INTO USERS TABLE
+--     -- This links the new employee to their new system login
+--     INSERT INTO users (
+--         username, 
+--         employee_id, 
+--         email, 
+--         password_hash, 
+--         role, 
+--         department_id, 
+--         status
+--     ) 
+--     VALUES (
+--         final_uname, 
+--         NEW.id, 
+--         NEW.personal_email, 
+--         default_pwd_hash, 
+--         'HRM User',     -- Sets a default role
+--         NEW.department_id, 
+--         'Active'
+--     );
+-- END$$
+
+-- -- Reset the delimiter back to normal
+-- DELIMITER ;
+
+
+-- -- Employment Types (matches the UI dropdown exactly)
+-- INSERT INTO employment_types (name, description, benefits) VALUES
+-- ('Permanent / Full-Time', 'Regular employee with full benefits',    'Yes'),
+-- ('Fixed-Term Contract',   'Time-bound employment agreement',        'Partial'),
+-- ('Part-Time',             'Less than 40 hours per week',            'Partial'),
+-- ('Internship',            'Student or graduate trainee',            'No'),
+-- ('Temporary / Casual',    'Short-term project-based assignment',     'No');
+
+-- -- Leave Types (matches the UI table)
+-- INSERT INTO leave_types (name, days_per_year, carryover_days, is_paid, requires_approval) VALUES
+-- ('Annual Leave',      20,   5, 'Yes',     TRUE),
+-- ('Sick Leave',        10,   0, 'Yes',     FALSE),
+-- ('Maternity Leave',   90,   0, 'Yes',     TRUE),
+-- ('Paternity Leave',   14,   0, 'Yes',     TRUE),
+-- ('Bereavement Leave',  5,   0, 'Yes',     TRUE),
+-- ('Unpaid Leave',      NULL, 0, 'No',      TRUE),
+-- ('Study/Exam Leave',   5,   0, 'Partial', TRUE),
+-- ('Public Holiday',    12,   0, 'Yes',     FALSE);
+
+-- -- Document Types (matches VAULT_SCHEMA in the JS)
+-- INSERT INTO document_types (code, name, category, is_mandatory) VALUES
+-- ('contract',   'Signed Employment Contract',      'Legal',        TRUE),
+-- ('cv',         'Curriculum Vitae (CV)',            'Identity',     TRUE),
+-- ('academic',   'Academic Credentials',             'Education',    TRUE),
+-- ('clearance',  'Clearance / Release Letter',       'History',      TRUE),
+-- ('experience', 'Experience Letters',               'History',      FALSE),
+-- ('coc',        'Certificate of Competence (COC)', 'Professional', FALSE),
+-- ('guarantor',  'Guarantor Form & ID',              'Legal',        TRUE),
+-- ('nda',        'Confidentiality / NDA Agreement',  'Compliance',   TRUE),
+-- ('handbook',   'Acknowledgments',                  'Compliance',   TRUE),
+-- ('national_id','National ID / Passport Copy',      'Identity',     TRUE),
+-- ('tin',        'TIN Certification Document',       'Tax',          TRUE),
+-- ('medical',    'Health & Fitness Clearance',       'Compliance',   TRUE);
+
+-- Standard Roles (matches the roles-permissions UI)
+INSERT INTO roles (name, description) VALUES
+('Super Admin',       'Full system authority — all modules unrestricted'),
+('HRM User',          'Standard HR operations across all modules') ;
+
+
+
+ 
 -- Views
 CREATE OR REPLACE VIEW v_employee_master AS
 SELECT 
     e.id AS internal_id,
     e.employee_id,
     CONCAT(e.first_name, ' ', COALESCE(e.middle_name, ''), ' ', e.last_name) AS full_name,
-    e.first_name, e.last_name, e.username, e.personal_email, e.personal_phone,
-    e.gender, e.date_of_birth, e.hire_date, e.status,
+    e.first_name, 
+    e.last_name, 
+    u.username,             -- Pulled from users table instead of employees
+    e.personal_email, 
+    e.personal_phone,
+    e.gender, 
+    e.date_of_birth, 
+    e.hire_date, 
+    e.status,
     d.name AS department_name,
     jp.title AS position_title,
     b.name AS branch_name,
@@ -964,12 +1090,12 @@ SELECT
     TIMESTAMPDIFF(YEAR, e.date_of_birth, CURDATE()) AS current_age,
     TIMESTAMPDIFF(YEAR, e.hire_date, CURDATE()) AS years_of_service
 FROM employees e
+LEFT JOIN users u ON e.id = u.employee_id              -- Added this join
 LEFT JOIN departments d ON e.department_id = d.id
 LEFT JOIN job_positions jp ON e.job_position_id = jp.id
 LEFT JOIN branches b ON e.branch_id = b.id
 LEFT JOIN employment_types et ON e.employment_type_id = et.id
 LEFT JOIN employees mgr ON e.reports_to_id = mgr.id;
-
 
 CREATE OR REPLACE VIEW v_employee_compliance_status AS
 SELECT 
@@ -1177,32 +1303,34 @@ SELECT
     (SELECT COUNT(*) FROM asset_categories) AS total_asset_categories
 FROM dual;
 
-CREATE OR REPLACE VIEW v_vault_missing_documents AS
-SELECT 
-    e.id AS employee_id,
-    e.employee_id AS emp_code,
-    CONCAT(e.first_name, ' ', e.last_name) AS full_name,
-    dt.name AS missing_document_name,
-    dt.category AS document_category
-FROM employees e
-CROSS JOIN document_types dt
-LEFT JOIN employee_documents ed ON e.id = ed.employee_id AND dt.id = ed.document_type_id
-WHERE dt.is_mandatory = 1 
-  AND ed.id IS NULL 
-  AND e.status = 'Active';
+    CREATE OR REPLACE VIEW v_vault_missing_documents AS
+    SELECT 
+        e.id AS employee_id,
+        e.employee_id AS emp_code,
+        CONCAT(e.first_name, ' ', e.last_name) AS full_name,
+        dt.name AS missing_document_name,
+        dt.category AS document_category
+    FROM employees e
+    CROSS JOIN document_types dt
+    LEFT JOIN employee_documents ed ON e.id = ed.employee_id AND dt.id = ed.document_type_id
+    WHERE dt.is_mandatory = 1 
+    AND ed.id IS NULL 
+    AND e.status = 'Active';
 
   CREATE OR REPLACE VIEW v_user_access_resolver AS
-SELECT 
-    u.id AS user_id,
-    u.username,
-    m.module_key,
-    m.name AS module_name,
-    -- If an individual override exists, use it; otherwise, use the role's permission
-    COALESCE(upo.can_access, rp.can_access, 0) AS final_access_allowed
-FROM users u
-CROSS JOIN modules m
-LEFT JOIN role_permissions rp ON u.role = (SELECT name FROM roles WHERE id = rp.role_id) AND m.id = rp.module_id
-LEFT JOIN user_permission_overrides upo ON u.id = upo.user_id AND m.id = upo.module_id;
+    SELECT 
+        u.id AS user_id,
+        u.username,
+        u.role AS role_name, -- You now have the name string right here
+        m.module_key,
+        m.name AS module_name,
+        -- Match the user's role name to the role name in permissions
+        COALESCE(upo.can_access, rp.can_access, 0) AS final_access_allowed
+    FROM users u
+    CROSS JOIN modules m
+    JOIN roles r ON u.role = r.name
+    LEFT JOIN role_permissions rp ON r.id = rp.role_id AND m.id = rp.module_id
+    LEFT JOIN user_permission_overrides upo ON u.id = upo.user_id AND m.id = upo.module_id;
 
 CREATE OR REPLACE VIEW v_analytics_demographics AS
 SELECT 
@@ -1219,48 +1347,6 @@ SELECT
 FROM employees
 WHERE status = 'Active'
 GROUP BY gender, age_group, department_id;
-
-
--- -- Employment Types (matches the UI dropdown exactly)
--- INSERT INTO employment_types (name, description, benefits) VALUES
--- ('Permanent / Full-Time', 'Regular employee with full benefits',    'Yes'),
--- ('Fixed-Term Contract',   'Time-bound employment agreement',        'Partial'),
--- ('Part-Time',             'Less than 40 hours per week',            'Partial'),
--- ('Internship',            'Student or graduate trainee',            'No'),
--- ('Temporary / Casual',    'Short-term project-based assignment',     'No');
-
--- -- Leave Types (matches the UI table)
--- INSERT INTO leave_types (name, days_per_year, carryover_days, is_paid, requires_approval) VALUES
--- ('Annual Leave',      20,   5, 'Yes',     TRUE),
--- ('Sick Leave',        10,   0, 'Yes',     FALSE),
--- ('Maternity Leave',   90,   0, 'Yes',     TRUE),
--- ('Paternity Leave',   14,   0, 'Yes',     TRUE),
--- ('Bereavement Leave',  5,   0, 'Yes',     TRUE),
--- ('Unpaid Leave',      NULL, 0, 'No',      TRUE),
--- ('Study/Exam Leave',   5,   0, 'Partial', TRUE),
--- ('Public Holiday',    12,   0, 'Yes',     FALSE);
-
--- -- Document Types (matches VAULT_SCHEMA in the JS)
--- INSERT INTO document_types (code, name, category, is_mandatory) VALUES
--- ('contract',   'Signed Employment Contract',      'Legal',        TRUE),
--- ('cv',         'Curriculum Vitae (CV)',            'Identity',     TRUE),
--- ('academic',   'Academic Credentials',             'Education',    TRUE),
--- ('clearance',  'Clearance / Release Letter',       'History',      TRUE),
--- ('experience', 'Experience Letters',               'History',      FALSE),
--- ('coc',        'Certificate of Competence (COC)', 'Professional', FALSE),
--- ('guarantor',  'Guarantor Form & ID',              'Legal',        TRUE),
--- ('nda',        'Confidentiality / NDA Agreement',  'Compliance',   TRUE),
--- ('handbook',   'Acknowledgments',                  'Compliance',   TRUE),
--- ('national_id','National ID / Passport Copy',      'Identity',     TRUE),
--- ('tin',        'TIN Certification Document',       'Tax',          TRUE),
--- ('medical',    'Health & Fitness Clearance',       'Compliance',   TRUE);
-
--- Standard Roles (matches the roles-permissions UI)
-INSERT INTO roles (name, description) VALUES
-('Super Admin',       'Full system authority — all modules unrestricted'),
-('HRM User',          'Standard HR operations across all modules') ;
-
-
 
 
 SET FOREIGN_KEY_CHECKS = 1;  -- Re-enable after all tables are created
