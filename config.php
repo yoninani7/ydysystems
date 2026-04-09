@@ -15,7 +15,7 @@ define('DB_PASS', '');     // ← change
 define('DB_CHARSET', 'utf8mb4');
 
 // Redirect users here after a successful login
-define('LOGIN_REDIRECT', '../dashboard.html');
+define('LOGIN_REDIRECT', '../dashboard.php');
 
 // How long (seconds) a "remember me" session cookie lasts (30 days)
 define('REMEMBER_ME_TTL', 60 * 60 * 24 * 30);
