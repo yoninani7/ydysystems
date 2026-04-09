@@ -25,8 +25,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdo = get_pdo(); 
             
             // 2. Query handles both Email and Username lookups
-                $stmt = $pdo->prepare('
-                    SELECT id, username, email, password_hash, status 
+               $stmt = $pdo->prepare('
+                    SELECT id, username, email, password_hash, status, role, employee_id 
                     FROM users 
                     WHERE email = :ident1 OR username = :ident2 
                     LIMIT 1
@@ -60,36 +60,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
-            if (!$locked) {
+         if (!$locked) {
                 if ($user && password_verify($password, $hashToVerify)) {
                     if ($user['status'] !== 'Active') {
-                        $error = 'This account is currently inactive.';
+                        $error = 'Invalid credentials or account inactive';
                     } else {
                         // --- LOGIN SUCCESS ---
                         
-                        // Clear failed attempts
-                        $pdo->prepare('DELETE FROM login_attempts WHERE user_id = :uid')->execute([':uid' => $user['id']]);
+                        // 1. Clear failed attempts
+                        $pdo->prepare('DELETE FROM login_attempts WHERE user_id = :uid')
+                            ->execute([':uid' => $user['id']]);
                         
-                        // Regenerate session for security
+                        // 2. Fetch Module Permissions from your database View (v_user_access_resolver)
+                        // This gets all keys like 'company-profile', 'attendance', etc., that this user can see.
+                        $permStmt = $pdo->prepare('
+                            SELECT module_key 
+                            FROM v_user_access_resolver 
+                            WHERE user_id = :uid AND final_access_allowed = 1
+                        ');
+                        $permStmt->execute([':uid' => $user['id']]);
+                        $userPermissions = $permStmt->fetchAll(PDO::FETCH_COLUMN);
+
+                        // 3. Regenerate session for security
                         session_regenerate_id(true);
                         
-                        // Store essential data in Session
-                        $_SESSION['user_id']  = $user['id'];
-                        $_SESSION['username'] = $user['username']; // The actual username from DB
-                        $_SESSION['email']    = $user['email'];
+                        // 4. Store essential data in Session
+                        $_SESSION['user_id']     = $user['id'];
+                        $_SESSION['emp_id']      = $user['employee_id']; // For profile linking
+                        $_SESSION['username']    = $user['username'];
+                        $_SESSION['email']       = $user['email'];
+                        $_SESSION['role']        = $user['role'];        // e.g., 'Super Admin'
+                        $_SESSION['permissions'] = $userPermissions;     // The list of modules they can access
 
-                        // Update last login timestamp (Match schema: table 'users', column 'last_login')
+                        // 5. Update last login timestamp
                         $pdo->prepare('UPDATE users SET last_login = NOW() WHERE id = :uid')
                             ->execute([':uid' => $user['id']]);
                         
-                        // Remember Me functionality
+                        // 6. Remember Me functionality
                         if (!empty($_POST['remember_me'])) {
                             $token = bin2hex(random_bytes(32));
                             $pdo->prepare('INSERT INTO remember_tokens (user_id, token_hash, expires_at) VALUES (:uid, :hash, DATE_ADD(NOW(), INTERVAL 30 DAY))')
                                 ->execute([':uid' => $user['id'], ':hash' => hash('sha256', $token)]);
                             
                             setcookie('remember_token', $token, [
-                                'expires'  => time() + REMEMBER_ME_TTL,
+                                'expires'  => time() + 2592000, // 30 days
                                 'path'     => '/',
                                 'httponly' => true,
                                 'samesite' => 'Strict'
