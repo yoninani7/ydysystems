@@ -32,6 +32,7 @@ $activityQuery = $pdo->query("
 $activities = $activityQuery->fetchAll(PDO::FETCH_ASSOC);
 
 $username = clean($_SESSION['username'] ?? 'User');
+$userRole = clean($_SESSION['role'] ?? 'Guest Access');
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -929,10 +930,10 @@ th.sticky-emp.sticky-head { z-index: 50; top: 0; left: 0; background: #f8fafc !i
       <div class="icon-btn"><i data-lucide="bell" size="15"></i><span class="notif-dot"></span></div>
       <div class="icon-btn"><i data-lucide="help-circle" size="15"></i></div>
       <div class="topbar-user">
-        <div class="topbar-user-avatar">AD</div>
+        <div class="topbar-user-avatar"><?= strtoupper(substr($username, 0, 2)) ?></div>
         <div class="topbar-user-info">
           <div class="u-name"><?php echo $username; ?></div>
-          <div class="u-role">Super Administrator</div>
+          <div class="u-role"><?php echo $userRole; ?></div>
         </div>
       </div>
       <div class="icon-btn btn-logout" onclick="handleLogout()" title="Log out">
