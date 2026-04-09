@@ -44,46 +44,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors['password_confirm'] = "Passwords do not match.";
         }
 
-        // 4. Database Interaction
-        if (empty($errors)) {
-            try {
-                $pdo = get_pdo();
+        // 4. Database Interaction 
+// 4. Database Interaction
+if (empty($errors)) {
+    try {
+        $pdo = get_pdo();
 
-                // Check for existing records (Unique constraints in your table)
-                $check = $pdo->prepare("SELECT username, email FROM users WHERE username = ? OR email = ?");
-                $check->execute([$fields['username'], $fields['email']]);
-                $existing = $check->fetch();
+        // Check for existing records
+        $check = $pdo->prepare("SELECT username, email FROM users WHERE username = ? OR email = ?");
+        $check->execute([$fields['username'], $fields['email']]);
+        $existing = $check->fetch();
 
-                if ($existing) {
-                    if ($existing['username'] === $fields['username']) $errors['username'] = "Username already taken.";
-                    if ($existing['email'] === $fields['email']) $errors['email'] = "Email already registered.";
-                } else {
-                    // Hash password 
-                    $password_hash = password_hash($password, PASSWORD_BCRYPT);
+        if ($existing) {
+            if ($existing['username'] === $fields['username']) $errors['username'] = "Username already taken.";
+            if ($existing['email'] === $fields['email']) $errors['email'] = "Email already registered.";
+        } else {
+            
+            // --- NEW LOGIC TO MATCH YOUR DATABASE ---
+            
+            // 1. Find the ID for the 'Super Admin' role from your 'roles' table
+            $roleQuery = $pdo->prepare("SELECT id FROM roles WHERE name = 'Super Admin' LIMIT 1");
+            $roleQuery->execute();
+            $roleRow = $roleQuery->fetch();
 
-                    /**
-                     * Matching your CREATE TABLE structure:
-                     * role & status use DB defaults ('Super Admin', 'Active')
-                     * employee_id & department_id remain NULL
-                     */
-                    $sql = "INSERT INTO users (username, email, password_hash, role, status) 
-                            VALUES (:username, :email, :password_hash, 'Super Admin', 'Active')";
-                    
-                    $stmt = $pdo->prepare($sql);
-                    $stmt->execute([
-                        ':username'      => $fields['username'],
-                        ':email'         => $fields['email'],
-                        ':password_hash' => $password_hash
-                    ]);
-
-                    $success = "Account created! You can now <a href='login.php' style='color:inherit; font-weight:700;'>Sign in</a>.";
-                    // Clear fields on success
-                    $fields = ['username' => '', 'email' => ''];
-                }
-            } catch (Exception $e) {
-                $errors['global'] = "Registration failed: " . $e->getMessage();
+            if (!$roleRow) {
+                throw new Exception("Default role 'Super Admin' not found in database. Please seed the roles table.");
             }
+            $target_role_id = $roleRow['id'];
+
+            // 2. Hash the password
+            $password_hash = password_hash($password, PASSWORD_BCRYPT);
+
+            // 3. Perform the Insert using 'role_id' instead of 'role'
+            $sql = "INSERT INTO users (username, email, password_hash, role_id, status) 
+                    VALUES (:username, :email, :password_hash, :role_id, 'Active')";
+            
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([
+                ':username'      => $fields['username'],
+                ':email'         => $fields['email'],
+                ':password_hash' => $password_hash,
+                ':role_id'       => $target_role_id
+            ]);
+
+            $success = "Account created! You can now <a href='login.php' style='color:inherit; font-weight:700;'>Sign in</a>.";
+            $fields = ['username' => '', 'email' => ''];
         }
+    } catch (Exception $e) {
+        $errors['global'] = "Registration failed: " . $e->getMessage();
+    }
+}
     }
 }
 ?>
