@@ -289,7 +289,7 @@ function render_inactivity_modal(): void
         </div>
 
         <h2 id="inactivity-title">Session Security</h2>
-        <p>Your session is about to expire due to inactivity. Would you like to stay logged in?</p>
+        <p>Your session is about to expire due to inactivity. Would you like to stay?</p>
         
         <div class="inactivity-actions">
             <!-- UPDATED: Added ID and removed location.reload() -->
@@ -307,7 +307,7 @@ function render_inactivity_modal(): void
     <script>
     (function () {
       const TIMEOUT       = <?= $timeout ?>;   
-      const COUNTDOWN_VAL = 7;   
+      const COUNTDOWN_VAL = 50;   
       const overlay       = document.getElementById('inactivity-overlay');
       const counter       = document.getElementById('inactivity-countdown');
       const progressRing  = document.getElementById('timer-progress');
