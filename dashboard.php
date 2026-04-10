@@ -3233,7 +3233,7 @@ window.sortTbl = (id, key) => {
   c._rows.sort((a, b) => {
     let vA = a[key], vB = b[key];
     const isNum = !isNaN(parseFloat(vA)) && isFinite(vA) && !isNaN(parseFloat(vB)) && isFinite(vB);
-    let res = isNum ? (vA - vB) : String(vA).localeCompare(String(vB), undefined, {numeric: true, sensitivity: 'base'});
+    let res = isNum ? (vA - vB) : String(vA).replace(/<[^>]*>/g, '').localeCompare(String(vB).replace(/<[^>]*>/g, ''), undefined, {numeric: true, sensitivity: 'base'});
     return c._sort.dir === 'asc' ? res : -res;
   });
 
