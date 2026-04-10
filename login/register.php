@@ -274,6 +274,7 @@ if (empty($errors)) {
         }
 
         @media (max-width: 850px) { .auth-container { grid-template-columns: 1fr; } .brand-panel { display: none; } }
+        
     </style>
 </head>
 <body>
