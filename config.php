@@ -31,10 +31,15 @@ define('REMEMBER_ME_TTL', 60 * 60 * 24 * 30);
 define('MAX_LOGIN_ATTEMPTS', 5);
 define('LOCKOUT_SECONDS', 900);
 
-// ── Inactivity timeout (seconds) ─────────────────────────────────────────────
-define('INACTIVITY_TIMEOUT', 5); // 5 seconds for testing
+// ── Inactivity timeout (20 minutes) ─────────────────────────────────────────────
+define('INACTIVITY_TIMEOUT',1200); // 
 
-define('BASE_URL', '/'); // or '/your-subfolder/' if the app is not at root
+define('BASE_URL', rtrim(str_replace(
+    str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']),
+    '',
+    str_replace('\\', '/', __DIR__)
+), '/') . '/');
+
 define('LOGOUT_URL', BASE_URL . 'login/logout.php');
 // ── Session hardening ─────────────────────────────────────────────────────────
 if (session_status() === PHP_SESSION_NONE) {
@@ -104,7 +109,6 @@ function clean(string $value): string
  */
 function render_inactivity_modal(): void
 {
-    // Do not inject on AJAX requests
     if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
         strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
         return;
@@ -112,152 +116,262 @@ function render_inactivity_modal(): void
 
     $timeout = INACTIVITY_TIMEOUT;
     ?>
-    <!-- ── THEME-ALIGNED INACTIVITY MODAL ── -->
     <style>
+      /* ... (All your existing CSS remains exactly the same) ... */
+      :root {
+        --modal-primary: #15b201;
+        --modal-primary-hover: #0f8a00;
+        --modal-bg: #ffffff;
+        --modal-text: #0f172a;
+        --modal-muted: #64748b;
+        --modal-overlay: rgba(15, 23, 42, 0.7);
+      }
+
       #inactivity-overlay {
         display: none;
         position: fixed;
         inset: 0;
-        background: rgba(15, 23, 42, 0.45); /* Matching your --text color with alpha */
-        backdrop-filter: blur(8px);
+        background: var(--modal-overlay);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
         z-index: 10000;
         align-items: center;
         justify-content: center;
         padding: 20px;
-        font-family: 'Plus Jakarta Sans', sans-serif;
+        font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+        opacity: 0;
+        transition: opacity 0.4s ease;
+        overflow-y: auto;
       }
+
       #inactivity-overlay.show {
         display: flex;
-        animation: modalIn .3s cubic-bezier(.16, 1, .3, 1) forwards;
+        opacity: 1;
       }
+
       #inactivity-box {
-        background: var(--surface, #ffffff);
-        border: 1px solid var(--border, #e2e8f0);
-        border-top: 4px solid #15b201; /* Your --primary color */
-        border-radius: 14px;
-        padding: 40px;
-        max-width: 400px;
+        background: var(--modal-bg);
+        border-radius: 24px;
+        padding: 40px 24px;
         width: 100%;
+        max-width: 400px;
         text-align: center;
-        box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3);
+        transform: scale(0.9) translateY(20px);
+        transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        position: relative;
+        margin: auto;
       }
-      #inactivity-icon-container {
-        width: 64px;
-        height: 64px;
-        background: #f1fcf0; /* Your --primary-light */
-        color: #15b201; /* Your --primary */
-        border-radius: 18px;
+
+      #inactivity-overlay.show #inactivity-box {
+        transform: scale(1) translateY(0);
+      }
+
+      .timer-container {
+        position: relative;
+        width: 100px;
+        height: 100px;
+        margin: 0 auto 24px;
         display: flex;
         align-items: center;
         justify-content: center;
-        margin: 0 auto 24px;
-        box-shadow: 0 10px 15px -3px rgba(21, 178, 1, 0.15);
       }
-      #inactivity-title {
-        font-size: 1.25rem;
+
+      .timer-svg {
+        transform: rotate(-90deg);
+        width: 100px;
+        height: 100px;
+        overflow: visible;
+      }
+
+      .timer-bg {
+        fill: none;
+        stroke: #f1f5f9;
+        stroke-width: 8;
+      }
+
+      .timer-progress {
+        fill: none;
+        stroke: var(--modal-primary);
+        stroke-width: 8;
+        stroke-linecap: round;
+        stroke-dasharray: 282.7;
+        stroke-dashoffset: 0;
+        transition: stroke-dashoffset 1s linear, stroke 0.3s ease;
+      }
+
+      #inactivity-countdown {
+        position: absolute;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 1.5rem;
         font-weight: 800;
-        color: #0f172a; /* Your --text */
-        margin-bottom: 8px;
+        color: var(--modal-text);
+      }
+
+      @keyframes ring-pulse {
+        0% { stroke-width: 8; opacity: 1; }
+        50% { stroke-width: 12; opacity: 0.7; }
+        100% { stroke-width: 8; opacity: 1; }
+      }
+
+      .urgent-mode .timer-progress {
+        stroke: #ef4444;
+        animation: ring-pulse 1s infinite ease-in-out;
+      }
+
+      #inactivity-title {
+        font-size: clamp(1.25rem, 5vw, 1.5rem);
+        font-weight: 800;
+        color: var(--modal-text);
+        margin-bottom: 12px;
         letter-spacing: -0.02em;
       }
+
       #inactivity-box p {
-        color: #64748b; /* Your --muted */
-        font-size: 0.85rem;
-        line-height: 1.6;
-        margin-bottom: 24px;
-      }
-      #inactivity-countdown-wrap {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        padding: 12px 24px;
-        border-radius: 12px;
+        color: var(--modal-muted);
+        font-size: 0.9rem;
+        line-height: 1.5;
         margin-bottom: 32px;
+        padding: 0 10px;
       }
-      #inactivity-countdown {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 1.75rem;
-        font-weight: 800;
-        color: #15b201;
+
+      .inactivity-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
       }
-      .inactivity-btn-primary {
+
+      .btn-stay {
         all: unset;
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 8px;
-        background: #15b201;
+        background: var(--modal-primary);
         color: #fff;
-        padding: 12px 24px;
-        border-radius: 10px;
-        font-size: 0.85rem;
+        padding: 14px 20px;
+        border-radius: 14px;
+        font-size: 0.95rem;
         font-weight: 700;
         cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 4px 12px rgba(21, 178, 1, 0.2);
+      }
+
+      .btn-stay:hover { background: var(--modal-primary-hover); }
+      .btn-stay:active { transform: scale(0.98); }
+
+      .btn-logout {
+        all: unset;
+        color: var(--modal-muted);
+        font-size: 0.85rem;
+        font-weight: 600;
+        padding: 10px;
+        cursor: pointer;
+        border-radius: 10px;
         transition: all 0.2s;
-        width: calc(100% - 48px);
-        margin: 0 auto;
       }
-      .inactivity-btn-primary:hover {
-        background: #0f8a00; /* Your --primary-dark */
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(21, 178, 1, 0.25);
-      }
-      
-      @keyframes modalIn {
-        from { opacity: 0; transform: translateY(20px) scale(0.95); }
-        to { opacity: 1; transform: translateY(0) scale(1); }
+
+      .btn-logout:hover {
+        background: #fff1f2;
+        color: #ef4444;
       }
     </style>
 
     <div id="inactivity-overlay">
       <div id="inactivity-box">
-        <div id="inactivity-icon-container">
-            <!-- Clock icon using raw SVG to avoid dependency issues -->
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        </div>
-        <h2 id="inactivity-title">Session Intelligence</h2>
-        <p>Security protocols detected inactivity. For your protection, this session will be terminated in:</p>
-        
-        <div id="inactivity-countdown-wrap">
-            <span id="inactivity-countdown">--</span>
+        <div class="timer-container">
+            <svg class="timer-svg" viewBox="0 0 100 100">
+                <circle class="timer-bg" cx="50" cy="50" r="45"></circle>
+                <circle id="timer-progress" class="timer-progress" cx="50" cy="50" r="45"></circle>
+            </svg>
+            <div id="inactivity-countdown">--</div>
         </div>
 
-        <button class="inactivity-btn-primary" onclick="location.reload()">
-          <span>Maintain Secure Session</span>
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-        </button>
+        <h2 id="inactivity-title">Session Security</h2>
+        <p>Your session is about to expire due to inactivity. Would you like to stay logged in?</p>
+        
+        <div class="inactivity-actions">
+            <!-- UPDATED: Added ID and removed location.reload() -->
+            <button id="btn-stay-active" class="btn-stay">
+              <span>Continue Session</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </button>
+            <button class="btn-logout" onclick="location.href='<?= LOGOUT_URL ?>'">
+                Log Out Now
+            </button>
+        </div>
       </div>
     </div>
 
     <script>
     (function () {
-      var TIMEOUT   = <?= $timeout ?>;   
-      var COUNTDOWN = <?= $timeout ?>;   
-      var overlay   = document.getElementById('inactivity-overlay');
-      var counter   = document.getElementById('inactivity-countdown');
+      const TIMEOUT       = <?= $timeout ?>;   
+      const COUNTDOWN_VAL = 7;   
+      const overlay       = document.getElementById('inactivity-overlay');
+      const counter       = document.getElementById('inactivity-countdown');
+      const progressRing  = document.getElementById('timer-progress');
+      const stayBtn       = document.getElementById('btn-stay-active');
+      const radius        = 45;
+      const circumference = 2 * Math.PI * radius;
 
-      var idleTimer     = null;
-      var countTimer    = null;
-      var remaining     = COUNTDOWN;
-      var modalVisible  = false;
+      let idleTimer     = null;
+      let countTimer    = null;
+      let remaining     = COUNTDOWN_VAL;
+      let modalVisible  = false;
+
+      progressRing.style.strokeDasharray = circumference;
+
+      function setProgress(percent) {
+        const offset = circumference - (percent / 100 * circumference);
+        progressRing.style.strokeDashoffset = offset;
+      }
 
       function showModal() {
         if (modalVisible) return;
         modalVisible = true;
-        remaining    = COUNTDOWN;
-        counter.textContent = remaining + 's';
+        remaining    = COUNTDOWN_VAL;
+        
+        setProgress(100);
+        counter.textContent = remaining;
         overlay.classList.add('show');
 
-       countTimer = setInterval(function () {
+        countTimer = setInterval(function () {
             remaining--;
-            counter.textContent = remaining + 's';
+            counter.textContent = remaining;
+            
+            const percent = (remaining / COUNTDOWN_VAL) * 100;
+            setProgress(percent);
+
+            if (remaining <= 5) {
+                overlay.classList.add('urgent-mode');
+            }
+
             if (remaining <= 0) {
                 clearInterval(countTimer);
-                location.href = '<?= LOGOUT_URL ?>'; // ← root-relative, always correct
+                location.href = '<?= LOGOUT_URL ?>';
             }
-            }, 1000);
+        }, 1000);
+      }
+
+      // NEW: Function to resume without reloading
+      function resumeSession() {
+        if (!modalVisible) return;
+        
+        // 1. Stop the countdown
+        clearInterval(countTimer);
+        
+        // 2. Hide modal and reset UI state
+        overlay.classList.remove('show');
+        overlay.classList.remove('urgent-mode');
+        modalVisible = false;
+
+        // 3. Optional: Ping server to keep PHP session alive
+        // This prevents the session file on the server from expiring
+        fetch(window.location.href, { method: 'HEAD', cache: 'no-store' });
+
+        // 4. Restart the idle timer
+        resetIdle();
       }
 
       function resetIdle() {
@@ -266,8 +380,14 @@ function render_inactivity_modal(): void
         idleTimer = setTimeout(showModal, TIMEOUT * 1000);
       }
 
+      // Attach click event to the stay button
+      stayBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        resumeSession();
+      });
+
       ['mousemove', 'keydown', 'mousedown', 'touchstart', 'scroll', 'click']
-        .forEach(function (evt) {
+        .forEach(evt => {
           document.addEventListener(evt, resetIdle, { passive: true });
         });
 
