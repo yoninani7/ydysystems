@@ -1107,7 +1107,7 @@ CREATE OR REPLACE VIEW v_dept_structure_stats AS
 SELECT 
     d.id AS dept_id,
     d.name AS department_name,
-    CONCAT_WS( e.first_name,' ', e.last_name) AS head_of_dept
+    CONCAT_WS(' ', e.first_name, e.last_name) AS head_of_dept,
     (SELECT COUNT(*) FROM employees WHERE department_id = d.id AND status = 'Active') AS active_headcount,
     (SELECT COUNT(*) FROM job_positions WHERE department_id = d.id) AS total_positions
 FROM departments d

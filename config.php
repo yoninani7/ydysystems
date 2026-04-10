@@ -396,5 +396,6 @@ function render_inactivity_modal(): void
     </script>
     <?php
 }
-
-register_shutdown_function('render_inactivity_modal');
+if (!defined('IS_API')) {
+    register_shutdown_function('render_inactivity_modal');
+}

@@ -575,89 +575,69 @@ function initPage(id){
     case 'org-chart':initOrgChart();break;
     /* Locate this section inside the initPage function */
 
-/* Inside functions in the initPage(id) */
-      case 'departments':
-        // 1. Show a loader or clear the container while fetching
-        const container = document.getElementById('tbl-departments');
-        if (container) container.innerHTML = '<div style="padding:40px; text-align:center;"><i data-lucide="loader-2" class="spin"></i> Loading Departments...</div>';
-        if (typeof lcIcons === 'function') lcIcons(container);
+case 'departments':
+  fetch('api/companyprofile/fetch_departments.php')
+    .then(r => r.json())
+    .then(res => {
+      if (!res.success) throw new Error(res.message);
+      // Clear the built guard so buildTable can run
+      const el = document.getElementById('tbl-departments');
+      if (el) delete el.dataset.built;
 
-        // 2. Fetch real data from PHP
-       fetch('api/companyprofile/get_departments.php')
-          .then(response => response.json())
-          .then(res => {
-            if (!res.success) throw new Error(res.message);
-
-            // 3. Map the Database columns to your Table columns
-            const dbRows = res.data.map(row => ({
-              name: row.department_name,
-              head: row.head_of_dept || 'Unassigned',
-              emp: row.active_headcount,
-              status: statusBadge.active // You can later add a 'status' column to your view
-            }));
-
-            // 4. Build the table with real data
-            // We clear the "built" flag to allow re-rendering with fresh data
-            if (container) {
-                container.innerHTML = '';
-                delete container.dataset.built; 
-            }
-
-            buildTable('tbl-departments', {
-              columns: [
-                { key: 'name', label: 'Department Name' },
-                { key: 'head', label: 'Head of Department' },
-                { key: 'emp', label: 'Employees' },
-                { key: 'status', label: 'Status' },
-                {
-                  key: '_',
-                  label: 'Actions',
-                  render: () => `
-                    <div class="flex-row">
-                      <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;">
-                        <i data-lucide="trash-2" size="10"></i>
-                      </button>
-                    </div>`
-                }
-              ],
-              rows: dbRows
-            });
-          })
-          .catch(err => {
-            console.error('Fetch Error:', err);
-            if (container) container.innerHTML = `<div class="alert alert-danger">Failed to load departments: ${err.message}</div>`;
-          });
-        break;
-
-      case 'job-positions':
-        buildTable('tbl-job-positions', {
-          columns: [
-            { key: 'title', label: 'Job Title' },
-            { key: 'dept', label: 'Department' },
-            { key: 'count', label: 'Headcount' },
-            /* Custom Actions column - Only Trash Icon */
-            {
-              key: '_',
-              label: 'Actions',
-              render: () => `
-                <div class="flex-row">
-                  <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;">
-                    <i data-lucide="trash-2" size="10"></i>
-                  </button>
-                </div>`
-            }
-          ],
-          rows: gen(28, i => ({
-            title: ['Software Engineer', 'Sales Manager', 'HR Business Partner', 'Finance Analyst', 'Product Manager', 'UX Designer', 'DevOps Engineer', 'Data Scientist', 'Legal Counsel', 'Support Lead'][i % 10],
-            dept: rand(depts),
-            grade: ['L1', 'L2', 'L3', 'L4', 'M1', 'M2', 'S1', 'S2'][i % 8],
-            min: fmtMoney(randInt(40, 80) * 1000),
-            max: fmtMoney(randInt(80, 150) * 1000),
-            count: randInt(2, 40)
-          }))
-        });
-        break;
-       case 'branch-offices':buildTable('tbl-branch-offices',{columns:[ {key:'name',label:'Branch Name'},{key:'manager',label:'Branch Manager'},{key:'phone',label:'Phone'},{key:'email',label:'Email'},{key:'location',label:'Location'},{key:'emp',label:'Staff'},{key:'status',label:'Status'},ac],rows:gen(12,i=>({ name:['HQ','North','South','East','West','APAC','EMEA','LATAM','Canada','Australia','UK','Singapore'][i]+' Office',location:['New York','Chicago','Atlanta','Boston','San Jose','Singapore','London','São Paulo','Toronto','Sydney','Manchester','Tokyo'][i],manager:names[i%names.length],emp:randInt(30,320),status:statusBadge.active}))});break;
+      buildTable('tbl-departments', {
+        columns: [
+          { key: 'name',   label: 'Department Name' },
+          { key: 'head',   label: 'Head of Department' },
+          { key: 'emp',    label: 'Employees' },
+          { key: 'status', label: 'Status' },
+          {
+            key: '_',
+            label: 'Actions',
+            render: () => `
+              <div class="flex-row">
+                <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;">
+                  <i data-lucide="trash-2" size="10"></i>
+                </button>
+              </div>`
+          }
+        ],
+        rows: res.data
+      });
+    })
+    .catch(err => {
+      document.getElementById('tbl-departments').innerHTML =
+        `<p style="padding:20px;color:#dc2626;">Error loading departments: ${err.message}</p>`;
+    });
+  break;
+case 'job-positions':
+  buildTable('tbl-job-positions', {
+    columns: [
+      { key: 'title', label: 'Job Title' },
+      { key: 'dept', label: 'Department' },
+      { key: 'count', label: 'Headcount' },
+      /* Custom Actions column - Only Trash Icon */
+      {
+        key: '_',
+        label: 'Actions',
+        render: () => `
+          <div class="flex-row">
+            <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;">
+              <i data-lucide="trash-2" size="10"></i>
+            </button>
+          </div>`
+      }
+    ],
+    rows: gen(28, i => ({
+      title: ['Software Engineer', 'Sales Manager', 'HR Business Partner', 'Finance Analyst', 'Product Manager', 'UX Designer', 'DevOps Engineer', 'Data Scientist', 'Legal Counsel', 'Support Lead'][i % 10],
+      dept: rand(depts),
+      grade: ['L1', 'L2', 'L3', 'L4', 'M1', 'M2', 'S1', 'S2'][i % 8],
+      min: fmtMoney(randInt(40, 80) * 1000),
+      max: fmtMoney(randInt(80, 150) * 1000),
+      count: randInt(2, 40)
+    }))
+  });
+  break;
+    case 'branch-offices':buildTable('tbl-branch-offices',{columns:[ {key:'name',label:'Branch Name'},{key:'manager',label:'Branch Manager'},{key:'phone',label:'Phone'},{key:'email',label:'Email'},{key:'location',label:'Location'},{key:'emp',label:'Staff'},{key:'status',label:'Status'},ac],rows:gen(12,i=>({ name:['HQ','North','South','East','West','APAC','EMEA','LATAM','Canada','Australia','UK','Singapore'][i]+' Office',location:['New York','Chicago','Atlanta','Boston','San Jose','Singapore','London','São Paulo','Toronto','Sydney','Manchester','Tokyo'][i],manager:names[i%names.length],emp:randInt(30,320),status:statusBadge.active}))});break;
     case 'employee-directory':buildTable('tbl-employees',{columns:[{key:'id',label:'Emp ID'},{key:'fname',label:'First Name'},{key:'mname',label:'Middle Name'},{key:'lname',label:'Last Name'},{key:'uname',label:'Username'},{key:'gender',label:'Gender'},{key:'dob',label:'Date of Birth'},{key:'hire',label:'Hired Date'},{key:'status',label:'Status'},{key:'marital',label:'Marital Status'},{key:'phone',label:'Phone'},{key:'email',label:'Email'},{key:'dept',label:'Department'},{key:'position',label:'Job Position'},{key:'branch',label:'Branch name'},{key:'type',label:'Emp Type'} , {key:'bankname',label:'Bank name'}, {key:'bankacc',label:'Bank Account'} , {key:'tin',label:'Tin number'},{key:'created',label:'Created At'},ac],rows:gen(60,i=>{const isActive=i%8!==0,fn=names[i%names.length].split(' ')[0],ln=names[i%names.length].split(' ')[1];return{id:`E${String(i+1).padStart(4,'0')}`,fname:fn,mname:['A.','M.','D.','S.','K.'][i%5],lname:ln,uname:(fn[0]+ln).toLowerCase()+randInt(10,99),gender:i%2===0?'Male':'Female',dob:`19${randInt(70,99)}-${String(randInt(1,12)).padStart(2,'0')}-${String(randInt(1,28)).padStart(2,'0')}`,hire:`202${randInt(0,5)}-${String(randInt(1,12)).padStart(2,'0')}-${String(randInt(1,28)).padStart(2,'0')}`,status:isActive?statusBadge.active:statusBadge.inactive,marital:['Single','Married','Divorced','Widowed'][i%4],phone:`+1 555-${randInt(100,999)}-${randInt(1000,9999)}`,email:`${fn.toLowerCase()}.${ln.toLowerCase()}@hrm.com`,dept:rand(depts),position:['Software Engineer','Project Manager','HR Specialist','Accountant','Sales Lead'][i%5],type:i%4===0?'Contract':'Full-Time', bankacc:`BE${randInt(10,99)} 0000 ${randInt(1000,9999)} ${randInt(10,99)}`,created:'2025-01-10 08:30'};})});break;
     /* Locate this section inside the initPage function */
 
