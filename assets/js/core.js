@@ -1,0 +1,1551 @@
+// ── ICON HELPER: targeted scan when possible, full scan as fallback ──
+const lcIcons = (el) => el ? lucide.createIcons({nodes:[el]}) : lucide.createIcons();
+
+// ── SIDEBAR ──
+let sidebarCollapsed = false;
+const isMobile = () => window.innerWidth <= 768;
+const sidebar = document.getElementById('sidebar');
+const mainContent = document.getElementById('main-content');
+const overlay = document.getElementById('sidebar-overlay');
+
+function toggleSidebar() {
+  if (isMobile()) {
+    const isOpen = sidebar.classList.contains('mobile-open');
+    if (isOpen) {
+      sidebar.classList.remove('mobile-open');
+      overlay.classList.remove('visible');
+    } else {
+      sidebar.classList.remove('collapsed');
+      mainContent.classList.remove('sidebar-collapsed');
+      sidebar.classList.add('mobile-open');
+      overlay.classList.add('visible');
+    }
+  } else {
+    sidebarCollapsed = !sidebarCollapsed;
+    sidebar.classList.toggle('collapsed', sidebarCollapsed);
+    mainContent.classList.toggle('sidebar-collapsed', sidebarCollapsed);
+    const icon = document.getElementById('toggle-icon');
+    icon.setAttribute('data-lucide', sidebarCollapsed ? 'panel-left-open' : 'menu');
+    if (sidebarCollapsed) {
+      document.querySelectorAll('.submenu').forEach(s => s.classList.remove('open'));
+      document.querySelectorAll('.nav-trigger').forEach(t => t.classList.remove('open'));
+    }
+    lcIcons(document.getElementById('sidebar-toggle-btn'));
+  }
+}
+
+function closeMobileSidebar() {
+  sidebar.classList.remove('mobile-open');
+  overlay.classList.remove('visible');
+}
+
+window.addEventListener('resize', () => {
+  if (!isMobile()) {
+    sidebar.classList.remove('mobile-open');
+    overlay.classList.remove('visible');
+  }
+}, {passive:true});
+
+// ── COLLAPSED SIDEBAR FLYOUT (with delay fix) ──
+let _flyoutTimer = null;
+let _activeGroup = null;
+
+function showFlyout(group) {
+  clearTimeout(_flyoutTimer);
+  if (_activeGroup && _activeGroup !== group) {
+    _activeGroup.classList.remove('flyout-active');
+  }
+  
+  // Dynamically calculate position
+  const rect = group.getBoundingClientRect();
+  const submenu = group.querySelector('.submenu');
+  const label = group.querySelector('.nav-trigger-left span');
+  
+  if (submenu) {
+    submenu.style.top = rect.top + 'px';
+  }
+  if (label) {
+    label.style.top = rect.top + 'px';
+  }
+
+  group.classList.add('flyout-active');
+  _activeGroup = group;
+}
+function hideFlyout() {
+  _flyoutTimer = setTimeout(() => {
+    if (_activeGroup) {
+      _activeGroup.classList.remove('flyout-active');
+      _activeGroup = null;
+    }
+  }, 400);
+}
+
+document.querySelectorAll('.nav-group').forEach(group => {
+  group.addEventListener('mouseenter', () => {
+    if (!sidebar.classList.contains('collapsed') || isMobile()) return;
+    showFlyout(group);
+  });
+  group.addEventListener('mouseleave', () => {
+    if (!sidebar.classList.contains('collapsed') || isMobile()) return;
+    hideFlyout();
+  });
+});
+
+// ── NAVIGATION ──
+function toggleNav(el, id) {
+  if (sidebarCollapsed && !isMobile()) { toggleSidebar(); return; }
+  const sub = document.getElementById(id);
+  const isOpen = sub.classList.contains('open');
+  document.querySelectorAll('.nav-trigger').forEach(t => { if (t !== el) t.classList.remove('open'); });
+  document.querySelectorAll('.submenu').forEach(s => { if (s !== sub) s.classList.remove('open'); });
+  el.classList.toggle('open', !isOpen);
+  sub.classList.toggle('open', !isOpen);
+}
+function goPage(id, el) {
+  // 1. Save the current page ID to the URL hash
+  window.location.hash = id;
+
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const pg = document.getElementById('p-' + id);
+  if (pg) pg.classList.add('active');
+
+  // 2. If 'el' is not provided (on refresh), find the sidebar element automatically
+  if (!el) {
+    el = document.querySelector(`.sub-link[onclick*="'${id}'"], .dash-link[onclick*="'${id}'"]`);
+  }
+
+  document.getElementById('page-title').textContent = el ? el.textContent.trim() : id.replace(/-/g, ' ');
+  
+  document.querySelectorAll('.sub-link, .dash-link').forEach(l => l.classList.remove('active'));
+  if (el) el.classList.add('active');
+  
+  document.querySelectorAll('.nav-trigger').forEach(t => t.classList.remove('parent-active'));
+  
+  const parentSub = el && el.closest('.submenu');
+  if (parentSub) {
+    const trigger = document.querySelector(`.nav-trigger[onclick*="${parentSub.id}"]`);
+    if (trigger) {
+      trigger.classList.add('parent-active');
+      // Also ensure the submenu is visible on refresh
+      parentSub.classList.add('open');
+      trigger.classList.add('open');
+    }
+  }
+
+  initPage(id);
+  if (isMobile()) closeMobileSidebar();
+}
+
+// ── PAGINATED TABLE BUILDER ──
+window.changePg=(id,dir)=>{const c=document.getElementById(id);const np=c._page()+dir;const tp=Math.ceil(c._rows.length/c._perPage);if(np>=1&&np<=tp)c._setPage(np);};
+window.setPg=(id,p)=>document.getElementById(id)._setPage(p);
+
+// ── MOCK DATA ──
+const depts=['Engineering','Sales','HR','Finance','Marketing','Operations','Legal','IT','Product','Customer Success'];
+const names=['John Smith','Jane Doe','Carlos Martinez','Alice Kim','Michael Brown','Sarah Lee','David Park','Emily Wang','Robert Johnson','Lisa Chen','Tom Wilson','Maya Singh','James White','Anna Taylor','Kevin Moore','Sophie Turner','Chris Davis','Rachel Green','Daniel Hill','Olivia Harris'];
+const gen=(n,fn)=>Array.from({length:n},(_,i)=>fn(i));
+const rand=arr=>arr[Math.floor(Math.random()*arr.length)];
+const randInt=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const fmtMoney=n=>'$'+n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+const b=(cls,txt)=>`<span class="badge badge-${cls}">${txt}</span>`;
+const actions=`<div class="flex-row"><button class="btn btn-xs btn-secondary"><i data-lucide="eye" size="10"></i></button><button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;"><i data-lucide="trash-2" size="10"></i></button></div>`;
+const ac={key:'_',label:'Actions',render:()=>actions};
+const statusBadge={active:b('success','Active'),inactive:b('neutral','Inactive'),pending:b('warning','Pending'),approved:b('success','Approved'),rejected:b('danger','Rejected')};
+
+// ── ORG CHART ──
+let ocZoom=1.0;
+function zoomOC(delta){const n=ocZoom+delta;if(n>=0.3&&n<=1.5){ocZoom=n;applyOCZoom();}}
+function resetOC(){ocZoom=1.0;applyOCZoom();const bp=document.getElementById('oc-blueprint-area');if(bp)bp.scrollLeft=(bp.scrollWidth-bp.clientWidth)/2;}
+function applyOCZoom(){const c=document.getElementById('oc-zoom-container'),l=document.getElementById('oc-zoom-label');if(c)c.style.transform=`scale(${ocZoom})`;if(l)l.textContent=Math.round(ocZoom*100)+'%';}
+function initOrgChart(){applyOCZoom();initOrgChartDrag();  renderOrgChartDepartments();}
+function initOrgChartDrag(){
+  const slider=document.getElementById('oc-blueprint-area');
+  if(!slider||slider.dataset.drag)return; slider.dataset.drag='1';
+  let down=false,sx,sy,sl,st;
+  slider.addEventListener('mousedown',e=>{down=true;sx=e.pageX-slider.offsetLeft;sy=e.pageY-slider.offsetTop;sl=slider.scrollLeft;st=slider.scrollTop;});
+  slider.addEventListener('mouseleave',()=>down=false);
+  slider.addEventListener('mouseup',()=>down=false);
+  slider.addEventListener('mousemove',e=>{if(!down)return;e.preventDefault();slider.scrollLeft=sl-(e.pageX-slider.offsetLeft-sx)*2;slider.scrollTop=st-(e.pageY-slider.offsetTop-sy)*2;});
+}
+ 
+// ── VAULT MATRIX ──
+const companyRequiredDocs=[{id:'id_card',short:'ID',name:'National ID/Passport'},{id:'contract',short:'CTR',name:'Employment Contract'},{id:'nda',short:'NDA',name:'Non-Disclosure Agreement'},{id:'tax',short:'TAX',name:'Tax Filing (TIN)'},{id:'edu',short:'EDU',name:'Degree/Certificates'},{id:'photo',short:'IMG',name:'Profile Photo'}];
+function initVaultMatrix(){
+  const container=document.getElementById('vault-matrix-container');
+  if(!container||container.dataset.built)return;
+  container.dataset.built='1';
+  const cols=[{key:'emp',label:'Employee'}];
+  companyRequiredDocs.forEach(doc=>cols.push({key:doc.id,label:doc.short,render:val=>val==='filled'?`<div class="vault-slot filled" title="Uploaded"><i data-lucide="check" size="10"></i></div>`:`<div class="vault-slot expired" title="Expired"><i data-lucide="alert-circle" size="10"></i></div>`}));
+  cols.push({key:'progress',label:'Fulfillment',render:v=>`<span style="font-size:.7rem;font-weight:800;color:var(--primary);">${v}%</span>`});
+  // Inside initVaultMatrix function:
+  cols.push({
+  key: '_',
+  label: 'Actions',
+  render: (v, row) => {
+    // This extracts the clean name and ID from the HTML string
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = row.emp;
+    const cleanName = tempDiv.querySelector('b').innerText;
+    const cleanId = tempDiv.querySelector('small').innerText;
+    
+    return `<button class="btn btn-xs btn-secondary" onclick="openEmployeeVault('${cleanName}', '${cleanId}')">Open Folder</button>`;
+  }
+});
+  const rows=gen(25,i=>{const row={emp:`<b>${names[i%names.length]}</b><br><small style="color:var(--muted)">E-${1000+i}</small>`,progress:randInt(40,100)};companyRequiredDocs.forEach(doc=>{row[doc.id]=Math.random()>0.4?'filled':'expired';});return row;});
+  const wrapper=document.createElement('div');
+  wrapper.id='tbl-vault-matrix-final';
+  container.appendChild(wrapper);
+  buildTable('tbl-vault-matrix-final',{columns:cols,rows,perPage:12});
+}
+
+// ── DASHBOARD CHART  ── 
+function initDashboard() {
+  // Use a unique key to prevent re-initialization
+  if (inited.has('dashboard-main-chart')) return;
+  inited.add('dashboard-main-chart');
+
+  const canvas = document.getElementById('chart-headcount-dept');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  // Create the Premium Vertical Gradient (Green to Lime)
+  const gradient = ctx.createLinearGradient(0, 300, 0, 0);
+  gradient.addColorStop(0, '#44c100'); // Deep Green
+  gradient.addColorStop(1, '#d4fc79'); // Bright Lime
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Engineering', 'Sales', 'Marketing', 'Finance', 'HR', 'Legal', 'IT'],
+      datasets: [{
+        label: 'Personnel',
+        data: [485, 312, 195, 110, 82, 48, 16],
+        backgroundColor: gradient,
+        borderRadius: 6,
+        borderSkipped: false,
+        barThickness: 28,
+      }]
+    },
+    options: {
+      maintainAspectRatio: false,
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#0f172a',
+          padding: 12,
+          titleFont: { family: 'Plus Jakarta Sans', size: 12, weight: '800' },
+          bodyFont: { family: 'Plus Jakarta Sans', size: 12 },
+          cornerRadius: 8,
+          displayColors: false
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 500,
+          ticks: {
+            stepSize: 100,
+            font: { family: 'JetBrains Mono', size: 11 },
+            color: '#94a3b8'
+          },
+          grid: {
+            color: '#f1f5f9',
+            drawBorder: false
+          }
+        },
+        x: {
+          grid: { display: false },
+          ticks: {
+            font: { family: 'Plus Jakarta Sans', size: 11, weight: '600' },
+            color: '#334155'
+          }
+        }
+      }
+    }
+  });
+} 
+// ── ANALYTICS CHARTS ──
+function initAnalytics(){
+  if(inited.has('analytics'))return;
+  inited.add('analytics');
+  requestAnimationFrame(()=>{
+    const gridCfg={color:'#f1f5f9'};
+    const legOpts={position:'bottom',labels:{boxWidth:10,font:{size:10}}};
+    const c4=document.getElementById('chart-hire-attrition');
+    if(c4)new Chart(c4,{type:'bar',data:{labels:['Jan','Feb','Mar','Apr','May','Jun'],datasets:[{label:'New Hires',data:[15,8,12,0,0,0],backgroundColor:'#16a34a',borderRadius:4},{label:'Attrition',data:[5,4,7,0,0,0],backgroundColor:'#dc2626',borderRadius:4}]},options:{maintainAspectRatio:false,plugins:{legend:legOpts},scales:{y:{beginAtZero:true,grid:gridCfg},x:{grid:{display:false}}}}});
+    const c5=document.getElementById('chart-age');
+    if(c5)new Chart(c5,{type:'bar',data:{labels:['18–25','26–35','36–45','46–55','55+'],datasets:[{label:'Employees',data:[180,420,380,200,68],backgroundColor:['#15b201','#16a34a','#d97706','#dc2626','#64748b'],borderRadius:4}]},options:{maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:gridCfg},x:{grid:{display:false}}}}});
+  });
+}
+
+// ── ROLES ──
+function selectRole(el,name){document.querySelectorAll('.role-pill').forEach(p=>p.classList.remove('active'));el.classList.add('active');document.getElementById('active-role-name').textContent=name;}
+
+// ── MODALS ──
+function openModal(id){document.getElementById(id).classList.add('open');lcIcons(document.getElementById(id));}
+function closeModal(id,e){if(!e||e.target===e.currentTarget)document.getElementById(id).classList.remove('open');}
+function openDeptModal(){openModal('modal-add-dept');}
+function closeDeptModal(e){closeModal('modal-add-dept',e);}
+function saveDepartment(){const name=document.getElementById('dept-name').value.trim();if(!name){alert('Department Name is required.');return;}alert(`Department "${name}" created successfully.`);closeDeptModal();}
+function openAssetModal(){openModal('modal-add-asset');}
+function closeAssetModal(e){closeModal('modal-add-asset',e);}
+function saveNewAsset(){const name=document.getElementById('as-new-name').value;if(!name){alert('Asset Name is required.');return;}alert(`Asset "${name}" registered successfully.`);closeAssetModal();}
+function openReassignModal(assetName,currentCustodian){document.getElementById('reassign-display-name').textContent=assetName;document.getElementById('reassign-display-curr').textContent=currentCustodian;document.getElementById('as-input-reassign').value='';openModal('modal-reassign-asset');}
+function closeReassignModal(e){closeModal('modal-reassign-asset',e);}
+function saveReassignment(){const o=document.getElementById('as-input-reassign').value,a=document.getElementById('reassign-display-name').textContent;if(!o){alert('Please select a new custodian.');return;}alert(`Reassignment Successful: ${a} has been transferred to ${o}.`);closeReassignModal();}
+function openJobModal(){openModal('modal-add-job-position');}
+function closeJobModal(e){closeModal('modal-add-job-position',e);}
+function saveJobPosition(){const title=document.getElementById('job-title').value.trim();if(!title){alert('Job Title is required.');return;}const btn=document.querySelector('#modal-add-job-position .btn-primary');btn.innerHTML=`<i data-lucide="loader-2" class="spin" size="13"></i> Saving...`;lcIcons(btn.parentElement);setTimeout(()=>{alert(`Success: ${title} created.`);document.getElementById('job-title').value='';document.getElementById('as-input-job-dept').value='';closeJobModal();btn.innerHTML=`<i data-lucide="check" size="13"></i>Create Position`;lcIcons(btn.parentElement);},600);}
+function openBranchModal(){openModal('modal-add-branch');}
+function closeBranchModal(e){closeModal('modal-add-branch',e);}
+function saveBranch(){const name=document.getElementById('branch-name').value.trim();if(!name){alert('Branch Name is required.');return;}const btn=document.querySelector('#modal-add-branch .btn-primary');btn.innerHTML=`<i data-lucide="loader-2" class="spin" size="13"></i> Saving...`;lcIcons(btn.parentElement);setTimeout(()=>{alert(`Success: ${name} has been registered.`);document.getElementById('branch-name').value='';document.getElementById('branch-city').value='';document.getElementById('as-input-branch-mgr').value='';closeBranchModal();btn.innerHTML=`<i data-lucide="check" size="13"></i>Create Branch`;lcIcons(btn.parentElement);},600);}
+
+// ── ASSET DROPDOWNS ──
+function showAsDrop(id){const d=document.getElementById(id);if(!d.innerHTML.trim())populateAsDrop(id);d.classList.add('active');}
+function filterAsDrop(inputId,dropId){const val=document.getElementById(inputId).value.toLowerCase(),d=document.getElementById(dropId);if(!d.innerHTML.trim())populateAsDrop(dropId);d.querySelectorAll('.as-res-item').forEach(item=>{item.style.display=item.textContent.toLowerCase().includes(val)?'block':'none';});d.classList.add('active');}
+function selectAsItem(inputId,dropId,name){document.getElementById(inputId).value=name;document.getElementById(dropId).classList.remove('active');}
+function selectMonth(name, val) {
+  document.getElementById('att-m-display').value = name;
+  document.getElementById('att-m-select').value = val;
+  document.getElementById('as-drop-month').classList.remove('active');
+}
+function selectYear(val) {
+  document.getElementById('att-y-display').value = val;
+  document.getElementById('att-y-select').value = val;
+  document.getElementById('as-drop-year').classList.remove('active');
+}
+function selectAttDept(name, val) {
+  document.getElementById('att-dept-display').value = name;
+  document.getElementById('att-dept-select').value = val;
+  document.getElementById('as-drop-att-dept').classList.remove('active');
+}
+window.addEventListener('mousedown',e=>{if(!e.target.closest('.as-combo-container'))document.querySelectorAll('.as-combo-results').forEach(d=>d.classList.remove('active'));},{passive:true});
+
+// ── ONBOARDING WIZARD ──
+let currentObStep=1;
+const totalObSteps=6;
+// 1. Blocks Next Button + Highlights Missing
+// 1. Blocks 'Next' & toggles the red highlight class
+function moveOnboarding(dir){
+  if(dir>0){
+    const cur=[...document.querySelectorAll(`#ob-step-${currentObStep} .master-req`)];
+    let ok=true; 
+    cur.forEach(i=>{ 
+      const isBad = !i.value.trim();
+      i.classList.toggle('field-error', isBad); 
+      if(isBad) ok=false;
+    });
+    if(!ok) return; 
+  }
+  const t=currentObStep+dir; if(t>=1&&t<=totalObSteps) jumpToStep(t);
+}
+
+// 2. Blocks side-nav jumps if current section is invalid
+function jumpToStep(step){
+  if(step > currentObStep) {
+    const cur=[...document.querySelectorAll(`#ob-step-${currentObStep} .master-req`)];
+    if(cur.some(i=>!i.value.trim())) { moveOnboarding(1); return; }
+  }
+  
+  currentObStep=step;
+  if(step === 6) renderSummary();
+
+  document.querySelectorAll('#p-add-employee .form-section-content').forEach(s=>s.classList.remove('active'));
+  document.getElementById(`ob-step-${step}`).classList.add('active');
+  
+  // Left Sidebar Nav Updates
+  document.querySelectorAll('.step-pro').forEach((item,idx)=>{
+    const sNum=idx+1;
+    item.classList.toggle('active',sNum===step);
+    item.classList.toggle('done',sNum<step);
+    item.querySelector('.step-idx').innerHTML=sNum<step?'<i data-lucide="check" size="14"></i>':sNum;
+  });
+
+  // Bottom Nav Controls
+  const dots = document.getElementById('ob-dots'), 
+        next = document.getElementById('ob-next'), 
+        bottomCommit = document.getElementById('btn-save-master-bottom'),
+        prev = document.getElementById('ob-prev');
+
+  prev.style.visibility = step === 1 ? 'hidden' : 'visible';
+  
+  // THE SWAP: If step 6, hide dots/next and show large Add button
+  dots.style.display = step === 6 ? 'none' : 'flex';
+  next.style.display = step === 6 ? 'none' : 'flex';
+  bottomCommit.style.display = step === 6 ? 'flex' : 'none';
+  
+  next.innerHTML = step === 5 ? 'Review All Steps' : 'Next Step <i data-lucide="chevron-right" size="14"></i>';
+  
+  document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('active',(i+1)===step));
+  document.getElementById('master-progress-line').style.width=(step/totalObSteps*100)+'%';
+  
+  validateMasterRecord();
+  lcIcons(document.getElementById('p-add-employee'));
+}function renderSummary() {
+  const area = document.getElementById('summary-render-area');
+  if(!area) return;
+  const getV = (id) => document.getElementById(id)?.value || '—';
+  
+  const sections = [
+    { title: 'Identity', icon: 'user', fields: [['Name', `${getV('o-fname')} ${getV('o-lname')}`], ['DOB', getV('o-dob')], ['Gender', getV('o-gender')]] },
+    { title: 'Contact', icon: 'mail', fields: [['Phone', getV('o-phone')], ['Email', getV('o-email')], ['City', getV('o-city')]] },
+    { title: 'Employment', icon: 'briefcase', fields: [['Dept', getV('o-dept')], ['Role', getV('o-pos')], ['Joined', getV('o-hire')]] },
+    { title: 'Financial', icon: 'credit-card', fields: [['Salary', getV('o-sal')], ['Bank', getV('o-bank')], ['Account', getV('o-acc')]] },
+    { title: 'Compliance', icon: 'shield', fields: [['ID Number', getV('o-idno')], ['Emergency', getV('o-ename')], ['E-Phone', getV('o-ephone')]] }
+  ];
+
+  area.innerHTML = sections.map(sec => `
+    <div class="review-sec">
+      <div class="review-sec-title"><i data-lucide="${sec.icon}" size="12"></i>${sec.title}</div>
+      ${sec.fields.map(f => `<div class="review-row"><span class="rev-label">${f[0]}</span><span class="rev-val">${f[1]}</span></div>`).join('')}
+    </div>
+  `).join('');
+  lcIcons(area);
+}// 3. Real-time Button States & auto-clears red highlights
+function validateMasterRecord(){
+  const all=[...document.querySelectorAll('#p-add-employee .master-req')], cur=[...document.querySelectorAll(`#ob-step-${currentObStep} .master-req`)];
+  const allOk=all.every(i=>i.value.trim()), stepOk=cur.every(i=>i.value.trim());
+  
+  const commitTop = document.getElementById('btn-save-master'),
+        commitBtn = document.getElementById('btn-save-master-bottom'), 
+        next = document.getElementById('ob-next'), 
+        val = document.getElementById('master-val-text');
+  
+  // Handle Button Opacity/State
+  if(next){ next.style.opacity=stepOk?'1':'0.4'; next.style.cursor=stepOk?'pointer':'not-allowed'; }
+  
+  [commitTop, commitBtn].forEach(btn => {
+    if(btn) {
+      btn.disabled = !allOk;
+      btn.style.opacity = allOk ? '1' : '0.4';
+      btn.style.cursor = allOk ? 'pointer' : 'not-allowed';
+    }
+  });
+  
+  val.innerHTML=allOk?'<i data-lucide="check-circle" size="12"></i> Verified':`* Required fields missing`;
+  val.style.color=allOk?'var(--success)':'var(--danger)';
+  
+  all.forEach(i=>{ if(i.value.trim()) i.classList.remove('field-error'); });
+  lcIcons(val);
+}document.querySelectorAll('#p-add-employee input, #p-add-employee select, #p-add-employee textarea').forEach(input=>input.addEventListener('input',validateMasterRecord));
+function saveNewEmployee(){
+  const btn=document.getElementById('btn-save-master');
+  btn.innerHTML=`<i data-lucide="loader-2" class="spin" size="14"></i> Committing...`;
+  lcIcons(btn);
+  setTimeout(()=>{alert('Employee Master Record successfully created and synced with the database.');goPage('employee-directory');document.querySelectorAll('#p-add-employee input, #p-add-employee select').forEach(i=>i.value='');jumpToStep(1);btn.innerHTML=`<i data-lucide="shield-check" size="16"></i> Commit Record`;lcIcons(btn);},1500);
+}
+function previewAvatar(input){
+  if(input.files&&input.files[0]){
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const preview=document.getElementById('avatar-img-output');
+      const icon=document.getElementById('placeholder-icon');
+      const box=document.getElementById('avatar-preview-box');
+      preview.src=e.target.result;preview.style.display='block';icon.style.display='none';
+      box.style.borderStyle='solid';box.style.borderColor='var(--primary)';
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+// ── PAGE INIT ROUTER ──
+const inited=new Set();
+// Department data
+const departmentsForChart = [  
+  { name: 'Marketing', headcount: 195, manager: 'Helen Gebre' },
+  { name: 'Finance', headcount: 110, manager: 'Daniel Smith' },
+  { name: 'HR', headcount: 82, manager: 'Sarah Lee' }, 
+  { name: 'IT', headcount: 16, manager: 'Kevin Vark' }
+];
+ 
+function renderOrgChartDepartments() {
+  const container = document.getElementById('dept-tree-container');
+  if (!container) return;
+  
+  // Department data with job titles
+  const departmentsForChart = [  
+    { 
+      name: 'Marketing', 
+      headcount: 195,
+      jobs: [
+        { title: 'Marketing Manager', count: 12 },
+        { title: 'Digital Marketing Specialist', count: 48 },
+        { title: 'Content Creator', count: 35 },
+        { title: 'Social Media Manager', count: 28 },
+        { title: 'Brand Strategist', count: 22 },
+        { title: 'Market Research Analyst', count: 32 },
+        { title: 'PR Specialist', count: 18 }
+      ]
+    },
+    { 
+      name: 'Finance', 
+      headcount: 110,
+      jobs: [
+        { title: 'Finance Manager', count: 8 },
+        { title: 'Senior Accountant', count: 22 },
+        { title: 'Accountant', count: 45 },
+        { title: 'Payroll Specialist', count: 15 },
+        { title: 'Financial Analyst', count: 12 },
+        { title: 'Auditor', count: 8 }
+      ]
+    },
+    { 
+      name: 'HR', 
+      headcount: 82,
+      jobs: [
+        { title: 'HR Manager', count: 5 },
+        { title: 'HR Generalist', count: 28 },
+        { title: 'Recruitment Specialist', count: 18 },
+        { title: 'Training Coordinator', count: 12 },
+        { title: 'Compensation Analyst', count: 9 },
+        { title: 'HR Assistant', count: 10 }
+      ]
+    }, 
+    { 
+      name: 'IT', 
+      headcount: 16,
+      jobs: [
+        { title: 'IT Manager', count: 2 },
+        { title: 'System Administrator', count: 5 },
+        { title: 'Network Engineer', count: 4 },
+        { title: 'Help Desk Support', count: 3 },
+        { title: 'Security Specialist', count: 2 }
+      ]
+    }
+  ];
+  
+  let html = '';
+  departmentsForChart.forEach(dept => {
+    // Build submenu items for job titles
+    let submenuHtml = '';
+    if (dept.jobs && dept.jobs.length > 0) {
+      submenuHtml = '<ul class="submenu-jobs" style="padding-top:20px;">';
+      dept.jobs.forEach(job => {
+        submenuHtml += `
+          <li>
+            <div class="oc-node oc-staff" style="width:160px; border-top:2px solid var(--primary-light);">
+              <div class="oc-node-body" style="padding:12px; text-align:center; flex-direction:column;">
+                <div class="oc-node-name" style="font-size:.75rem; font-weight:700;">${job.title}</div>
+                <div class="oc-node-role" style="font-size:.6rem; margin-top:4px;">${job.count} employees</div>
+              </div>
+            </div>
+          </li>
+        `;
+      });
+      submenuHtml += '</ul>';
+    }
+    
+    html += `
+      <li>
+        <div class="oc-node oc-mgr">
+          <div class="oc-node-header">
+            <span class="oc-id">${dept.name.toUpperCase()}</span>
+            <span class="badge badge-primary" style="font-size:8px;">${dept.headcount} EMP</span>
+          </div>
+          <div class="oc-node-body">
+            <div class="oc-node-avatar" style="background:var(--primary-light);color:var(--primary);">
+              <i data-lucide="users" size="20"></i>
+            </div>
+            <div class="oc-node-info">
+              <div class="oc-node-name">${dept.name}</div>
+              <div class="oc-node-role">Department</div>
+            </div>
+          </div>
+          <div class="oc-node-footer">
+            ${dept.jobs.length} Positions
+          </div>
+        </div>
+        ${submenuHtml}
+      </li>
+    `;
+  });
+  container.innerHTML = html;
+  
+  // Refresh icons
+  setTimeout(() => {
+    if (typeof lcIcons === 'function') lcIcons(container);
+  }, 50);
+}
+function initPage(id){
+  if(inited.has(id))return;
+  inited.add(id);
+  switch(id){
+    case 'dashboard':initDashboard();break;
+    case 'org-chart':initOrgChart();break;
+    /* Locate this section inside the initPage function */
+
+/* Inside functions in the initPage(id) */
+      case 'departments':
+        // 1. Show a loader or clear the container while fetching
+        const container = document.getElementById('tbl-departments');
+        if (container) container.innerHTML = '<div style="padding:40px; text-align:center;"><i data-lucide="loader-2" class="spin"></i> Loading Departments...</div>';
+        if (typeof lcIcons === 'function') lcIcons(container);
+
+        // 2. Fetch real data from PHP
+       fetch('api/companyprofile/get_departments.php')
+          .then(response => response.json())
+          .then(res => {
+            if (!res.success) throw new Error(res.message);
+
+            // 3. Map the Database columns to your Table columns
+            const dbRows = res.data.map(row => ({
+              name: row.department_name,
+              head: row.head_of_dept || 'Unassigned',
+              emp: row.active_headcount,
+              status: statusBadge.active // You can later add a 'status' column to your view
+            }));
+
+            // 4. Build the table with real data
+            // We clear the "built" flag to allow re-rendering with fresh data
+            if (container) {
+                container.innerHTML = '';
+                delete container.dataset.built; 
+            }
+
+            buildTable('tbl-departments', {
+              columns: [
+                { key: 'name', label: 'Department Name' },
+                { key: 'head', label: 'Head of Department' },
+                { key: 'emp', label: 'Employees' },
+                { key: 'status', label: 'Status' },
+                {
+                  key: '_',
+                  label: 'Actions',
+                  render: () => `
+                    <div class="flex-row">
+                      <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;">
+                        <i data-lucide="trash-2" size="10"></i>
+                      </button>
+                    </div>`
+                }
+              ],
+              rows: dbRows
+            });
+          })
+          .catch(err => {
+            console.error('Fetch Error:', err);
+            if (container) container.innerHTML = `<div class="alert alert-danger">Failed to load departments: ${err.message}</div>`;
+          });
+        break;
+
+      case 'job-positions':
+        buildTable('tbl-job-positions', {
+          columns: [
+            { key: 'title', label: 'Job Title' },
+            { key: 'dept', label: 'Department' },
+            { key: 'count', label: 'Headcount' },
+            /* Custom Actions column - Only Trash Icon */
+            {
+              key: '_',
+              label: 'Actions',
+              render: () => `
+                <div class="flex-row">
+                  <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;">
+                    <i data-lucide="trash-2" size="10"></i>
+                  </button>
+                </div>`
+            }
+          ],
+          rows: gen(28, i => ({
+            title: ['Software Engineer', 'Sales Manager', 'HR Business Partner', 'Finance Analyst', 'Product Manager', 'UX Designer', 'DevOps Engineer', 'Data Scientist', 'Legal Counsel', 'Support Lead'][i % 10],
+            dept: rand(depts),
+            grade: ['L1', 'L2', 'L3', 'L4', 'M1', 'M2', 'S1', 'S2'][i % 8],
+            min: fmtMoney(randInt(40, 80) * 1000),
+            max: fmtMoney(randInt(80, 150) * 1000),
+            count: randInt(2, 40)
+          }))
+        });
+        break;
+       case 'branch-offices':buildTable('tbl-branch-offices',{columns:[ {key:'name',label:'Branch Name'},{key:'manager',label:'Branch Manager'},{key:'phone',label:'Phone'},{key:'email',label:'Email'},{key:'location',label:'Location'},{key:'emp',label:'Staff'},{key:'status',label:'Status'},ac],rows:gen(12,i=>({ name:['HQ','North','South','East','West','APAC','EMEA','LATAM','Canada','Australia','UK','Singapore'][i]+' Office',location:['New York','Chicago','Atlanta','Boston','San Jose','Singapore','London','São Paulo','Toronto','Sydney','Manchester','Tokyo'][i],manager:names[i%names.length],emp:randInt(30,320),status:statusBadge.active}))});break;
+    case 'employee-directory':buildTable('tbl-employees',{columns:[{key:'id',label:'Emp ID'},{key:'fname',label:'First Name'},{key:'mname',label:'Middle Name'},{key:'lname',label:'Last Name'},{key:'uname',label:'Username'},{key:'gender',label:'Gender'},{key:'dob',label:'Date of Birth'},{key:'hire',label:'Hired Date'},{key:'status',label:'Status'},{key:'marital',label:'Marital Status'},{key:'phone',label:'Phone'},{key:'email',label:'Email'},{key:'dept',label:'Department'},{key:'position',label:'Job Position'},{key:'branch',label:'Branch name'},{key:'type',label:'Emp Type'} , {key:'bankname',label:'Bank name'}, {key:'bankacc',label:'Bank Account'} , {key:'tin',label:'Tin number'},{key:'created',label:'Created At'},ac],rows:gen(60,i=>{const isActive=i%8!==0,fn=names[i%names.length].split(' ')[0],ln=names[i%names.length].split(' ')[1];return{id:`E${String(i+1).padStart(4,'0')}`,fname:fn,mname:['A.','M.','D.','S.','K.'][i%5],lname:ln,uname:(fn[0]+ln).toLowerCase()+randInt(10,99),gender:i%2===0?'Male':'Female',dob:`19${randInt(70,99)}-${String(randInt(1,12)).padStart(2,'0')}-${String(randInt(1,28)).padStart(2,'0')}`,hire:`202${randInt(0,5)}-${String(randInt(1,12)).padStart(2,'0')}-${String(randInt(1,28)).padStart(2,'0')}`,status:isActive?statusBadge.active:statusBadge.inactive,marital:['Single','Married','Divorced','Widowed'][i%4],phone:`+1 555-${randInt(100,999)}-${randInt(1000,9999)}`,email:`${fn.toLowerCase()}.${ln.toLowerCase()}@hrm.com`,dept:rand(depts),position:['Software Engineer','Project Manager','HR Specialist','Accountant','Sales Lead'][i%5],type:i%4===0?'Contract':'Full-Time', bankacc:`BE${randInt(10,99)} 0000 ${randInt(1000,9999)} ${randInt(10,99)}`,created:'2025-01-10 08:30'};})});break;
+    /* Locate this section inside the initPage function */
+
+case 'employment-types':
+  buildTable('tbl-employment-types', {
+    columns: [
+      { key: 'name', label: 'Type Name' },
+      { key: 'desc', label: 'Description' },
+      { key: 'count', label: 'Employees' },
+      /* Custom Actions column without the eye icon */
+      {
+        key: '_',
+        label: 'Actions',
+        render: () => `
+          <div class="flex-row">
+            <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;">
+              <i data-lucide="trash-2" size="10"></i>
+            </button>
+          </div>`
+      }
+    ],
+    rows: [
+      { name: 'Permanent / Full-Time', desc: 'Regular employee with full benefits', benefits: 'Yes', count: 912 },
+      { name: 'Fixed-Term Contract', desc: 'Time-bound employment agreement', benefits: 'Partial', count: 248 },
+      { name: 'Part-Time', desc: 'Less than 40 hours per week', benefits: 'Partial', count: 55 },
+      { name: 'Internship', desc: 'Student or graduate trainee', benefits: 'No', count: 33 },
+      { name: 'Temporary / Casual', desc: 'Short-term project-based', benefits: 'No', count: 0 }
+    ]
+  });
+  break;
+    /* Locate this section inside the initPage function */
+
+case 'probation-tracker':
+  buildTable('tbl-probation', {
+    columns: [
+      { key: 'name', label: 'Employee' },
+      { key: 'dept', label: 'Department' },
+      { key: 'start', label: 'Probation Start' },
+      { key: 'end', label: 'Probation End' },
+      { key: 'days', label: 'Days Left' },
+      { key: 'status', label: 'Probation Status' },
+      /* Custom Actions column - Only Trash Icon */
+      {
+        key: '_',
+        label: 'Actions',
+        render: () => `
+          <div class="flex-row">
+            <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;">
+              <i data-lucide="trash-2" size="10"></i>
+            </button>
+          </div>`
+      }
+    ],
+    rows: gen(22, i => ({
+      name: names[i % names.length],
+      dept: rand(depts),
+      start: `Jan ${randInt(5, 20)}, 2026`,
+      end: `Apr ${randInt(5, 20)}, 2026`,
+      days: randInt(0, 50),
+      status: i < 8 ? b('warning', 'Ending Soon') : b('info', 'Active')
+    }))
+  });
+  break;
+    case 'contract-renewals':buildTable('tbl-contract-renewals',{columns:[ {key:'name',label:'Employee'},{key:'dept',label:'Department'} ,{key:'start',label:'Start'},{key:'expiry',label:'Expiry'},{key:'days',label:'Days to Expiry'},{key:'status',label:'Status'},ac],rows:gen(18,i=>({ name:names[i%names.length],dept:rand(depts),start:`Apr ${randInt(1,28)}, 2025`,expiry:`Apr ${randInt(1,28)}, 2026`,days:randInt(-5,90),status:i<3?b('danger','Critical'):i<8?b('warning','Due Soon'):b('success','Active')}))});break;
+    case 'retirement-planner':
+      // Generate mock data specifically for retirement
+      const retirementRows = gen(20, i => {
+        const isRetired = i > 5; // First 5 are upcoming, rest are already retired
+        const today = new Date();
+        const retDate = new Date();
+        
+        if (!isRetired) {
+          // Set retirement date within the next 90 days
+          retDate.setDate(today.getDate() + randInt(10, 85));
+        } else {
+          // Set retirement date in the past
+          retDate.setDate(today.getDate() - randInt(10, 200));
+        }
+
+        return {
+          name: names[i % names.length],
+          dept: rand(depts),
+          age: isRetired ? 60 : 59,
+          tenure: randInt(20, 35) + " yrs",
+          date: retDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          status: isRetired ? b('neutral', 'Retired') : b('warning', 'Upcoming (90D)'),
+          pension: i % 3 === 0 ? b('success', 'Verified') : b('warning', 'In Progress')
+        };
+      });
+
+      // Update the counter in the stat card
+      document.getElementById('count-upcoming-ret').textContent = "5";
+
+      buildTable('tbl-retirement', {
+        columns: [
+          { key: 'name', label: 'Employee' },
+          { key: 'dept', label: 'Department' },
+          { key: 'age', label: 'Age' },
+          { key: 'tenure', label: 'Service Period' },
+          { key: 'date', label: 'Retirement Date' },
+          { key: 'status', label: 'Status' },
+          { key: 'pension', label: 'Pension Status' },
+          { 
+            key: '_', 
+            label: 'Actions', 
+            render: (v, row) => `
+              <div class="flex-row">
+                <button class="btn btn-xs btn-secondary" title="Succession Plan"><i data-lucide="user-plus" size="10"></i></button>
+                <button class="btn btn-xs btn-primary" title="Clearance"><i data-lucide="clipboard-check" size="10"></i></button>
+              </div>`
+          }
+        ],
+        rows: retirementRows,
+        perPage: 10
+      });
+      break;
+    /* Locate this section inside the initPage function */
+
+case 'former-employees':
+  buildTable('tbl-former-employees', {
+    columns: [
+      { key: 'name', label: 'Employee' },
+      { key: 'dept', label: 'Last Department' },
+      { key: 'role', label: 'Last Role' },
+      { key: 'exitDate', label: 'Exit Date' },
+      { key: 'type', label: 'Reason' },
+      { key: 'duration', label: 'Duration' },
+      { key: 'rehire', label: 'Rehire possibility' },
+      /* Custom Actions column - Only Trash Icon */
+      {
+        key: '_',
+        label: 'Actions',
+        render: () => `
+          <div class="flex-row">
+            <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;">
+              <i data-lucide="trash-2" size="10"></i>
+            </button>
+          </div>`
+      }
+    ],
+    rows: gen(25, i => ({
+      name: names[i % names.length],
+      dept: rand(depts),
+      role: ['Manager', 'Analyst', 'Dev', 'Lead'][i % 4],
+      exitDate: `Jan ${randInt(1, 31)}, 2026`,
+      type: (i % 5 === 2) ? b('danger', 'Terminated') : b('neutral', 'Resigned'),
+      duration: randInt(1, 10) + ' yrs',
+      rehire: (i % 6 === 0) ? b('danger', 'No') : b('success', 'Yes')
+    }))
+  });
+  break;
+    case 'asset-tracking':
+      buildTable('tbl-assets', {
+        columns: [
+          { key: 'id', label: 'Item Code' },
+          { key: 'name', label: 'Asset Name' },
+          { key: 'cat', label: 'Category' },
+          { key: 'serial', label: 'Serial number' },
+          { key: 'val', label: 'Asset Value' },
+          { key: 'user', label: 'Previous custodian' },
+          { key: 'user', label: 'Current custodian' },
+          { key: 'loc', label: 'Location' }, 
+          { key: 'war', label: 'Warranty' }, 
+          { 
+            key: '_', 
+            label: 'Actions', 
+            render: (v, row) => `
+              <div style="display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 8px; width: 100%;">
+                <button class="btn btn-xs btn-secondary" title="View Details">
+                  <i data-lucide="eye" size="10"></i>
+                </button>
+                <button class="btn btn-xs btn-secondary" onclick="openReassignModal('${row.name}','${row.user}')" title="Reassign">
+                  <i data-lucide="shuffle" size="10"></i>
+                </button>
+              </div>`
+          }
+        ],
+        rows: gen(50, i => {
+          const categories = ['IT Hardware', 'Fleet/Vehicles', 'Office Furniture', 'Networking', 'Security'];
+          const cats = categories[i % categories.length];
+          const price = randInt(2000, 850000);
+          
+          return {
+            id: `AST-${2000 + i}`,
+            name: i % 4 === 0 ? 'MacBook Pro M3' : i % 4 === 1 ? 'Toyota Hilux Pickup' : i % 4 === 2 ? 'Executive Desk Pro' : 'Cisco Firewall X1',
+            cat: b('neutral', cats),
+            val: `ETB ${price.toLocaleString()}`,
+            user: names[i % names.length],
+            war: `202${randInt(6, 8)}-12-31` 
+          };
+        })
+      });
+      break;
+    case 'document-vault':initVaultMatrix();break;
+    case 'job-vacancies':buildTable('tbl-vacancies',{columns:[ {key:'title',label:'Position'},{key:'dept',label:'Department'},{key:'branch',label:'Branch Name'},{key:'type',label:'Type'},{key:'posted',label:'Posted'},{key:'deadline',label:'Deadline'},{key:'description',label:'Job Description'},{key:'requirements',label:'Requirements'},{key:'status',label:'Status'},ac],rows:gen(23,i=>({ title:['Senior Dev','Sales Rep','HR Coordinator','Finance Analyst','UX Designer','DevOps','QA Engineer','Data Analyst','Legal Counsel','Support Specialist'][i%10],dept:rand(depts),branch:['Remote','New York','Hybrid','Atlanta','London'][i%5],type:['Full-Time','Contract','Part-Time'][i%3],posted:`Mar ${randInt(1,18)}, 2026`,deadline:`Apr ${randInt(5,30)}, 2026`}))});break;
+    case 'candidates':buildTable('tbl-candidates',{columns:[ {key:'name',label:'Candidate'},{key:'position',label:'Applied For'},{key:'applied',label:'Applied'},{key:'stage',label:'Stage'},ac],rows:gen(45,i=>({ name:names[i%names.length],position:['Senior Dev','Sales Rep','HR Coordinator','Finance Analyst'][i%4],applied:`Mar ${randInt(1,18)}, 2026`,stage:['Applied','Screening','Interview','Assessment','Offer','Hired'][i%6]}))});break;
+    case 'interview-tracker':buildTable('tbl-interviews',{columns:[ {key:'candidate',label:'Candidate'},{key:'position',label:'Position'},{key:'interviewer',label:'Interviewer'},{key:'date',label:'Date'},{key:'time',label:'Time'},{key:'mode',label:'Mode'},{key:'result',label:'Result'},ac],rows:gen(30,i=>({ candidate:names[i%names.length],position:['Senior Dev','Sales Rep','HR Coordinator'][i%3],interviewer:names[(i+5)%names.length],date:`Mar ${randInt(18,31)}, 2026`,time:`${randInt(9,17)}:00`,mode:['In-Person','Video Call','Phone'][i%3],result:[b('success','Passed'),b('danger','Failed'),b('warning','On Hold'),b('info','Scheduled')][i%4]}))});break;
+    case 'internship':buildTable('tbl-internship',{columns:[{key:'id',label:'Intern ID'},{key:'name',label:'Full Name'},{key:'uni',label:'Institution'},{key:'dept',label:'Assigned Dept'},{key:'mentor',label:'Mentor'},{key:'start',label:'Start Date'},{key:'end',label:'End Date'},{key:'eval',label:'Evaluation'},{key:'status',label:'Status'},ac],rows:gen(35,i=>({id:`INT-26-${String(i+1).padStart(3,'0')}`,name:names[i%names.length],uni:['AAU','ASTU','Unity','Hilcoe','MicroLink'][i%5],dept:rand(depts),mentor:names[(i+5)%names.length],start:'Feb 01, 2026',end:'May 30, 2026',eval:i%4===0?b('primary','92%'):'Pending',status:i%6===0?b('neutral','Completed'):b('success','Active')}))});break;
+    case 'daily-attendance':buildTable('tbl-attendance',{columns:[ {key:'name',label:'Employee'},{key:'dept',label:'Dept'},{key:'shift',label:'Shift'},{key:'in',label:'Check In'},{key:'out',label:'Check Out'},{key:'hours',label:'Hours'},{key:'ot',label:'OT'},{key:'status',label:'Status'},ac],rows:gen(50,i=>({ name:names[i%names.length],dept:rand(depts),shift:'Day',in:`0${randInt(8,9)}:${['00','15','30','45'][i%4]}`,out:`17:${['00','15','30'][i%3]}`,hours:randInt(7,9)+'.0',ot:i%5===0?'1.5':'0',status:i%8===0?b('warning','Late'):i%15===0?b('danger','Absent'):b('success','Present')}))});break;
+    case 'overtime-requests':buildTable('tbl-overtime',{columns:[ {key:'emp',label:'Employee'},{key:'dept',label:'Dept'},{key:'date',label:'Date'},{key:'hours',label:'OT Hours'},{key:'reason',label:'Reason'},{key:'submitted',label:'Submitted'},{key:'status',label:'Status'},ac],rows:gen(25,i=>({ emp:names[i%names.length],dept:rand(depts),date:`Mar ${randInt(1,20)}, 2026`,hours:randInt(1,4)+'.0',reason:['Project deadline','Client request','Coverage','System migration','Month-end close'][i%5],submitted:`Mar ${randInt(1,18)}, 2026`,status:[statusBadge.pending,statusBadge.approved,statusBadge.rejected][i%3]}))});break;
+    case 'attendance-reports':buildTable('tbl-attendance-reports',{columns:[{key:'dept',label:'Department'},{key:'total',label:'Total Emp'} ,{key:'absent',label:'Absent Days'},{key:'leave',label:'Leave Days'},{key:'late',label:'Late Arrivals'},{key:'ot',label:'Total OT Hrs'},{key:'rate',label:'Attendance Rate'},ac],rows:gen(10,i=>({dept:depts[i],total:randInt(40,300) ,absent:randInt(10,80),leave:randInt(20,100),late:randInt(5,30),ot:randInt(20,200),rate:randInt(90,99)+'%'}))});break;
+    case 'leave-types':buildTable('tbl-leave-types',{columns:[ {key:'name',label:'Leave Type'},{key:'days',label:'Days/Year'},{key:'carry',label:'Carryover'},{key:'paid',label:'Paid'},{key:'approval',label:'Needs Approval'},ac],rows:[{ name:'Annual Leave',days:20,carry:'5 days',paid:'Yes',approval:'Yes'},{ name:'Sick Leave',days:10,carry:'0 days',paid:'Yes',approval:'No (with cert)'},{ name:'Maternity Leave',days:90,carry:'N/A',paid:'Yes',approval:'Yes'},{ name:'Paternity Leave',days:14,carry:'N/A',paid:'Yes',approval:'Yes'},{ name:'Bereavement Leave',days:5,carry:'N/A',paid:'Yes',approval:'Yes'},{ name:'Unpaid Leave',days:'—',carry:'N/A',paid:'No',approval:'Yes'},{ name:'Study/Exam Leave',days:5,carry:'N/A',paid:'Partial',approval:'Yes'},{ name:'Public Holiday',days:12,carry:'N/A',paid:'Yes',approval:'N/A'}]});break;
+    case 'leave-requests':buildTable('tbl-leave-requests',{columns:[ {key:'emp',label:'Employee'},{key:'dept',label:'Department'},{key:'type',label:'Leave Type'},{key:'approver',label:'Approver'},{key:'from',label:'From'},{key:'to',label:'To'},{key:'days',label:'Days'},{key:'reason',label:'Reason'},{key:'status',label:'Status'},ac],rows:gen(40,i=>({ emp:names[i%names.length],dept:rand(depts),type:['Annual','Sick','Maternity','Bereavement','Unpaid'][i%5],from:`Mar ${randInt(18,25)}, 2026`,to:`Mar ${randInt(26,31)}, 2026`,days:randInt(1,7),reason:['Vacation','Medical','Personal'][i%3],status:[statusBadge.approved,statusBadge.rejected][i%2]}))});break;
+    case 'leave-entitlement':buildTable('tbl-leave-entitlement',{columns:[{key:'id',label:'Emp ID'},{key:'name',label:'Employee'},{key:'dept',label:'Department'},{key:'al_total',label:'AL Total'},{key:'al_used',label:'AL Used'},{key:'al_bal',label:'AL Balance'},{key:'sl_used',label:'SL Used'},{key:'sl_bal',label:'SL Balance'},{key:'carry',label:'Carried Over'},ac],rows:gen(48,i=>({id:`E${String(i+1).padStart(4,'0')}`,name:names[i%names.length],dept:rand(depts),al_total:20,al_used:randInt(0,18),al_bal:randInt(2,20),sl_used:randInt(0,8),sl_bal:randInt(2,10),carry:randInt(0,5)}))});break;
+    case 'medical-claims':buildTable('tbl-medical',{columns:[{key:'id',label:'Claim ID'},{key:'emp',label:'Employee'},{key:'dept',label:'Department'},{key:'category',label:'Category'},{key:'amount',label:'Amount'},{key:'submitted',label:'Submitted'},{key:'receipt',label:'Receipt'},{key:'status',label:'Status'},ac],rows:gen(35,i=>({id:`MC-${String(i+1).padStart(3,'0')}`,emp:names[i%names.length],dept:rand(depts),category:['Doctor Visit','Specialist','Prescription','Dental','Vision','Hospital'][i%6],amount:fmtMoney(randInt(50,1500)),submitted:`Mar ${randInt(1,18)}, 2026`,receipt:'Yes',status:[statusBadge.pending,statusBadge.approved,statusBadge.rejected][i%3]}))});break;
+    case 'training-needs':buildTable('tbl-training-needs',{columns:[ {key:'dept',label:'Department'},{key:'skill',label:'Skill Gap'},{key:'priority',label:'Priority'},{key:'emp_count',label:'Affected'},{key:'proposed',label:'Proposed Training'},{key:'status',label:'Status'},ac],rows:gen(20,i=>({ dept:rand(depts),skill:['Leadership','Excel Advanced','Cloud Computing','Project Management','Customer Service','Data Analytics','Cybersecurity','Presentation Skills'][i%8],priority:i%3===0?b('danger','High'):i%3===1?b('warning','Medium'):b('neutral','Low'),emp_count:randInt(5,80),proposed:['Workshop','Online Course','Mentoring','Certification Program','Conference'][i%5],status:[statusBadge.pending,statusBadge.approved,b('success','Ongoing')][i%3]}))});break;
+    case 'training-schedule':buildTable('tbl-training-schedule',{columns:[ {key:'course',label:'Course'},{key:'dept',label:'Department'},{key:'trainer',label:'Trainer'},{key:'date',label:'Date'},{key:'time',label:'Time'},{key:'venue',label:'Venue'},{key:'seats',label:'Enrolled/Seats'},{key:'status',label:'Status'},ac],rows:gen(20,i=>({ course:['Leadership 101','Advanced Excel','AWS Cloud','PMP Prep','Python Basics'][i%5],dept:rand(depts),trainer:names[i%names.length],date:`${['Apr','May','Jun'][i%3]} ${randInt(1,28)}, 2026`,time:`${randInt(9,14)}:00`,venue:['Room A','Room B','Online','HQ Auditorium'][i%4],seats:`${randInt(5,25)}/${randInt(25,30)}`,status:i%3===0?b('success','Confirmed'):b('warning','Open')}))});break;
+    case 'performance-reviews':buildTable('tbl-reviews',{columns:[ {key:'emp',label:'Employee'},{key:'dept',label:'Department'},{key:'reviewer',label:'Reviewer'},{key:'period',label:'Period'},{key:'score',label:'Overall Score'},{key:'rank',label:'Rating'},{key:'status',label:'Status'},ac],rows:gen(35,i=>({ emp:names[i%names.length],dept:rand(depts),reviewer:names[(i+4)%names.length],period:'Q1 2026',score:(randInt(60,100)/10).toFixed(1)+' / 10',rank:['Exceptional','Exceeds','Meets','Below'][i%4],status:i%4===0?statusBadge.pending:b('success','Submitted')}))});break;
+    case '360-feedback':buildTable('tbl-360',{columns:[ {key:'subject',label:'Subject'},{key:'dept',label:'Department'},{key:'total',label:'Respondents'},{key:'complete',label:'Completed'},{key:'avg',label:'Avg Score'},{key:'status',label:'Status'},ac],rows:gen(20,i=>({ subject:names[i%names.length],dept:rand(depts),total:randInt(5,12),complete:randInt(3,12),avg:(randInt(60,100)/10).toFixed(1)+'/10',status:i%3===0?b('success','Closed'):i%3===1?b('success','Open'):b('warning','In Progress')}))});break;
+    case 'Promote/Demote':buildTable('tbl-Promote/Demote',{columns:[{key:'emp',label:'Employee'},{key:'type',label:'Change Type'},{key:'from_pos',label:'Prev Position'},{key:'to_pos',label:'Current Position'},{key:'dept',label:'Dept'},{key:'sal_from',label:'Old Salary'},{key:'sal_to',label:'New Salary'},{key:'eff_date',label:'Effective'},{key:'status',label:'Status'},ac],rows:gen(18,i=>({ emp:names[i%names.length],from_pos:['Junior Dev','Sales Rep','HR Assistant','Analyst'][i%4],to_pos:['Senior Dev','Senior Rep','HR Manager','Senior Analyst'][i%4],dept:rand(depts),sal_from:fmtMoney(randInt(40,70)*1000),sal_to:fmtMoney(randInt(70,100)*1000),eff_date:'Apr 1, 2026',status:[statusBadge.pending,statusBadge.approved,b('info','Processing')][i%3],type:[statusBadge.pending,statusBadge.approved][i%3]}))});break;
+    case 'transfers':buildTable('tbl-transfers-dept',{columns:[ {key:'emp',label:'Employee'},{key:'from_dept',label:'From Department'},{key:'to_dept',label:'To Department'},{key:'from_branch',label:'From Branch'},{key:'to_branch',label:'To Branch'},{key:'req_date',label:'Requested'},{key:'eff_date',label:'Effective'},{key:'status',label:'Status'},ac],rows:gen(20,i=>({ emp:names[i%names.length],from_dept:rand(depts),to_dept:rand(depts),from_branch:'HQ',to_branch:['North','South','West','APAC'][i%4],req_date:`Mar ${randInt(1,18)}, 2026`,eff_date:'Apr 1, 2026',status:[statusBadge.pending,statusBadge.approved][i%2]}))});break;
+    case 'attendance': initAttendanceGrid(); break;
+    case 'disciplinary-actions':buildTable('tbl-disciplinary',{columns:[ {key:'emp',label:'Employee'},{key:'dept',label:'Department'},{key:'type',label:'Action Type'},{key:'incident',label:'Incident Date'},{key:'issued',label:'Issued'},{key:'issuer',label:'Issued By'}, ac],rows:gen(18,i=>({ emp:names[i%names.length],dept:rand(depts),type:['Verbal Warning','Written Warning','Final Warning','Suspension','Demotion'][i%5],incident:`Feb ${randInt(1,28)}, 2026`,issued:`Mar ${randInt(1,15)}, 2026`,issuer:names[(i+3)%names.length]}))});break;
+    case 'resignations':buildTable('tbl-resignations',{columns:[ {key:'emp',label:'Employee'},{key:'dept',label:'Department'},{key:'type',label:'Reason'},{key:'filed',label:'Filed'},{key:'assigned',label:'Assigned To'},{key:'priority',label:'Priority'},{key:'status',label:'Status'},ac],rows:gen(15,i=>({ emp:names[i%names.length],dept:rand(depts),type:['Harassment','Unfair Treatment','Pay Dispute','Safety Concern','Discrimination','Work Conditions'][i%6],filed:`Mar ${randInt(1,18)}, 2026`,assigned:names[(i+2)%names.length],priority:i%3===0?b('danger','High'):i%3===1?b('warning','Medium'):b('neutral','Low'),status:i%4===0?b('success','Resolved'):i%4===1?statusBadge.pending:b('info','Under Review')}))});break;
+    case 'termination':buildTable('tbl-termination',{columns:[{key:'emp',label:'Employee'},{key:'dept',label:'Department'},{key:'type',label:'Separation Type'},{key:'notice',label:'Notice Date'},{key:'last_day',label:'Last Working Day'},{key:'clearance',label:'Clearance'},{key:'settlement',label:'Final Settlement'},{key:'status',label:'Status'},ac],rows:gen(12,i=>({emp:names[i%names.length],dept:rand(depts),type:['Resignation','Involuntary','Retirement','End of Contract'][i%4],notice:`Mar ${randInt(1,15)}, 2026`,last_day:`Mar ${randInt(25,31)}, 2026`,clearance:i%3===0?b('success','Done'):b('warning','Pending'),settlement:i%3===0?fmtMoney(randInt(2000,15000)):b('neutral','TBD'),status:i%3===0?b('success','Complete'):b('warning','In Progress')}))});break;
+    case 'roles-permissions': initRoles(); break;
+    case 'exit-clearance':{
+      const chk=v=>v?b('success','✓'):b('warning','—');
+      buildTable('tbl-clearance',{columns:[{key:'emp',label:'Employee'},{key:'dept',label:'Department'},{key:'it',label:'IT'},{key:'finance',label:'Finance'},{key:'hr',label:'HR'},{key:'admin',label:'Admin'},{key:'assets',label:'Assets'},{key:'overall',label:'Overall'},ac],rows:gen(12,i=>{const done=i%3===0;return{emp:names[i%names.length],dept:rand(depts),it:chk(done||i%2===0),finance:chk(done),hr:chk(done||i%3===0),admin:chk(done||i%4===0),assets:chk(done),overall:done?b('success','Cleared'):b('warning','In Progress')};})});break;
+    }
+    case 'user-management':buildTable('tbl-users',{columns:[{key:'id',label:'User ID'},{key:'name',label:'Name'},{key:'email',label:'Email'},{key:'role',label:'Role'},{key:'dept',label:'Dept'},{key:'last_login',label:'Last Login'},{key:'status',label:'Status'},ac],rows:gen(25,i=>({id:`USR-${String(i+1).padStart(3,'0')}`,name:names[i%names.length],email:`${names[i%names.length].toLowerCase().replace(' ','.')}@hrm.com`,role:['Super Admin','HR Manager','Finance Officer','Department Head','Employee'][i%5],dept:rand(depts),last_login:`Mar ${randInt(1,20)}, 2026 ${randInt(8,17)}:${['00','30'][i%2]}`,status:i%7===0?statusBadge.inactive:statusBadge.active}))});break;
+    case 'audit-logs':buildTable('tbl-audit',{columns:[ {key:'user',label:'User'},{key:'action',label:'Action'},{key:'module',label:'Module'},{key:'record',label:'Record'},{key:'ip',label:'IP Address'},{key:'ts',label:'Timestamp'},{key:'_',label:'Details',render:()=>'<button class="btn btn-xs btn-secondary">View</button>'}],rows:gen(60,i=>({ user:names[i%names.length],action:['CREATE','UPDATE','DELETE','LOGIN','APPROVE'][i%6],module:['Payroll','Employees','Leave','Recruitment','Settings'][i%5],record:`Record #${randInt(100,999)}`,ip:`192.168.${randInt(1,10)}.${randInt(1,255)}`,ts:`Mar ${randInt(18,20)}, 2026 ${String(randInt(8,17)).padStart(2,'0')}:${String(randInt(0,59)).padStart(2,'0')}`}))});break;
+    case 'hr-analytics':initAnalytics();break;
+  }
+}
+
+// ── STARTUP: single icon pass on the static DOM ──
+window.addEventListener('DOMContentLoaded', () => {
+  lcIcons();
+  
+  // Check if there is a page ID in the URL hash (e.g., #employee-directory)
+  const currentHash = window.location.hash.replace('#', '');
+  
+  // If a hash exists and the page element exists, go to that page. Otherwise, default to dashboard.
+  if (currentHash && document.getElementById('p-' + currentHash)) {
+    goPage(currentHash);
+  } else {
+    goPage('dashboard');
+  }
+});
+window.addEventListener('hashchange', () => {
+  const currentHash = window.location.hash.replace('#', '');
+  if (currentHash) {
+    goPage(currentHash);
+  }
+});
+//sorting algorithm for all tables 
+function buildTable(containerId, {columns, rows, perPage=8}) {
+  const container = document.getElementById(containerId);
+  if (!container || container.dataset.built) return;
+  container.dataset.built = '1';
+  
+  container._rows = [...rows]; 
+  container._cols = columns; 
+  container._perPage = perPage;
+  container._currPg = 1;
+  container._sort = { key: null, dir: 'desc' };
+
+  container._render = function() {
+    const start = (this._currPg - 1) * this._perPage;
+    const end = Math.min(start + this._perPage, this._rows.length);
+    const slice = this._rows.slice(start, end);
+    
+    // Header Logic: Check for action key '_'
+    const colHeaders = this._cols.map(c => {
+      if (c.key === '_') return `<th>${c.label}</th>`; // No sort for Actions
+      
+      const isSorted = this._sort.key === c.key;
+      const arrow = isSorted ? (this._sort.dir === 'asc' ? ' ↑' : ' ↓') : ' ↕';
+      return `<th onclick="sortTbl('${containerId}','${c.key}')">${c.label}<span class="sort-indicator">${arrow}</span></th>`;
+    }).join('');
+
+    const bodyRows = slice.map(row =>
+      `<tr>${this._cols.map(c => {
+        let v = row[c.key] !== undefined ? row[c.key] : '—';
+        if (c.render) v = c.render(v, row);
+        return `<td>${v}</td>`;
+      }).join('')}</tr>`
+    ).join('');
+
+    const tp = Math.ceil(this._rows.length / this._perPage);
+    let pgBtns = `<button class="pg-btn" onclick="changePg('${containerId}',-1)" ${this._currPg<=1?'disabled':''}>‹</button>`;
+    for (let i=1; i<=tp; i++) {
+      if (tp<=7 || i===1 || i===tp || Math.abs(i-this._currPg)<=1) 
+        pgBtns += `<button class="pg-btn ${i===this._currPg?'active':''}" onclick="setPg('${containerId}',${i})">${i}</button>`;
+      else if (Math.abs(i-this._currPg)===2) pgBtns += `<button class="pg-btn" disabled>…</button>`;
+    }
+    pgBtns += `<button class="pg-btn" onclick="changePg('${containerId}',1)" ${this._currPg>=tp?'disabled':''}>›</button>`;
+
+    this.innerHTML = `
+      <div class="filter-bar">
+        <div class="search-container"><div class="search-inner">
+          <i data-lucide="search" class="search-lead-icon"></i>
+          <input type="text" placeholder="Search..." oninput="filterTbl('${containerId}', this.value)">
+        </div></div>
+      </div>
+      <div class="table-wrap"><table class="tbl"><thead><tr>${colHeaders}</tr></thead><tbody>${bodyRows}</tbody></table></div>
+      <div class="pagination"><span class="pagination-info">Showing ${this._rows.length?start+1:0}–${end} of ${this._rows.length}</span><div class="pagination-btns">${pgBtns}</div></div>`;
+    lcIcons(this);
+  };
+
+  container._render();
+}
+
+// ── GLOBAL SORT HANDLER (DESC-FIRST) ──
+window.sortTbl = (id, key) => {
+  const c = document.getElementById(id);
+  if (c._sort.key === key) {
+    c._sort.dir = c._sort.dir === 'asc' ? 'desc' : 'asc';
+  } else {
+    c._sort.key = key;
+    c._sort.dir = 'desc';
+  }
+
+  c._rows.sort((a, b) => {
+    let vA = a[key], vB = b[key];
+    const isNum = !isNaN(parseFloat(vA)) && isFinite(vA) && !isNaN(parseFloat(vB)) && isFinite(vB);
+    let res = isNum ? (vA - vB) : String(vA).replace(/<[^>]*>/g, '').localeCompare(String(vB).replace(/<[^>]*>/g, ''), undefined, {numeric: true, sensitivity: 'base'});
+    return c._sort.dir === 'asc' ? res : -res;
+  });
+
+  c._currPg = 1;
+  c._render();
+};
+
+window.changePg = (id, dir) => { const c = document.getElementById(id); c._currPg += dir; c._render(); };
+window.setPg = (id, p) => { const c = document.getElementById(id); c._currPg = p; c._render(); };
+window.filterTbl = (id, val) => {
+  const c = document.getElementById(id);
+  if (!c._rawRows) c._rawRows = [...c._rows];
+  const q = val.toLowerCase();
+  c._rows = c._rawRows.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(q)));
+  c._currPg = 1;
+  c._render();
+};
+const mods = [
+  
+  {
+    id: 'm-org', n: 'Company & Structure', i: 'building-2',
+    subs: ['Company Profile', 'Organization Chart', 'Departments', 'Job Positions', 'Branch Offices']
+  },
+  {
+    id: 'm-emp', n: 'Employees', i: 'users',
+    subs: ['Employee Profile', 'Employment Types', 'Probation Tracker', 'Contract Renewals', 'Former employees', 'Attachment Vault', 'Asset Tracking']
+  },
+  {
+    id: 'm-rec', n: 'Talent Acquisition', i: 'user-plus',
+    subs: ['Add Job Vacancies', 'Job Applicant\'s List', 'Interview Tracker', 'Internship Management']
+  },
+  {
+    id: 'm-move', n: 'Employee Movement', i: 'arrow-right-left',
+    subs: ['Promote/Demote', 'Department Transfers']
+  },
+  {
+    id: 'm-att', n: 'Attendance', i: 'clock',
+    subs: ['Record attendance', 'Daily Attendance', 'Attendance Reports']
+  },
+  {
+    id: 'm-leave', n: 'Leave Management', i: 'calendar-days',
+    subs: ['Leave Types', 'Leave Requests', 'Leave Entitlement']
+  },
+  {
+    id: 'm-ben', n: 'Benefits', i: 'heart-pulse',
+    subs: ['Medical Claims', 'Overtime Requests']
+  },
+  {
+    id: 'm-comp', n: 'Compliance & Exit', i: 'shield-alert',
+    subs: ['Disciplinary Actions', 'Resignations', 'Separation & Exit', 'Exit Clearance']
+  },
+  {
+    id: 'm-train', n: 'Training & Dev', i: 'graduation-cap',
+    subs: ['Training Needs Analysis', 'Training Schedule']
+  },
+  {
+    id: 'm-perf', n: 'Performance', i: 'trending-up',
+    subs: ['Performance Reviews', '360° Feedback']
+  },
+  {
+    id: 'm-sys', n: 'System Admin', i: 'settings-2',
+    subs: ['User Management', 'Roles & Permissions', 'Audit Logs']
+  }
+];
+
+function initRoles() { 
+  selRole(document.querySelector('.role-pill-v2'), 'Super Admin'); 
+}
+ 
+let currentAccessMode = 'role';
+
+function switchAccessMode(mode) {
+    currentAccessMode = mode;
+    const btnRole = document.getElementById('btn-mode-role');
+    const btnUser = document.getElementById('btn-mode-user');
+    const sideRole = document.getElementById('side-role-list');
+    const sideUser = document.getElementById('side-user-search');
+    const targetLabel = document.getElementById('perm-target-label');
+    const warning = document.getElementById('override-warning');
+
+    if (mode === 'role') {
+        // UI Switching
+        btnRole.style.background = 'var(--primary-light)'; btnRole.style.color = 'var(--primary)';
+        btnUser.style.background = 'transparent'; btnUser.style.color = 'var(--muted)';
+        sideRole.style.display = 'block';
+        sideUser.style.display = 'none';
+        targetLabel.textContent = "Standard Role:";
+        warning.style.display = 'none';
+        
+        // Select first standard role
+        selRole(document.querySelector('#side-role-list .role-pill-v2'), 'Super Admin');
+    } else {
+        // UI Switching
+        btnUser.style.background = 'var(--primary-light)'; btnUser.style.color = 'var(--primary)';
+        btnRole.style.background = 'transparent'; btnRole.style.color = 'var(--muted)';
+        sideRole.style.display = 'none';
+        sideUser.style.display = 'block';
+        targetLabel.textContent = "Individual Override:";
+        warning.style.display = 'inline-flex';
+        
+        // Clear the table until a user is picked
+        document.getElementById('active-role-name').textContent = "No User Selected";
+        document.getElementById('perm-grid').innerHTML = `<tr><td colspan="4" style="text-align:center; padding:40px; color:var(--muted)">Search and select a user to define individual permissions.</td></tr>`;
+        document.getElementById('selected-user-card').style.display = 'none';
+    }
+    lcIcons();
+}
+
+// Override the existing selectAsItem specifically for Permissions
+// Or handle it in a generic way if you prefer:
+function selectUserForPerms(name) {
+    document.getElementById('as-input-perm-user').value = name;
+    document.getElementById('as-drop-perm-user').classList.remove('active');
+    
+    // Update the Profile Card
+    document.getElementById('selected-user-card').style.display = 'block';
+    document.getElementById('perm-user-name').textContent = name;
+    document.getElementById('perm-user-id').textContent = "E-" + Math.floor(1000 + Math.random() * 9000);
+    document.getElementById('perm-user-avatar').textContent = name.split(' ').map(n => n[0]).join('');
+    
+    // Set the Active Target
+    document.getElementById('active-role-name').textContent = name;
+    
+    // Re-render the grid (Individual mode always starts with some base permissions)
+    renderPermissionGrid(false); // Passing 'false' makes checkboxes active/changeable
+}
+
+// Ensure the grid reflects the parent-child relationship on load
+function renderPermissionGrid(isSuperAdmin) {
+    const grid = document.getElementById('perm-grid');
+    let html = '';
+
+    mods.forEach(m => {
+        // 1. RENDER THE CATEGORY (THE GROUP)
+        html += `
+          <tr style="background: #f8fafc; border-bottom: 2px solid var(--border)">
+            <td style="text-align:center; color:var(--primary)"><i data-lucide="${m.i}" size="14"></i></td>
+            <td><b style="font-size:.75rem; text-transform:uppercase; letter-spacing:0.05em;">${m.n}</b></td>
+            <td style="font-size:.65rem; color:var(--muted)">Enable/Disable entire sidebar category.</td>
+            <td style="text-align:center">
+              <label class="switch">
+                <input type="checkbox" 
+                       class="parent-check" 
+                       data-module-id="${m.id}"
+                       onchange="toggleModuleGroup('${m.id}', this.checked)"
+                       ${isSuperAdmin ? 'checked disabled' : 'checked'}>
+                <span class="slider"></span>
+              </label>
+            </td>
+          </tr>
+        `;
+
+        // 2. RENDER THE SUB-CATEGORIES (INDIVIDUALS)
+        m.subs.forEach(sub => {
+            html += `
+              <tr class="child-row-${m.id}">
+                <td></td>
+                <td style="padding-left: 30px;">
+                  <div style="display:flex; align-items:center; gap:8px;">
+                     <span style="width:6px; height:6px; border-radius:50%; background:var(--primary);"></span>
+                     <span style="font-size:.75rem; font-weight:600;">${sub}</span>
+                  </div>
+                </td>
+                <td style="font-size:.65rem; color:var(--muted)">Individual access to the ${sub} page.</td>
+                <td style="text-align:center">
+                  <label class="switch">
+                    <input type="checkbox" 
+                           class="child-check" 
+                           data-parent-ref="${m.id}"
+                           onchange="checkParentStatus('${m.id}')"
+                           ${isSuperAdmin ? 'checked disabled' : 'checked'}>
+                    <span class="slider"></span>
+                  </label>
+                </td>
+              </tr>
+            `;
+        });
+    });
+
+    grid.innerHTML = html;
+    lcIcons(grid);
+}
+
+// Function to toggle all sub-modules when parent is clicked
+function toggleModuleGroup(moduleId, isChecked) {
+    // Find all checkboxes that belong to this category
+    const children = document.querySelectorAll(`input[data-parent-ref="${moduleId}"]`);
+    children.forEach(child => {
+        child.checked = isChecked;
+        // Optionally: gray out the child rows if parent is unchecked
+        child.closest('tr').style.opacity = isChecked ? "1" : "0.5";
+    });
+}
+
+// Optional: If you click a child ON, ensure the parent is also ON
+// If you click all children OFF, the parent stays as is or you can auto-toggle it
+function checkParentStatus(moduleId) {
+    const parent = document.querySelector(`input[data-module-id="${moduleId}"]`);
+    const children = document.querySelectorAll(`input[data-parent-ref="${moduleId}"]`);
+    const anyChecked = Array.from(children).some(c => c.checked);
+    
+    // If at least one child is checked, the parent module should technically be active
+    if (anyChecked && !parent.checked) {
+        parent.checked = true;
+    }
+}
+// Modify your existing selRole to call the new renderer
+function selRole(el, name) {
+    document.querySelectorAll('#side-role-list .role-pill-v2').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('active-role-name').textContent = name;
+    renderPermissionGrid(name === 'Super Admin');
+}
+
+// Custom Save Logic
+function savePermissionChanges() {
+    const target = document.getElementById('active-role-name').textContent;
+    const btn = document.querySelector('#p-roles-permissions .btn-primary');
+    const indicator = document.getElementById('save-status-indicator');
+    
+    if (target === "No User Selected") {
+        showNotification("Action Denied", "Please select a role or user first.", "error");
+        return;
+    }
+
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = `<i data-lucide="loader-2" class="spin" size="14"></i> Syncing...`;
+    lcIcons(btn);
+
+    setTimeout(() => {
+        btn.innerHTML = originalHtml;
+        lcIcons(btn);
+        indicator.style.display = 'flex';
+        showNotification("Role Updated", `Access schema for ${target} has been updated.`, "success");
+        setTimeout(() => { indicator.style.display = 'none'; }, 3000);
+    }, 1000);
+}
+
+// Initialize individual search populator
+document.addEventListener('DOMContentLoaded', () => {
+    // We need to inject the specific selection logic for the perms search
+    window.populateAsDrop = function(id) {
+        const d = document.getElementById(id);
+        const inputId = id.replace('as-drop-','as-input-');
+        
+        d.innerHTML = names.map(n => {
+            // If it's the permissions search, use the specific selection function
+            const clickFn = (id === 'as-drop-perm-user') 
+                ? `selectUserForPerms('${n}')` 
+                : `selectAsItem('${inputId}','${id}','${n}')`;
+            return `<div class="as-res-item" onclick="${clickFn}">${n}</div>`;
+        }).join('');
+    };
+});
+
+const ATT_CODES = ['P', 'H', 'A', 'L', 'O'];
+function buildMatrix() {
+  const m = document.getElementById('att-m-select').value;
+  const y = document.getElementById('att-y-select').value;
+  const deptFilter = document.getElementById('att-dept-select').value;
+  // Get typed or selected name
+  const nameInput = document.getElementById('as-input-att-name').value.toLowerCase().trim();
+
+if (m === "" || y === "") {
+    showNotification("Input Required", "Please select both a target Month and Fiscal Year to generate the registry.", "warning");
+    return;
+}
+
+  const month = parseInt(m);
+  const year = parseInt(y);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const now = new Date();
+
+  // 1. Header
+  let headHtml = `<tr><th class="sticky-emp sticky-head"><div class="id-label-theme">Employee Identity</div></th>`;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dObj = new Date(year, month, d);
+    const dayName = dObj.toLocaleDateString('en-US', { weekday: 'short' });
+    const isToday = (d === now.getDate() && month === now.getMonth() && year === now.getFullYear());
+    headHtml += `<th class="sticky-head att-day-col ${isToday ? 'is-today' : ''}"><span class="ledger-d-num">${d}</span><span class="ledger-d-day">${dayName}</span></th>`;
+  }
+  headHtml += `</tr>`;
+  document.getElementById('ledger-head').innerHTML = headHtml;
+
+  // 2. Filter logic
+  let bodyHtml = '';
+  // Combine names with departments to filter them
+  const filteredList = names.map((name, idx) => {
+    return { name, dept: depts[idx % depts.length], id: `EMP-10${idx + 100}` };
+  }).filter(emp => {
+    const matchesDept = (deptFilter === 'All' || emp.dept === deptFilter);
+    const matchesName = nameInput === "" || emp.name.toLowerCase().includes(nameInput);
+    return matchesDept && matchesName;
+  });
+
+  if (filteredList.length === 0) {
+    bodyHtml = `<tr><td colspan="${daysInMonth + 1}" style="text-align:center; padding: 60px; color: var(--muted);">No matching records found.</td></tr>`;
+  } else {
+    // Show top 40 matches
+    filteredList.slice(0, 40).forEach((emp) => {
+      const initials = emp.name.split(' ').map(n => n[0]).join('');
+      bodyHtml += `<tr>
+        <td class="sticky-emp">
+          <div class="flex-row" style="gap:10px">
+            <div class="avatar avatar-sm">${initials}</div>
+            <div style="line-height:1.2">
+              <div style="font-size:11px; font-weight:800;">${emp.name}</div>
+              <div style="font-size:9px; color:var(--muted); font-family:'JetBrains Mono'">${emp.id} | ${emp.dept}</div>
+            </div>
+          </div>
+        </td>`;
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dObj = new Date(year, month, d);
+        const isSat = dObj.getDay() === 6;
+        const isSun = dObj.getDay() === 0;
+        const isFuture = dObj > now;
+        let status = isSat ? 'H' : (isSun ? 'O' : 'P');
+        bodyHtml += `<td class="att-cell st-${status}">
+                      <div class="status-pill ${isFuture ? 'future' : ''}" onclick="${isFuture ? '' : 'cycleStatus(this)'}">
+                         ${isFuture ? '' : status}
+                      </div>
+                    </td>`;
+      }
+      bodyHtml += `</tr>`;
+    });
+  }
+
+  document.getElementById('ledger-body').innerHTML = bodyHtml;
+  document.getElementById('ledger-container').style.display = 'block';
+  document.getElementById('att-meta-header').style.display = 'flex';
+  document.getElementById('ledger-empty').style.display = 'none';
+  lcIcons(document.getElementById('p-attendance'));
+}
+function filterAttMatrix(val) {
+  const q = val.toLowerCase();
+  document.querySelectorAll('#ledger-body tr').forEach(row => {
+    const name = row.querySelector('.sticky-emp').textContent.toLowerCase();
+    row.style.display = name.includes(q) ? '' : 'none';
+  });
+}
+
+function cycleStatus(el) {
+  let current = el.textContent.trim();
+  let nextIdx = (ATT_CODES.indexOf(current) + 1) % ATT_CODES.length;
+  let next = ATT_CODES[nextIdx];
+
+  const parent = el.parentElement;
+  ATT_CODES.forEach(code => parent.classList.remove('st-' + code));
+  parent.classList.add('st-' + next);
+  el.textContent = next;
+}
+
+// 1. Define the mandatory document list
+const VAULT_SCHEMA = [
+  { id: 'contract', name: 'Signed Employment Contract', cat: 'Legal' },
+  { id: 'cv', name: 'Curriculum Vitae (CV)', cat: 'Identity' },
+  { id: 'academic', name: 'Academic Credentials', cat: 'Education' },
+  { id: 'clearance', name: 'Clearance / Release Letter', cat: 'History' },
+  { id: 'experience', name: 'Experience Letters', cat: 'History' },
+  { id: 'coc', name: 'Certificate of Competence (COC)', cat: 'Professional' },
+  { id: 'guarantor', name: 'Guarantor Form & ID', cat: 'Legal' },
+  { id: 'nda', name: 'Confidentiality / NDA Agreement', cat: 'Compliance' },
+  { id: 'handbook', name: 'Acknowledgments', cat: 'Compliance' },
+  { id: 'national_id', name: 'National ID / Passport Copy', cat: 'Identity' },
+  { id: 'tin', name: 'TIN Certification Document', cat: 'Tax' },
+  { id: 'medical', name: 'Health & Fitness Clearance', cat: 'Compliance' }
+];
+
+// 2. Modified open function (Update your initVaultMatrix button to call this)
+function openEmployeeVault(name, id) {
+    goPage('employee-vault');
+    document.getElementById('v-emp-name').textContent = name;
+    document.getElementById('v-emp-id').textContent = id + " • Personnel Archive";
+    
+    const listContainer = document.getElementById('vault-docs-list');
+    listContainer.innerHTML = '';
+
+    let uploadCount = 0;
+
+    VAULT_SCHEMA.forEach(doc => {
+        const isUploaded = Math.random() > 0.4; // Mocking data
+        if(isUploaded) uploadCount++;
+
+        const row = document.createElement('div');
+        row.className = 'doc-row';
+        
+        row.innerHTML = `
+            <!-- COLUMN 1: ICON -->
+            <div class="doc-icon-box ${isUploaded ? 'uploaded' : 'missing'}">
+                <i data-lucide="${isUploaded ? 'file-check' : 'file-question-mark'}" size="18"></i>
+            </div>
+
+            <!-- COLUMN 2: TITLE & CATEGORY -->
+            <div class="doc-meta">
+                <div class="doc-name">${doc.name}</div>
+                <div class="doc-cat">${doc.cat}</div>
+            </div>
+
+            <!-- COLUMN 3: STATUS BADGE -->
+            <div class="doc-status">
+                ${isUploaded ? 
+                    '<span class="badge badge-success" style="font-size:10px">Verified</span>' : 
+                    '<span class="badge badge-neutral" style="font-size:10px; opacity:0.7;">Pending</span>'}
+            </div>
+
+            <!-- COLUMN 4: ACTIONS -->
+            <div class="doc-actions">
+                ${isUploaded ? `
+                    <button class="btn btn-secondary btn-xs" title="View" onclick="showNotification('Vault','Opening file...','info')">
+                        <i data-lucide="eye" size="14"></i> View
+                    </button>
+                    <button class="btn btn-secondary btn-xs" title="Update" style="min-width:34px;">
+                        <i data-lucide="refresh-cw" size="14"></i>
+                    </button>
+                ` : `
+                    <button class="btn btn-primary btn-xs btn-upload-pro" onclick="showNotification('Vault','Ready for upload','info')">
+                        <i data-lucide="plus" size="14"></i> Add Document
+                    </button>
+                `}
+            </div>
+        `;
+        listContainer.appendChild(row);
+    });
+
+    // Update Stats in side-card
+    const total = VAULT_SCHEMA.length;
+    document.getElementById('v-count-upload').textContent = uploadCount;
+    document.getElementById('v-count-missing').textContent = total - uploadCount;
+    document.getElementById('v-compliance-percent').textContent = Math.round((uploadCount/total)*100) + "%";
+
+    lcIcons(listContainer);
+}
+function updateEmploymentFields(type) {
+  const container = document.getElementById('dynamic-employment-fields');
+  if (!type) {
+    container.style.display = 'none';
+    return;
+  }
+  container.style.display = 'grid';
+  let html = '';
+
+  // Standard Probation options based on your company profile (90 days standard)
+  const probationHtml = ` 
+      <div class="form-group">
+  <label>Probation Period *</label>
+  <div class="as-combo-container">
+    <input type="text" id="o-probation" class="form-ctrl master-req" 
+           placeholder="Select Period..." value="90 Days (Standard)"
+           onfocus="showAsDrop('as-drop-probation')" readonly>
+    <div class="as-combo-results" id="as-drop-probation">
+      <div class="as-res-item" onclick="selectAsItem('o-probation','as-drop-probation','90 Days (Standard)')">90 Days (Standard)</div>
+      <div class="as-res-item" onclick="selectAsItem('o-probation','as-drop-probation','60 Days')">60 Days</div>
+      <div class="as-res-item" onclick="selectAsItem('o-probation','as-drop-probation','45 Days')">45 Days</div>
+      <div class="as-res-item" onclick="selectAsItem('o-probation','as-drop-probation','No Probation')">No Probation</div>
+    </div>
+  </div> 
+    </div>
+  `;
+
+  switch (type) {
+    case 'full-time':
+      html = `
+        <div class="form-group"><label>Hiring Date *</label><input type="date" class="form-ctrl master-req" id="o-hire"></div>
+        ${probationHtml}
+        <div class="form-group"><label>Reporting To *</label><input type="text" class="form-ctrl master-req" id="o-reports" placeholder="Search Manager..."></div>
+      `;
+      break;
+
+    case 'contract':
+      html = `
+        <div class="form-group"><label>Contract Start *</label><input type="date" class="form-ctrl master-req" id="o-hire"></div>
+        <div class="form-group"><label>Contract End *</label><input type="date" class="form-ctrl master-req" id="o-end-date"></div>
+        ${probationHtml}
+        <div class="form-group" style="grid-column: span 3;"><label>Reporting To *</label><input type="text" class="form-ctrl master-req" id="o-reports" placeholder="Search Manager..."></div>
+      `;
+      break;
+
+    case 'part-time':
+      html = `
+        <div class="form-group"><label>Hiring Date *</label><input type="date" class="form-ctrl master-req" id="o-hire"></div>
+        <div class="form-group"><label>Hours Per Week *</label><input type="number" class="form-ctrl master-req" id="o-hours" placeholder="e.g. 20"></div>
+        ${probationHtml}
+        <div class="form-group" style="grid-column: span 3;"><label>Reporting To *</label><input type="text" class="form-ctrl master-req" id="o-reports" placeholder="Search Manager..."></div>
+      `;
+      break;
+
+    case 'internship':
+      html = `
+        <div class="form-group"><label>Internship Start *</label><input type="date" class="form-ctrl master-req" id="o-hire"></div>
+        <div class="form-group"><label>Internship End *</label><input type="date" class="form-ctrl master-req" id="o-end-date"></div>
+        <div class="form-group"><label>Assigned Mentor *</label><input type="text" class="form-ctrl master-req" id="o-reports" placeholder="Full name of Mentor"></div>
+      `;
+      break;
+
+    case 'temporary':
+      html = `
+        <div class="form-group"><label>Project Name *</label><input type="text" class="form-ctrl master-req" id="o-project" placeholder="e.g. Infrastructure Audit"></div>
+        <div class="form-group"><label>Assignment Start *</label><input type="date" class="form-ctrl master-req" id="o-hire"></div>
+        <div class="form-group"><label>Project Supervisor *</label><input type="text" class="form-ctrl master-req" id="o-reports" placeholder="Search Supervisor..."></div>
+      `;
+      break;
+  }
+
+  container.innerHTML = html;
+  
+  // Re-initialize icons for the new elements
+  lcIcons(container);
+
+  // Attach validation listeners to the newly created inputs
+  container.querySelectorAll('input, select').forEach(input => {
+    input.addEventListener('input', validateMasterRecord);
+  });
+  
+  // Refresh the global validation state
+  validateMasterRecord();
+}
+function showNotification(title, message, type = 'success') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `ydy-toast toast-${type}`;
+    
+    const icons = {
+        success: 'check-circle',
+        error: 'alert-circle',
+        warning: 'alert-triangle',
+        info: 'info'
+    };
+
+    toast.innerHTML = `
+        <div class="toast-icon" ><i data-lucide="${icons[type]}" size="18"></i></div>
+        <div class="toast-content">
+            <div class="toast-title">${title}</div>
+            <div class="toast-msg">${message}</div>
+        </div>
+        <div class="toast-progress"><div class="toast-progress-fill" id="progress-fill"></div></div>
+    `;
+
+    container.appendChild(toast);
+    lucide.createIcons({ nodes: [toast] });
+
+    // Animate progress bar
+    const fill = toast.querySelector('.toast-progress-fill');
+    fill.style.transition = 'transform 4s linear';
+    fill.style.transform = 'scaleX(0)';
+
+    // Auto remove after 4 seconds
+    setTimeout(() => {
+        toast.classList.add('exit');
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
+function handleLogout() { 
+  openConfirm("Logout Session", "Are you sure you want to Logout now?"); 
+  document.getElementById('confirm-btn-yes').onclick = function() {
+      // Proceed with logout
+      showNotification("Security", "Ending secure session. Redirecting...", "danger");
+      setTimeout(() => {
+          window.location.href = 'login/logout.php'; 
+      }, 1500);
+      
+      closeConfirm(); // Close after finishing
+  };
+}
+function openConfirm(title, message) {
+  document.getElementById('confirm-title').innerText = title;
+  document.getElementById('confirm-body').innerText = message;
+  document.getElementById('confirm-modal').classList.add('open');
+}
+
+function closeConfirm() {
+  document.getElementById('confirm-modal').classList.remove('open');
+}

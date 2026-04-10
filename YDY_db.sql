@@ -39,9 +39,9 @@ CREATE TABLE company_profile (
     website             VARCHAR(255),
     corporate_email      VARCHAR(150),
     corporate_phone     VARCHAR(50),
-    socialmedia1     VARCHAR(150),
-    socialmedia2     VARCHAR(150),
-    socialmedia3     VARCHAR(150), 
+    telegram     VARCHAR(150),
+    whatsapp     VARCHAR(150),
+    linkedin     VARCHAR(150), 
     updated_at          TIMESTAMP       DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
@@ -969,7 +969,55 @@ CREATE INDEX idx_leave_overlap ON leave_requests(employee_id, status, from_date,
 INSERT INTO roles (name, description) VALUES
 ('Super Admin',       'Full system authority — all modules unrestricted'),
 ('HRM User',          'Standard HR operations across all modules') ;
-
+INSERT INTO company_profile (
+    legal_name, 
+    trading_name, 
+    ceo_name, 
+    head_office, 
+    entity_type, 
+    establishment_date, 
+    registration_no, 
+    tin, 
+    vat_reg_number, 
+    trade_license_no,
+    work_week_desc, 
+    probation_days, 
+    retirement_age,
+    main_bank, 
+    bank_account_primary, 
+    base_currency, 
+    fiscal_start,
+    website, 
+    corporate_email, 
+    corporate_phone, 
+    telegram, 
+    whatsapp, 
+    linkedin
+) VALUES (
+    'YDY systems PLC',                -- legal_name
+    'YDY',                       -- trading_name
+    'Abebe Kebede',                             -- ceo_name
+    'Bole Sub-city, Woreda 03, Addis Ababa',    -- head_office
+    'Private Limited Company',                  -- entity_type
+    '2015-06-12',                               -- establishment_date
+    'MT/AA/1/0012345/2007',                     -- registration_no
+    '0043829104',                               -- tin
+    '8829103347',                               -- vat_reg_number
+    'TRADE/FED/778/2016',                       -- trade_license_no
+    'Mon-Fri (40 hrs) + Sat Half-day',          -- work_week_desc
+    '60 Days',                                  -- probation_days
+    '60 Years',                                 -- retirement_age
+    'Commercial Bank of Ethiopia (CBE)',        -- main_bank
+    '1000123456789',                            -- bank_account_primary
+    'ETB',                                      -- base_currency
+    'Hamle 01 (July 08)',                       -- fiscal_start
+    'ydy.com',                                  -- website
+    'info@ydy-innovations.com',               -- corporate_email
+    '+251 11 661 2345',                         -- corporate_phone
+    '@ydy',                          -- telegram
+    '+251 91 122 3344',                         -- whatsapp
+    'linkedin.com/company/ydy'    -- linkedin
+);
 
 
  
@@ -1054,12 +1102,12 @@ LEFT JOIN asset_categories ac ON a.category_id = ac.id
 LEFT JOIN employees e ON a.current_custodian_id = e.id
 LEFT JOIN branches b ON a.location_branch_id = b.id;
 
-
+ 
 CREATE OR REPLACE VIEW v_dept_structure_stats AS
 SELECT 
     d.id AS dept_id,
     d.name AS department_name,
-    CONCAT(e.first_name, ' ', e.last_name) AS head_of_dept,
+    CONCAT_WS( e.first_name,' ', e.last_name) AS head_of_dept
     (SELECT COUNT(*) FROM employees WHERE department_id = d.id AND status = 'Active') AS active_headcount,
     (SELECT COUNT(*) FROM job_positions WHERE department_id = d.id) AS total_positions
 FROM departments d
