@@ -1,178 +1,125 @@
 <?php 
 declare(strict_types=1);
-    require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../config.php';
 
-    if (!empty($_SESSION['user_id'])) { 
-        redirect(LOGIN_REDIRECT); 
-    }
+ 
+$lockout_seconds = 300;    // 15 minutes. (Change this to 300 for 5 mins, 3600 for 1 hour)
+$max_ip_attempts = 5;     // Max attempts from one IP before a hard block.
+$max_fail_before_delay = 3; // How many fails before the "sleep" delay kicks in.
 
-    $error = '';
+// 1. DEVICE IDENTIFICATION (Must be before any HTML)
+$deviceId = $_COOKIE['bgt_dev_id'] ?? '';
+if (empty($deviceId)) {
+    $deviceId = bin2hex(random_bytes(32));
+    setcookie('bgt_dev_id', $deviceId, [
+        'expires' => time() + (86400 * 365 * 5), // 5 years
+        'path' => '/',
+        'httponly' => true,
+        'samesite' => 'Strict'
+    ]);
+}
 
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        try {
-            // 1. CSRF Security Check
-            if (!csrf_verify()) {
-                throw new Exception("Security session expired. Please refresh the page.");
-            }
+if (!empty($_SESSION['user_id'])) { 
+    redirect(LOGIN_REDIRECT); 
+}
+
+$error = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    try {
+        if (!csrf_verify()) {
+            throw new Exception("Security session expired. Please refresh the page.");
+        }
+        
+        $login_identity = trim($_POST['login_identity'] ?? '');
+        $password       = trim($_POST['password'] ?? '');
+        $ip_address     = $_SERVER['REMOTE_ADDR'];
+
+        if ($login_identity === '' || $password === '') {
+            $error = 'Please enter your username/email and password.';
+        } else {
+            $pdo = get_pdo(); 
+
+            // --- MAINTENANCE: DELETE ATTEMPTS OLDER THAN 1 DAY ---
+            // This keeps your table fast and prevents it from growing forever.
+            $pdo->exec("DELETE FROM login_attempts WHERE attempted_at < DATE_SUB(NOW(), INTERVAL 1 DAY)");
+
+            // 2. CHECK GLOBAL IP HEALTH (Hard block for massive bot attacks)
+            // To change the lockout window, change $lockout_seconds above.
+            $stmtIp = $pdo->prepare("SELECT COUNT(*) FROM login_attempts WHERE ip_address = ? AND attempted_at > DATE_SUB(NOW(), INTERVAL $lockout_seconds SECOND)");
+            $stmtIp->execute([$ip_address]);
             
-            // We call it 'login_identity' because it could be Username OR Email
-            $login_identity = trim($_POST['login_identity'] ?? '');
-            $password       = trim($_POST['password'] ?? '');
-
-            if ($login_identity === '' || $password === '') {
-                $error = 'Please enter your username/email and password.';
-            } else {
-                $pdo = get_pdo(); 
-                
-                // 2. Query handles both Email and Username lookups + Joins Roles for the name
-                $stmt = $pdo->prepare('
-                    SELECT 
-                        u.id, 
-                        u.username, 
-                        u.email, 
-                        u.password_hash, 
-                        u.status, 
-                        u.employee_id,
-                        u.role_id,
-                        r.name AS role_name 
-                    FROM users u
-                    JOIN roles r ON u.role_id = r.id
-                    WHERE u.email = :ident1 OR u.username = :ident2 
-                    LIMIT 1
-                ');
-
-                // Pass the same variable to both parameters
-                $stmt->execute([
-                    ':ident1' => $login_identity,
-                    ':ident2' => $login_identity
-                ]);
-                $user = $stmt->fetch();
-
-                // Mitigation for timing attacks (dummy hash if user not found)
-                $hashToVerify = $user ? $user['password_hash'] : '$2y$10$vI8.3O6QxMa./s0.4RWPqOtLRe68W.E4mR0a/t1.x/W6f1y5';
-                $locked = false;
-
-                if ($user) {
-                    // Check for account lockout
-                    $lStmt = $pdo->prepare('SELECT attempt_count, last_attempt_at FROM login_attempts WHERE user_id = :uid');
-                    $lStmt->execute([':uid' => $user['id']]);
-                    $attempt = $lStmt->fetch();
-
-                    if ($attempt) {
-                        $elapsed = time() - strtotime($attempt['last_attempt_at']);
-                        if ($attempt['attempt_count'] >= MAX_LOGIN_ATTEMPTS && $elapsed < LOCKOUT_SECONDS) {
-                            $locked = true;
-                            $error = "Too many failed attempts. Try again in " . ceil((LOCKOUT_SECONDS - $elapsed) / 60) . " minute(s).";
-                        } elseif ($elapsed >= LOCKOUT_SECONDS) {
-                            $pdo->prepare('DELETE FROM login_attempts WHERE user_id = :uid')->execute([':uid' => $user['id']]);
-                        }
-                    }
-                }
-
-            if (!$locked) {
-                    if ($user && password_verify($password, $hashToVerify)) {
-                        if ($user['status'] !== 'Active') {
-                            $error = 'Invalid credentials or account inactive';
-                        } else {
-                            // --- LOGIN SUCCESS ---
-                            
-                            // 1. Clear failed attempts
-                            $pdo->prepare('DELETE FROM login_attempts WHERE user_id = :uid')
-                                ->execute([':uid' => $user['id']]);
-                            
-                            // 2. Fetch Module Permissions from your database View (v_user_access_resolver)
-                            // This gets all keys like 'company-profile', 'attendance', etc., that this user can see.
-                            $permStmt = $pdo->prepare('
-                                SELECT module_key 
-                                FROM v_user_access_resolver 
-                                WHERE user_id = :uid AND final_access_allowed = 1
-                            ');
-                            $permStmt->execute([':uid' => $user['id']]);
-                            $userPermissions = $permStmt->fetchAll(PDO::FETCH_COLUMN);
-
-                            // 3. Regenerate session for security
-                            session_regenerate_id(true);
-                            
-                            // 4. Store essential data in Session
-                            $_SESSION['user_id']     = $user['id'];
-                            $_SESSION['emp_id']      = $user['employee_id']; // For profile linking
-                            $_SESSION['username']    = $user['username'];
-                            $_SESSION['email']       = $user['email'];
-                            $_SESSION['role'] = $user['role_name'];       // e.g., 'Super Admin'
-                            $_SESSION['permissions'] = $userPermissions;     // The list of modules they can access
-
-                            // 5. Update last login timestamp
-                            $pdo->prepare('UPDATE users SET last_login = NOW() WHERE id = :uid')
-                                ->execute([':uid' => $user['id']]);
-                            
-                            // 6. Remember Me functionality
-                            if (!empty($_POST['remember_me'])) {
-                                $token = bin2hex(random_bytes(32));
-                                $pdo->prepare('INSERT INTO remember_tokens (user_id, token_hash, expires_at) VALUES (:uid, :hash, DATE_ADD(NOW(), INTERVAL 30 DAY))')
-                                    ->execute([':uid' => $user['id'], ':hash' => hash('sha256', $token)]);
-                                
-                                setcookie('remember_token', $token, [
-                                    'expires'  => time() + 2592000, // 30 days
-                                    'path'     => '/',
-                                    'httponly' => true,
-                                    'samesite' => 'Strict'
-                                ]);
-                            }
-                            
-                            redirect(LOGIN_REDIRECT);
-                        }
-                    } else {
-                        $error = 'Invalid username/email or password.';
-                        if ($user) {
-                            // Record failed attempt
-                            $pdo->prepare('INSERT INTO login_attempts (user_id, attempt_count, last_attempt_at) VALUES (:uid, 1, NOW()) ON DUPLICATE KEY UPDATE attempt_count = attempt_count + 1, last_attempt_at = NOW()')
-                                ->execute([':uid' => $user['id']]);
-                        }
-                    }
-                }
+            if ((int)$stmtIp->fetchColumn() > $max_ip_attempts) {
+                // To change how long they are restricted, change $lockout_seconds above.
+                die("Traffic from this IP has been restricted due to unusual activity. Try again in " . ($lockout_seconds / 60) . " minutes.");
             }
-        } catch (Exception $e) {
-            $error = "System Error: " . $e->getMessage();
+
+            // 3. CALCULATE THROTTLE (Delay)
+            // Check fails for this specific account/device within the lockout window
+            $stmtCount = $pdo->prepare("SELECT COUNT(*) FROM login_attempts WHERE login_identity = ? AND device_id = ? AND attempted_at > DATE_SUB(NOW(), INTERVAL $lockout_seconds SECOND)");
+            $stmtCount->execute([$login_identity, $deviceId]);
+            $failCount = (int)$stmtCount->fetchColumn();
+
+            if ($failCount >= $max_fail_before_delay) {
+                // Exponential backoff: 3 fails = 2s, 4 fails = 4s, etc.
+                $delay = ($failCount - ($max_fail_before_delay - 1)) * 2; 
+                if ($delay > 30) $delay = 30; // Max 30 second wait
+                sleep($delay); 
+            }
+
+            // 4. SEARCH FOR USER
+            $stmt = $pdo->prepare('
+                SELECT u.id, u.username, u.email, u.password_hash, u.status, u.employee_id, u.role_id, r.name AS role_name 
+                FROM users u
+                JOIN roles r ON u.role_id = r.id
+                WHERE u.email = :ident1 OR u.username = :ident2 
+                LIMIT 1
+            ');
+            $stmt->execute([':ident1' => $login_identity, ':ident2' => $login_identity]);
+            $user = $stmt->fetch();
+
+            // Default hash to prevent timing attacks if user doesn't exist
+            $hashToVerify = $user ? $user['password_hash'] : '$2y$10$vI8.3O6QxMa./s0.4RWPqOtLRe68W.E4mR0a/t1.x/W6f1y5';
+
+            if ($user && password_verify($password, $hashToVerify)) {
+                if ($user['status'] !== 'Active') {
+                    $error = 'Account inactive.';
+                } else {
+                    // SUCCESS! 
+                    // Clear all failed attempts for this identity immediately
+                    $pdo->prepare('DELETE FROM login_attempts WHERE login_identity = ?')->execute([$login_identity]);
+
+                    session_regenerate_id(true);
+                    
+                    $permStmt = $pdo->prepare('SELECT module_key FROM v_user_access_resolver WHERE user_id = :uid AND final_access_allowed = 1');
+                    $permStmt->execute([':uid' => $user['id']]);
+                    
+                    $_SESSION['user_id']     = $user['id'];
+                    $_SESSION['emp_id']      = $user['employee_id'];
+                    $_SESSION['username']    = $user['username'];
+                    $_SESSION['email']       = $user['email'];
+                    $_SESSION['role']        = $user['role_name'];
+                    $_SESSION['permissions'] = $permStmt->fetchAll(PDO::FETCH_COLUMN);
+
+                    $pdo->prepare('UPDATE users SET last_login = NOW() WHERE id = :uid')->execute([':uid' => $user['id']]);
+                    
+                    redirect(LOGIN_REDIRECT);
+                }
+            } else {
+                // FAILURE: Record the attempt
+                $pdo->prepare("INSERT INTO login_attempts (ip_address, device_id, login_identity) VALUES (?, ?, ?)")
+                    ->execute([$ip_address, $deviceId, $login_identity]);
+                
+                $error = 'Invalid username/email or password.';
+            }
         }
-    } 
-
-    $csrf = csrf_token();
-    function getEthiopianDate() {
-        // 1. FORCE ETHIOPIAN TIMEZONE
-        date_default_timezone_set('Africa/Addis_Ababa');
-        
-        $year = (int)date('Y');
-        $month = (int)date('m');
-        $day = (int)date('d');
-
-        // 2. MANUAL JDN CALCULATION (In case server extension is missing)
-        $a = (int)((14 - $month) / 12);
-        $y = $year + 4800 - $a;
-        $m = $month + 12 * $a - 3;
-        $jdn = $day + (int)((153 * $m + 2) / 5) + 365 * $y + (int)($y / 4) - (int)($y / 100) + (int)($y / 400) - 32045;
-
-        // 3. ETHIOPIAN CALCULATION
-        $ethiopian_offset = 1723856;
-        $r = ($jdn - $ethiopian_offset) % 1461;
-        $n = ($r % 365) + 365 * (int)($r / 1460);
-        
-        $ethYear = 4 * (int)(($jdn - $ethiopian_offset) / 1461) + (int)($r / 365) - (int)($r / 1460);
-        $ethMonth = (int)($n / 30) + 1;
-        $ethDay = ($n % 30) + 1;
-
-        // Handle Pagume (Month 13)
-        if ($ethMonth > 13) {
-            $ethMonth = 13;
-            $ethDay = ($n - 360) + 1;
-        }
-
-        $months = ["", "Meskerem", "Tikimt", "Hidar", "Tahsas", "Tir", "Yekatit", "Megabit", "Miazia", "Genbot", "Sene", "Hamle", "Nehasse", "Pagume"];
-        
-        return $ethDay . " " . $months[$ethMonth] . " " . $ethYear . " E.C.";
+    } catch (Exception $e) {
+        $error = "System Error: " . $e->getMessage();
     }
+} 
 
-    $ethDate = getEthiopianDate();
-    ?> 
+$csrf = csrf_token();
+?>
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -186,17 +133,14 @@ declare(strict_types=1);
         body { font-family: 'Inter', sans-serif; background: var(--bg-body); color: var(--text-main); height: 100vh; overflow: hidden; }
         .auth-container { display: grid; grid-template-columns: 1fr 1fr; height: 100vh; width: 100%; }
         
-        /* Brand Panel with original Liquid Animations */
         .brand-panel { background-color: #0d8a00; background-image: radial-gradient(circle at 20% 30%, rgba(21, 178, 1, 0.8) 0%, transparent 50%), radial-gradient(circle at 80% 70%, rgba(0, 50, 0, 0.6) 0%, transparent 50%); background-size: 200% 200%; animation: liquidMove 15s ease-in-out infinite alternate; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; min-height: 100vh; width: 100%; color: white; }
         .brand-panel::before, .brand-panel::after { content: ""; position: absolute; bottom: 0; left: 0; width: 200%; height: 120px; background: rgba(255,255,255,0.05); backdrop-filter: blur(15px); -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 120" preserveAspectRatio="none"><path d="M0,120V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5,73.84-4.36,147.54,16.88,218.2,38.5,88.56,27.1,187.15,31.7,276,14.5,77.31-15,152.14-53,241-43.5V120H0Z" fill="black"/></svg>') repeat-x; mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 120" preserveAspectRatio="none"><path d="M0,120V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5,73.84-4.36,147.54,16.88,218.2,38.5,88.56,27.1,187.15,31.7,276,14.5,77.31-15,152.14-53,241-43.5V120H0Z" fill="black"/></svg>') repeat-x; -webkit-mask-size: calc(50% + 1px) 100%; mask-size: calc(50% + 1px) 100%; animation: waveLoop 20s linear infinite; z-index: 1; }
         .brand-panel::after { height: 100px; background: rgba(255,255,255,0.08); backdrop-filter: blur(30px); animation: waveLoop 30s linear infinite reverse; z-index: 2; }
         .brand-content { position: relative; z-index: 5; max-width: 600px; padding: 40px; }
         .logo-box { background: white; display: inline-flex; padding: 10px 18px; border-radius: 12px; margin-bottom: 40px; box-shadow: 0 15px 30px rgba(0,0,0,0.1);   }
         .logo-box img { width: 300px; }
-        @keyframes float {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-10px); }
-    }
+        
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
         .brand-panel h1 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 3.5rem; font-weight: 800; line-height: 1; margin-bottom: 20px; letter-spacing: -0.04em; }
         .brand-panel p { font-size: 1.1rem; opacity: 0.85; line-height: 1.5; }
         
@@ -212,9 +156,7 @@ declare(strict_types=1);
         .input-group label { display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 10px; padding-left: 2px; }
         .input-ctrl { width: 100%; height: 58px; background: #f8fafc; border: 2px solid #f1f5f9; border-radius: var(--radius); padding: 0 20px; font: inherit; font-weight: 500; transition: var(--transition); }
         .input-ctrl:focus { outline: none; background: white; border-color: var(--primary); box-shadow: 0 0 0 4px var(--primary-light); }
-        .input-ctrl.error { border-color: #fda4af !important; background-color: #fff1f2 !important; }
 
-        /* Password Wrapper & Toggle Styling */
         .password-wrapper { position: relative; display: flex; align-items: center; }
         .password-wrapper .input-ctrl { padding-right: 55px; }
         .toggle-password-btn { position: absolute; right: 12px; background: none; border: none; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 8px; transition: var(--transition); z-index: 10; border-radius: 8px; }
@@ -237,13 +179,10 @@ declare(strict_types=1);
         .btn-primary.is-loading .btn-text, .btn-primary.is-loading svg { display: none; }
         .btn-primary.is-loading .spinner { display: block; }
         
-        /* Footer & Toast system */
         .footer-note { position: absolute; bottom: 40px; color: #cbd5e1; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }
         #notification-hub { position: fixed; top: 30px; right: 30px; z-index: 9999; display: flex; flex-direction: column; gap: 12px; }
         .bgt-toast { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid var(--border); border-left: 5px solid var(--primary); padding: 16px 24px; border-radius: var(--radius); box-shadow: 0 15px 30px rgba(0, 0, 0, 0.08); display: flex; align-items: center; gap: 15px; min-width: 320px; transform: translateX(120%); transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
         .bgt-toast.active { transform: translateX(0); }
-        .bgt-toast.success { border-left-color: var(--primary); }
-        .bgt-toast.error { border-left-color: #e11d48; }
 
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -255,7 +194,9 @@ declare(strict_types=1);
         .btn-link:hover { background: var(--primary-light); color: var(--primary-dark); }
         .back-btn { display: inline-flex; align-items: center; gap: 8px; color: var(--text-muted); font-weight: 600; font-size: 0.85rem; margin-bottom: 24px; cursor: pointer; transition: var(--transition); padding: 8px 12px; margin-left: -12px; border-radius: 8px; background: none; border: none; font-family: inherit; }
         .back-btn:hover { color: var(--text-main); background: #f1f5f9; }
-        .eth-header {
+
+        /* Standard Status Header */
+        .status-header {
             position: absolute;
             top: 30px;
             right: 40px;
@@ -276,42 +217,19 @@ declare(strict_types=1);
             z-index: 100;
             letter-spacing: 0.5px;
         }
-        .eth-header .time-segment {
+        .status-header .time-segment {
             color: var(--primary);
             border-left: 2px solid #e2e8f0;
             padding-left: 15px;
         }
 
-        /* RESPONSIVE ADDITIONS (New) */
-        @media (max-width: 1200px) {
-            .brand-panel h1 { font-size: 2.8rem; }
-            .brand-content { padding: 30px; }
-        }
-
         @media (max-width: 850px) {
             body { overflow: auto; height: auto; }
             .auth-container { grid-template-columns: 1fr; }
-            .brand-panel { display: none; } /* Keeping your original logic to hide brand on mobile */
+            .brand-panel { display: none; }
             .form-panel { min-height: 100vh; padding: 60px 20px; }
-            .eth-header { 
-                position: fixed; 
-                top: 15px; 
-                right: 15px; 
-                padding: 8px 15px; 
-                font-size: 0.8rem; 
-                gap: 10px;
-            }
+            .status-header { position: fixed; top: 15px; right: 15px; padding: 8px 15px; font-size: 0.8rem; }
             .footer-note { position: relative; bottom: 0; margin-top: 40px; }
-        }
-
-        @media (max-width: 480px) {
-            .form-header h2 { font-size: 1.6rem; }
-            .form-options { flex-direction: column; align-items: flex-start; gap: 15px; }
-            .btn-primary { height: 54px; }
-            .input-ctrl { height: 54px; }
-            .logo-box img { width: 220px; }
-            #notification-hub { right: 10px; left: 10px; }
-            .bgt-toast { min-width: auto; width: 100%; }
         }
     </style>
     </head>
@@ -330,13 +248,14 @@ declare(strict_types=1);
         </aside>
 
         <main class="form-panel">
-            <div class="eth-header">
-            <span id="eth-date"><?= $ethDate ?></span>
-            <span class="time-segment" id="eth-time"><?= date('h:i:s A') ?></span>
-        </div>
+            <div class="status-header">
+                <span id="current-date"><?= $currentDate ?></span>
+                <span class="time-segment" id="current-time"><?= $currentTime ?></span>
+            </div>
+            
             <img src="../assets/img/bgwhitel.png" alt="BGT Logo" style="position:absolute;top:0;left:-10px;width:100px;  animation: float 1s ease-in-out infinite;">
+            
             <div class="form-card">
-
                 <!-- LOGIN VIEW -->
                 <div class="view active" id="login-view">
                     <div class="form-header">
@@ -368,7 +287,7 @@ declare(strict_types=1);
                                 <input type="password" name="password" id="pass-field" class="input-ctrl"
                                     placeholder="*******" autocomplete="current-password">
                                 
-                                <button type="button" id="toggle-password" class="toggle-password-btn" aria-label="Toggle password visibility">
+                                <button type="button" id="toggle-password" class="toggle-password-btn">
                                     <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                                         <circle cx="12" cy="12" r="3"></circle>
@@ -420,9 +339,8 @@ declare(strict_types=1);
                         <div class="spinner"></div>
                     </button>
                 </div>
-
             </div>
-            <footer class="footer-note">Bull Green Trading PLC &bull; &copy; 2026 YDY Systems</footer>
+            <footer class="footer-note">Bull Green Trading PLC &bull; &copy; <?= date('Y') ?> YDY Systems</footer>
         </main>
     </div>
 
@@ -432,16 +350,11 @@ declare(strict_types=1);
     const $ = id => document.getElementById(id);
     const views = document.querySelectorAll('.view');
 
-    // Notification System
     window.bgtNotify = (title, message, type = 'success') => {
         const hub = $('notification-hub');
         const toast = document.createElement('div');
         toast.className = `bgt-toast ${type}`;
-        toast.innerHTML = `
-            <div class="msg-content">
-                <strong style="display:block; font-size:13px;">${title}</strong>
-                <span style="font-size:14px; color:#64748b;">${message}</span>
-            </div>`;
+        toast.innerHTML = `<div class="msg-content"><strong style="display:block; font-size:13px;">${title}</strong><span style="font-size:14px; color:#64748b;">${message}</span></div>`;
         hub.appendChild(toast);
         setTimeout(() => toast.classList.add('active'), 10);
         setTimeout(() => {
@@ -450,26 +363,19 @@ declare(strict_types=1);
         }, 4500);
     };
 
-    // View Toggling
     window.toggleView = (viewId) => views.forEach(v => v.classList.toggle('active', v.id === viewId));
 
-    // --- Password Toggler Logic ---
     $('toggle-password')?.addEventListener('click', () => {
-        const field = $('pass-field');
-        const eye = $('eye-icon');
-        const eyeOff = $('eye-off-icon');
+        const field = $('pass-field'), eye = $('eye-icon'), eyeOff = $('eye-off-icon');
         const isPass = field.type === 'password';
-        
         field.type = isPass ? 'text' : 'password';
         eye.style.display = isPass ? 'none' : 'block';
         eyeOff.style.display = isPass ? 'block' : 'none';
         field.focus();
     });
 
-    // Form submission loading state
     $('login-form')?.addEventListener('submit', () => $('login-btn').classList.add('is-loading'));
 
-    // Password Reset Simulation
     window.handleReset = () => {
         const inp = $('forgot-email'), err = $('forgot-error'), val = inp.value.trim();
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
@@ -480,18 +386,17 @@ declare(strict_types=1);
         bgtNotify('Link Sent', 'Check your inbox for instructions.', 'success');
         toggleView('login-view');
     };
-    function updateEthClock() {
+
+    function updateClock() {
         const now = new Date();
-        const timeString = now.toLocaleTimeString('en-US', { 
-            hour: '2-digit', 
-            minute: '2-digit', 
-            second: '2-digit', 
-            hour12: true 
-        });
-        document.getElementById('eth-time').innerText = timeString;
+        const dateString = now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        const timeString = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+        
+        $('current-date').innerText = dateString;
+        $('current-time').innerText = timeString;
     }
-    // Update clock every second
-    setInterval(updateEthClock, 1000);
+    
+    setInterval(updateClock, 1000);
     if (window.history.replaceState) window.history.replaceState(null, null, window.location.href);
     </script>
     </body>
