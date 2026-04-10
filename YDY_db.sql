@@ -780,13 +780,14 @@ CREATE TABLE report_templates (
 
 -- Track failed login attempts to prevent brute force
 CREATE TABLE login_attempts (
-    user_id         INT NOT NULL,
-    attempt_count   TINYINT UNSIGNED NOT NULL DEFAULT 1,
-    last_attempt_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (user_id),
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    id              INT PRIMARY KEY AUTO_INCREMENT,
+    ip_address      VARCHAR(45) NOT NULL,
+    device_id       VARCHAR(64) NOT NULL, -- The unique cookie ID
+    login_identity  VARCHAR(150) NOT NULL, 
+    attempted_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_device (device_id, login_identity),
+    INDEX idx_ip (ip_address)
 );
-
 -- Store hashed tokens for "Remember Me" sessions
 CREATE TABLE remember_tokens (
     id          INT PRIMARY KEY AUTO_INCREMENT,
