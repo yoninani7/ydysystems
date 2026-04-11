@@ -43,6 +43,16 @@
       </div>
     </div>
     <div class="nav-group">
+      <div class="nav-trigger" onclick="toggleNav(this,'m-move')">
+        <div class="nav-trigger-left"><div class="nav-icon"><i data-lucide="arrow-right-left" size="15"></i></div><span>Employee Movement</span></div>
+        <i data-lucide="chevron-right" size="13" class="chevron"></i>
+      </div>
+      <div class="submenu" id="m-move">
+        <div class="sub-link" onclick="goPage('Promote/Demote',this)"><span class="sub-dot"></span><span>Promote/Demote</span></div>
+        <div class="sub-link" onclick="goPage('transfers',this)"><span class="sub-dot"></span><span>Department Transfers</span></div>
+      </div>
+    </div>
+    <div class="nav-group">
       <div class="nav-trigger" onclick="toggleNav(this,'m-rec')">
         <div class="nav-trigger-left"><div class="nav-icon"><i data-lucide="user-plus" size="15"></i></div><span>Talent Acquisition</span></div>
         <i data-lucide="chevron-right" size="13" class="chevron"></i>
@@ -52,16 +62,6 @@
         <div class="sub-link" onclick="goPage('candidates',this)"><span class="sub-dot"></span><span>Job Applicant's List</span></div>
         <div class="sub-link" onclick="goPage('interview-tracker',this)"><span class="sub-dot"></span><span>Interview Tracker</span></div>
         <div class="sub-link" onclick="goPage('internship',this)"><span class="sub-dot"></span><span>Internship Management</span></div>
-      </div>
-    </div>
-    <div class="nav-group">
-      <div class="nav-trigger" onclick="toggleNav(this,'m-move')">
-        <div class="nav-trigger-left"><div class="nav-icon"><i data-lucide="arrow-right-left" size="15"></i></div><span>Employee Movement</span></div>
-        <i data-lucide="chevron-right" size="13" class="chevron"></i>
-      </div>
-      <div class="submenu" id="m-move">
-        <div class="sub-link" onclick="goPage('Promote/Demote',this)"><span class="sub-dot"></span><span>Promote/Demote</span></div>
-        <div class="sub-link" onclick="goPage('transfers',this)"><span class="sub-dot"></span><span>Department Transfers</span></div>
       </div>
     </div>
     <div class="nav-label">Operations</div>
