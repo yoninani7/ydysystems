@@ -12,8 +12,7 @@ if (empty($_SESSION['user_id'])) {
 
 try {
     $pdo = get_pdo();
-    
-    // We calculate "days" using DATEDIFF
+     
     $stmt = $pdo->query("
         SELECT 
             CONCAT(e.first_name, ' ', e.last_name) AS name,
@@ -25,7 +24,7 @@ try {
         FROM probation_records pr
         JOIN employees e ON pr.employee_id = e.id
         LEFT JOIN departments d ON e.department_id = d.id
-        WHERE e.status = 'Active' AND pr.status IN ('Active', 'Extended')
+        WHERE e.status = 'Active'
         ORDER BY pr.end_date ASC
     ");
     
