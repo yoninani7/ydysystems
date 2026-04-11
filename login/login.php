@@ -122,12 +122,42 @@ $csrf = csrf_token();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BGT Enterprise | Secure Access</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+    <title>BGT Enterprise | Secure Access</title> 
 <style>
+     @font-face {
+        font-family: 'Plus Jakarta Sans';
+        src: url('<?= BASE_URL ?>assets/fonts/PlusJakartaSans-Regular.ttf') format('truetype');
+        font-weight: 400;
+        font-style: normal;
+    }
+    @font-face {
+        font-family: 'Plus Jakarta Sans';
+        src: url('<?= BASE_URL ?>assets/fonts/PlusJakartaSans-Medium.ttf') format('truetype');
+        font-weight: 500;
+        font-style: normal;
+    }
+    @font-face {
+        font-family: 'Plus Jakarta Sans';
+        src: url('<?= BASE_URL ?>assets/fonts/PlusJakartaSans-SemiBold.ttf') format('truetype');
+        font-weight: 600;
+        font-style: normal;
+    }
+    @font-face {
+        font-family: 'Plus Jakarta Sans';
+        src: url('<?= BASE_URL ?>assets/fonts/PlusJakartaSans-Bold.ttf') format('truetype');
+        font-weight: 700;
+        font-style: normal;
+    }
+    @font-face {
+        font-family: 'Plus Jakarta Sans';
+        src: url('<?= BASE_URL ?>assets/fonts/PlusJakartaSans-ExtraBold.ttf') format('truetype');
+        font-weight: 800;
+        font-style: normal;
+    }
+
     :root { --primary: #15b201; --primary-dark: #0e8a00; --primary-light: #f1fcf0; --text-main: #0f172a; --text-muted: #64748b; --border: #e2e8f0; --bg-body: #f8fafc; --radius: 14px; --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Inter', sans-serif; background: var(--bg-body); color: var(--text-main); height: 100vh; overflow: hidden; }
+    body { font-family: 'Plus Jakarta Sans', sans-serif;  background: var(--bg-body); color: var(--text-main); height: 100vh; overflow: hidden; }
     .auth-container { display: grid; grid-template-columns: 1fr 1fr; height: 100vh; width: 100%; }
     
     .brand-panel { background-color: #0d8a00; background-image: radial-gradient(circle at 20% 30%, rgba(21, 178, 1, 0.8) 0%, transparent 50%), radial-gradient(circle at 80% 70%, rgba(0, 50, 0, 0.6) 0%, transparent 50%); background-size: 200% 200%; animation: liquidMove 15s ease-in-out infinite alternate; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; min-height: 100vh; width: 100%; color: white; }
@@ -142,7 +172,7 @@ $csrf = csrf_token();
     .brand-panel p { font-size: 1.1rem; opacity: 0.85; line-height: 1.5; }
     
     .form-panel { background: white; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px; position: relative; }
-    .form-card { width: 100%; max-width: 400px; position: relative; }
+    .form-card { width: 100%; max-width: 500px;  }
     .view { display: none; animation: slideIn 0.5s ease-out forwards; }
     .view.active { display: block; }
     .form-header { margin-bottom: 35px; }
@@ -187,9 +217,9 @@ $csrf = csrf_token();
     @keyframes liquidMove { 0% { background-position: 0% 0%; } 100% { background-position: 100% 100%; } }
     @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
     
-    .btn-link { background: none; border: none; color: var(--primary); font-weight: 600; font-size: 0.9rem; cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: var(--transition); font-family: inherit; }
+    .btn-link { background: none; border: none; color: var(--primary); font-weight: 600; font-size: 0.9rem; cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: var(--transition); font-family: 'Plus Jakarta Sans', sans-serif;  }
     .btn-link:hover { background: var(--primary-light); color: var(--primary-dark); }
-    .back-btn { display: inline-flex; align-items: center; gap: 8px; color: var(--text-muted); font-weight: 600; font-size: 0.85rem; margin-bottom: 24px; cursor: pointer; transition: var(--transition); padding: 8px 12px; margin-left: -12px; border-radius: 8px; background: none; border: none; font-family: inherit; }
+    .back-btn { display: inline-flex; align-items: center; gap: 8px; color: var(--text-muted); font-weight: 600; font-size: 0.85rem; margin-bottom: 24px; cursor: pointer; transition: var(--transition); padding: 8px 12px; margin-left: -12px; border-radius: 8px; background: none; border: none; font-family: 'Plus Jakarta Sans', sans-serif;  }
     .back-btn:hover { color: var(--text-main); background: #f1f5f9; }
 
     .status-header {
@@ -205,7 +235,7 @@ $csrf = csrf_token();
         display: flex;
         align-items: center;
         gap: 15px;
-        font-family: 'Inter', monospace;
+        font-family: 'Plus Jakarta Sans', sans-serif; 
         font-size: 0.9rem;
         font-weight: 600;
         color: #1e293b;

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 define('IS_API', true);          
-require_once '../../config.php';
+require_once '../../config.php'; 
 header('Content-Type: application/json');
 
 if (empty($_SESSION['user_id'])) {
@@ -11,17 +11,18 @@ if (empty($_SESSION['user_id'])) {
 }
 
 try {
-    $pdo  = get_pdo();
+    $pdo = get_pdo();
+    
+    // Select the name, description (aliased as desc), and count active employees
     $stmt = $pdo->query("
-        SELECT
-            d.name,
-            COALESCE(v.head_of_dept, '—')   AS head,
-            COALESCE(v.active_headcount, 0) AS emp,
-            d.status
-        FROM departments d
-        LEFT JOIN v_dept_structure_stats v ON d.id = v.dept_id
-        ORDER BY d.name ASC
+        SELECT 
+            et.name,
+            et.description AS `desc`,
+            (SELECT COUNT(*) FROM employees e WHERE e.employment_type_id = et.id AND e.status = 'Active') AS count
+        FROM employment_types et
+        ORDER BY et.id ASC
     ");
+    
     echo json_encode(['success' => true, 'data' => $stmt->fetchAll()]);
 } catch (Exception $e) {
     http_response_code(500);

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 define('IS_API', true);          
-require_once '../../config.php';
+require_once '../../config.php'; // Adjust path to your config file
 header('Content-Type: application/json');
 
 if (empty($_SESSION['user_id'])) {
@@ -12,16 +12,17 @@ if (empty($_SESSION['user_id'])) {
 
 try {
     $pdo  = get_pdo();
+    // Query to get Position Title, Department Name, and count of Active Employees in that role
     $stmt = $pdo->query("
-        SELECT
-            d.name,
-            COALESCE(v.head_of_dept, '—')   AS head,
-            COALESCE(v.active_headcount, 0) AS emp,
-            d.status
-        FROM departments d
-        LEFT JOIN v_dept_structure_stats v ON d.id = v.dept_id
-        ORDER BY d.name ASC
+        SELECT 
+            jp.title, 
+            COALESCE(d.name, 'Unassigned') as dept,
+            (SELECT COUNT(*) FROM employees e WHERE e.job_position_id = jp.id AND e.status = 'Active') as count
+        FROM job_positions jp
+        LEFT JOIN departments d ON jp.department_id = d.id
+        ORDER BY d.name ASC, jp.title ASC
     ");
+    
     echo json_encode(['success' => true, 'data' => $stmt->fetchAll()]);
 } catch (Exception $e) {
     http_response_code(500);

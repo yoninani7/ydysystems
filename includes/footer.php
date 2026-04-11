@@ -41,7 +41,7 @@
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeDeptModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="saveDepartment()"><i data-lucide="check" size="13"></i>Create Department</button>
+      <button class="btn btn-primary" onclick=""><i data-lucide="check" size="13"></i>Create Department</button>
     </div>
   </div>
 </div>

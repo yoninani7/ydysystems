@@ -286,8 +286,7 @@ function selectRole(el,name){document.querySelectorAll('.role-pill').forEach(p=>
 function openModal(id){document.getElementById(id).classList.add('open');lcIcons(document.getElementById(id));}
 function closeModal(id,e){if(!e||e.target===e.currentTarget)document.getElementById(id).classList.remove('open');}
 function openDeptModal(){openModal('modal-add-dept');}
-function closeDeptModal(e){closeModal('modal-add-dept',e);}
-function saveDepartment(){const name=document.getElementById('dept-name').value.trim();if(!name){alert('Department Name is required.');return;}alert(`Department "${name}" created successfully.`);closeDeptModal();}
+function closeDeptModal(e){closeModal('modal-add-dept',e);} 
 function openAssetModal(){openModal('modal-add-asset');}
 function closeAssetModal(e){closeModal('modal-add-asset',e);}
 function saveNewAsset(){const name=document.getElementById('as-new-name').value;if(!name){alert('Asset Name is required.');return;}alert(`Asset "${name}" registered successfully.`);closeAssetModal();}
@@ -573,28 +572,102 @@ function initPage(id){
   switch(id){
     case 'dashboard':initDashboard();break;
     case 'org-chart':initOrgChart();break;
-    /* Locate this section inside the initPage function */
+    case 'departments':
+      fetch('api/companyprofile/fetch_departments.php')
+        .then(r => r.json())
+        .then(res => {
+          if (!res.success) throw new Error(res.message);
+          // Clear the built guard so buildTable can run
+          const el = document.getElementById('tbl-departments');
+          if (el) delete el.dataset.built;
 
-case 'departments':
-  fetch('api/companyprofile/fetch_departments.php')
+          buildTable('tbl-departments', {
+            columns: [
+              { key: 'name',   label: 'Department Name' },
+              { key: 'head',   label: 'Head of Department' },
+              { key: 'emp',    label: 'Employees' },
+              { key: 'status', label: 'Status' },
+              {
+                key: '_',
+                label: 'Actions',
+                render: () => `
+                  <div class="flex-row">
+                    <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;">
+                      <i data-lucide="trash-2" size="10"></i>
+                    </button>
+                  </div>`
+              }
+            ],
+            rows: res.data
+          });
+        })
+        .catch(err => {
+          document.getElementById('tbl-departments').innerHTML =
+            `<p style="padding:20px;color:#dc2626;">Error loading departments: ${err.message}</p>`;
+        });
+      break;
+    case 'job-positions':
+    fetch('api/companyprofile/fetch_jobpositions.php')
+      .then(r => r.json())
+      .then(res => {
+        if (!res.success) throw new Error(res.message);
+        
+        const el = document.getElementById('tbl-job-positions');
+        if (el) delete el.dataset.built; // Clear built guard to allow re-rendering
+
+        buildTable('tbl-job-positions', {
+          columns: [
+            { key: 'title', label: 'Job Title' },
+            { key: 'dept',  label: 'Department' },
+            { key: 'count', label: 'Headcount' },
+            {
+              key: '_',
+              label: 'Actions',
+              render: () => `
+                <div class="flex-row">
+                  <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;">
+                    <i data-lucide="trash-2" size="10"></i>
+                  </button>
+                </div>`
+            }
+          ],
+          rows: res.data
+        });
+      })
+      .catch(err => {
+        console.error(err);
+        document.getElementById('tbl-job-positions').innerHTML =
+          `<p style="padding:20px;color:#dc2626;">Error loading job positions: ${err.message}</p>`;
+      });
+    break;
+    case 'branch-offices':
+    fetch('api/companyprofile/fetch_branchoffices.php')
     .then(r => r.json())
     .then(res => {
       if (!res.success) throw new Error(res.message);
-      // Clear the built guard so buildTable can run
-      const el = document.getElementById('tbl-departments');
+      
+      const el = document.getElementById('tbl-branch-offices');
       if (el) delete el.dataset.built;
 
-      buildTable('tbl-departments', {
+      buildTable('tbl-branch-offices', {
         columns: [
-          { key: 'name',   label: 'Department Name' },
-          { key: 'head',   label: 'Head of Department' },
-          { key: 'emp',    label: 'Employees' },
-          { key: 'status', label: 'Status' },
+          { key: 'name',     label: 'Branch Name' },
+          { key: 'manager',  label: 'Branch Manager' },
+          { key: 'phone',    label: 'Phone' },
+          { key: 'email',    label: 'Email' },
+          { key: 'location', label: 'Location' },
+          { key: 'emp',      label: 'Staff' },
+          { 
+            key: 'status',   
+            label: 'Status',
+            render: (v) => v === 'Active' ? statusBadge.active : statusBadge.inactive 
+          },
           {
             key: '_',
             label: 'Actions',
             render: () => `
               <div class="flex-row">
+                <button class="btn btn-xs btn-secondary"><i data-lucide="eye" size="10"></i></button>
                 <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;">
                   <i data-lucide="trash-2" size="10"></i>
                 </button>
@@ -605,104 +678,220 @@ case 'departments':
       });
     })
     .catch(err => {
-      document.getElementById('tbl-departments').innerHTML =
-        `<p style="padding:20px;color:#dc2626;">Error loading departments: ${err.message}</p>`;
+      console.error(err);
+      document.getElementById('tbl-branch-offices').innerHTML =
+        `<p style="padding:20px;color:#dc2626;">Error loading branches: ${err.message}</p>`;
     });
   break;
-case 'job-positions':
-  buildTable('tbl-job-positions', {
-    columns: [
-      { key: 'title', label: 'Job Title' },
-      { key: 'dept', label: 'Department' },
-      { key: 'count', label: 'Headcount' },
-      /* Custom Actions column - Only Trash Icon */
-      {
-        key: '_',
-        label: 'Actions',
-        render: () => `
-          <div class="flex-row">
-            <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;">
-              <i data-lucide="trash-2" size="10"></i>
-            </button>
-          </div>`
-      }
-    ],
-    rows: gen(28, i => ({
-      title: ['Software Engineer', 'Sales Manager', 'HR Business Partner', 'Finance Analyst', 'Product Manager', 'UX Designer', 'DevOps Engineer', 'Data Scientist', 'Legal Counsel', 'Support Lead'][i % 10],
-      dept: rand(depts),
-      grade: ['L1', 'L2', 'L3', 'L4', 'M1', 'M2', 'S1', 'S2'][i % 8],
-      min: fmtMoney(randInt(40, 80) * 1000),
-      max: fmtMoney(randInt(80, 150) * 1000),
-      count: randInt(2, 40)
-    }))
-  });
-  break;
-    case 'branch-offices':buildTable('tbl-branch-offices',{columns:[ {key:'name',label:'Branch Name'},{key:'manager',label:'Branch Manager'},{key:'phone',label:'Phone'},{key:'email',label:'Email'},{key:'location',label:'Location'},{key:'emp',label:'Staff'},{key:'status',label:'Status'},ac],rows:gen(12,i=>({ name:['HQ','North','South','East','West','APAC','EMEA','LATAM','Canada','Australia','UK','Singapore'][i]+' Office',location:['New York','Chicago','Atlanta','Boston','San Jose','Singapore','London','São Paulo','Toronto','Sydney','Manchester','Tokyo'][i],manager:names[i%names.length],emp:randInt(30,320),status:statusBadge.active}))});break;
-    case 'employee-directory':buildTable('tbl-employees',{columns:[{key:'id',label:'Emp ID'},{key:'fname',label:'First Name'},{key:'mname',label:'Middle Name'},{key:'lname',label:'Last Name'},{key:'uname',label:'Username'},{key:'gender',label:'Gender'},{key:'dob',label:'Date of Birth'},{key:'hire',label:'Hired Date'},{key:'status',label:'Status'},{key:'marital',label:'Marital Status'},{key:'phone',label:'Phone'},{key:'email',label:'Email'},{key:'dept',label:'Department'},{key:'position',label:'Job Position'},{key:'branch',label:'Branch name'},{key:'type',label:'Emp Type'} , {key:'bankname',label:'Bank name'}, {key:'bankacc',label:'Bank Account'} , {key:'tin',label:'Tin number'},{key:'created',label:'Created At'},ac],rows:gen(60,i=>{const isActive=i%8!==0,fn=names[i%names.length].split(' ')[0],ln=names[i%names.length].split(' ')[1];return{id:`E${String(i+1).padStart(4,'0')}`,fname:fn,mname:['A.','M.','D.','S.','K.'][i%5],lname:ln,uname:(fn[0]+ln).toLowerCase()+randInt(10,99),gender:i%2===0?'Male':'Female',dob:`19${randInt(70,99)}-${String(randInt(1,12)).padStart(2,'0')}-${String(randInt(1,28)).padStart(2,'0')}`,hire:`202${randInt(0,5)}-${String(randInt(1,12)).padStart(2,'0')}-${String(randInt(1,28)).padStart(2,'0')}`,status:isActive?statusBadge.active:statusBadge.inactive,marital:['Single','Married','Divorced','Widowed'][i%4],phone:`+1 555-${randInt(100,999)}-${randInt(1000,9999)}`,email:`${fn.toLowerCase()}.${ln.toLowerCase()}@hrm.com`,dept:rand(depts),position:['Software Engineer','Project Manager','HR Specialist','Accountant','Sales Lead'][i%5],type:i%4===0?'Contract':'Full-Time', bankacc:`BE${randInt(10,99)} 0000 ${randInt(1000,9999)} ${randInt(10,99)}`,created:'2025-01-10 08:30'};})});break;
-    /* Locate this section inside the initPage function */
+    case 'employee-directory':
+      fetch('api/employees/fetch_empprofiles.php')
+    .then(r => r.json())
+    .then(res => {
+      if (!res.success) throw new Error(res.message);
+      
+      const el = document.getElementById('tbl-employees');
+      if (el) delete el.dataset.built;
 
-case 'employment-types':
-  buildTable('tbl-employment-types', {
-    columns: [
-      { key: 'name', label: 'Type Name' },
-      { key: 'desc', label: 'Description' },
-      { key: 'count', label: 'Employees' },
-      /* Custom Actions column without the eye icon */
-      {
-        key: '_',
-        label: 'Actions',
-        render: () => `
-          <div class="flex-row">
-            <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;">
-              <i data-lucide="trash-2" size="10"></i>
-            </button>
-          </div>`
-      }
-    ],
-    rows: [
-      { name: 'Permanent / Full-Time', desc: 'Regular employee with full benefits', benefits: 'Yes', count: 912 },
-      { name: 'Fixed-Term Contract', desc: 'Time-bound employment agreement', benefits: 'Partial', count: 248 },
-      { name: 'Part-Time', desc: 'Less than 40 hours per week', benefits: 'Partial', count: 55 },
-      { name: 'Internship', desc: 'Student or graduate trainee', benefits: 'No', count: 33 },
-      { name: 'Temporary / Casual', desc: 'Short-term project-based', benefits: 'No', count: 0 }
-    ]
-  });
+      buildTable('tbl-employees', {
+        columns: [
+          {key:'id', label:'Emp ID'},
+          {key:'fname', label:'First Name'},
+          {key:'mname', label:'Middle Name'},
+          {key:'lname', label:'Last Name'},
+          {key:'uname', label:'Username'},
+          {key:'gender', label:'Gender'},
+          {key:'dob', label:'Date of Birth'},
+          {key:'hire', label:'Hired Date'},
+          {
+            key:'status', 
+            label:'Status',
+            render: (v) => {
+              const s = v.toLowerCase();
+              if (s === 'active') return statusBadge.active;
+              if (s === 'inactive' || s === 'terminated') return statusBadge.inactive;
+              return b('warning', v); // Fallback for 'On Leave', etc.
+            }
+          },
+          {key:'marital', label:'Marital Status'},
+          {key:'phone', label:'Phone'},
+          {key:'email', label:'Email'},
+          {key:'dept', label:'Department'},
+          {key:'position', label:'Job Position'},
+          {key:'branch', label:'Branch name'},
+          {key:'type', label:'Emp Type'},
+          {key:'bankname', label:'Bank name'},
+          {key:'bankacc', label:'Bank Account'},
+          {key:'tin', label:'Tin number'},
+          {key:'created', label:'Created At'},
+          {
+            key: '_',
+            label: 'Actions',
+            render: () => `
+              <div class="flex-row">
+                <button class="btn btn-xs btn-secondary"><i data-lucide="eye" size="10"></i></button>
+                <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;">
+                  <i data-lucide="trash-2" size="10"></i>
+                </button>
+              </div>`
+          }
+        ],
+        rows: res.data,
+        perPage: 15 // Increased because directory is usually long
+      });
+    })
+    .catch(err => {
+      console.error(err);
+      document.getElementById('tbl-employees').innerHTML =
+        `<p style="padding:20px;color:#dc2626;">Error loading directory: ${err.message}</p>`;
+    });
   break;
-    /* Locate this section inside the initPage function */
+    case 'employment-types':
+        fetch('api/employees/fetch_emptypes.php')
+          .then(r => r.json())
+          .then(res => {
+            if (!res.success) throw new Error(res.message);
+            
+            const el = document.getElementById('tbl-employment-types');
+            if (el) delete el.dataset.built;
 
-case 'probation-tracker':
-  buildTable('tbl-probation', {
-    columns: [
-      { key: 'name', label: 'Employee' },
-      { key: 'dept', label: 'Department' },
-      { key: 'start', label: 'Probation Start' },
-      { key: 'end', label: 'Probation End' },
-      { key: 'days', label: 'Days Left' },
-      { key: 'status', label: 'Probation Status' },
-      /* Custom Actions column - Only Trash Icon */
-      {
-        key: '_',
-        label: 'Actions',
-        render: () => `
-          <div class="flex-row">
-            <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;">
-              <i data-lucide="trash-2" size="10"></i>
-            </button>
-          </div>`
-      }
-    ],
-    rows: gen(22, i => ({
-      name: names[i % names.length],
-      dept: rand(depts),
-      start: `Jan ${randInt(5, 20)}, 2026`,
-      end: `Apr ${randInt(5, 20)}, 2026`,
-      days: randInt(0, 50),
-      status: i < 8 ? b('warning', 'Ending Soon') : b('info', 'Active')
-    }))
-  });
+            buildTable('tbl-employment-types', {
+              columns: [
+                { key: 'name', label: 'Type Name' },
+                { key: 'desc', label: 'Description' },
+                { key: 'count', label: 'Employees' },
+                {
+                  key: '_',
+                  label: 'Actions',
+                  render: () => `
+                    <div class="flex-row">
+                      <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;">
+                        <i data-lucide="trash-2" size="10"></i>
+                      </button>
+                    </div>`
+                }
+              ],
+              rows: res.data
+            });
+          })
+          .catch(err => {
+            console.error(err);
+            document.getElementById('tbl-employment-types').innerHTML =
+              `<p style="padding:20px;color:#dc2626;">Error loading employment types: ${err.message}</p>`;
+          });
+        break;
+    case 'probation-tracker':
+      fetch('api/employees/fetch_probation.php')
+        .then(r => r.json())
+        .then(res => {
+          if (!res.success) throw new Error(res.message);
+          
+          const el = document.getElementById('tbl-probation');
+          if (el) delete el.dataset.built;
+
+          buildTable('tbl-probation', {
+            columns: [
+              { key: 'name',  label: 'Employee' },
+              { key: 'dept',  label: 'Department' },
+              { key: 'start', label: 'Probation Start' },
+              { key: 'end',   label: 'Probation End' },
+              { 
+                key: 'days',  
+                label: 'Days Left',
+                render: (v) => {
+                    const days = parseInt(v);
+                    if (days < 0) return `<span style="color:var(--danger); font-weight:bold;">Overdue (${Math.abs(days)})</span>`;
+                    if (days <= 14) return `<span style="color:var(--warning); font-weight:bold;">${days} Days</span>`;
+                    return `${days} Days`;
+                }
+              },
+              { 
+                key: 'status', 
+                label: 'Probation Status',
+                render: (v, row) => {
+                    const days = parseInt(row.days);
+                    if (v === 'Extended') return b('warning', 'Extended');
+                    if (days <= 14) return b('danger', 'Ending Soon');
+                    return b('info', 'Active');
+                }
+              },
+              {
+                key: '_',
+                label: 'Actions',
+                render: () => `
+                  <div class="flex-row">
+                    <button class="btn btn-xs btn-secondary" title="Evaluate"><i data-lucide="clipboard-check" size="10"></i></button>
+                    <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;">
+                      <i data-lucide="trash-2" size="10"></i>
+                    </button>
+                  </div>`
+              }
+            ],
+            rows: res.data
+          });
+        })
+        .catch(err => {
+          console.error(err);
+          document.getElementById('tbl-probation').innerHTML =
+            `<p style="padding:20px;color:#dc2626;">Error loading probation data: ${err.message}</p>`;
+        });
+      break;
+    case 'contract-renewals':
+  fetch('api/employees/fetch_contracts.php')
+    .then(r => r.json())
+    .then(res => {
+      if (!res.success) throw new Error(res.message);
+      
+      const el = document.getElementById('tbl-contract-renewals');
+      if (el) delete el.dataset.built;
+
+      buildTable('tbl-contract-renewals', {
+        columns: [
+          { key: 'name',   label: 'Employee' },
+          { key: 'dept',   label: 'Department' },
+          { key: 'start',  label: 'Start Date' },
+          { key: 'expiry', label: 'Expiry Date' },
+          { 
+            key: 'days',   
+            label: 'Days to Expiry',
+            render: (v) => {
+              const days = parseInt(v);
+              if (days < 0) return `<span style="color:var(--danger); font-weight:bold;">Expired (${Math.abs(days)}d ago)</span>`;
+              if (days <= 15) return `<span style="color:var(--danger); font-weight:bold;">${days} Days</span>`;
+              if (days <= 30) return `<span style="color:var(--warning); font-weight:bold;">${days} Days</span>`;
+              return `${days} Days`;
+            }
+          },
+          { 
+            key: 'status', 
+            label: 'Status',
+            render: (v, row) => {
+              const days = parseInt(row.days);
+              if (days < 0) return b('danger', 'Expired');
+              if (days <= 15) return b('danger', 'Critical');
+              if (days <= 30) return b('warning', 'Due Soon');
+              return b('success', 'Active');
+            }
+          },
+          {
+            key: '_',
+            label: 'Actions',
+            render: () => `
+              <div class="flex-row">
+                <button class="btn btn-xs btn-secondary" title="Renew Contract"><i data-lucide="refresh-cw" size="10"></i></button>
+                <button class="btn btn-xs btn-secondary"><i data-lucide="eye" size="10"></i></button>
+              </div>`
+          }
+        ],
+        rows: res.data
+      });
+    })
+    .catch(err => {
+      console.error(err);
+      document.getElementById('tbl-contract-renewals').innerHTML =
+        `<p style="padding:20px;color:#dc2626;">Error loading renewals: ${err.message}</p>`;
+    });
   break;
-    case 'contract-renewals':buildTable('tbl-contract-renewals',{columns:[ {key:'name',label:'Employee'},{key:'dept',label:'Department'} ,{key:'start',label:'Start'},{key:'expiry',label:'Expiry'},{key:'days',label:'Days to Expiry'},{key:'status',label:'Status'},ac],rows:gen(18,i=>({ name:names[i%names.length],dept:rand(depts),start:`Apr ${randInt(1,28)}, 2025`,expiry:`Apr ${randInt(1,28)}, 2026`,days:randInt(-5,90),status:i<3?b('danger','Critical'):i<8?b('warning','Due Soon'):b('success','Active')}))});break;
-    case 'retirement-planner':
+  case 'retirement-planner':
       // Generate mock data specifically for retirement
       const retirementRows = gen(20, i => {
         const isRetired = i > 5; // First 5 are upcoming, rest are already retired

@@ -107,9 +107,39 @@ if (empty($errors)) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BGT Enterprise | Create Account</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+    <title>BGT Enterprise | Create Account</title> 
     <style>
+                @font-face {
+                font-family: 'Plus Jakarta Sans';
+                src: url('<?= BASE_URL ?>assets/fonts/PlusJakartaSans-Regular.ttf') format('truetype');
+                font-weight: 400;
+                font-style: normal;
+            }
+            @font-face {
+                font-family: 'Plus Jakarta Sans';
+                src: url('<?= BASE_URL ?>assets/fonts/PlusJakartaSans-Medium.ttf') format('truetype');
+                font-weight: 500;
+                font-style: normal;
+            }
+            @font-face {
+                font-family: 'Plus Jakarta Sans';
+                src: url('<?= BASE_URL ?>assets/fonts/PlusJakartaSans-SemiBold.ttf') format('truetype');
+                font-weight: 600;
+                font-style: normal;
+            }
+            @font-face {
+                font-family: 'Plus Jakarta Sans';
+                src: url('<?= BASE_URL ?>assets/fonts/PlusJakartaSans-Bold.ttf') format('truetype');
+                font-weight: 700;
+                font-style: normal;
+            }
+            @font-face {
+                font-family: 'Plus Jakarta Sans';
+                src: url('<?= BASE_URL ?>assets/fonts/PlusJakartaSans-ExtraBold.ttf') format('truetype');
+                font-weight: 800;
+                font-style: normal;
+            }
+
         :root {
             --primary: #15b201;
             --primary-dark: #0e8a00;
@@ -125,7 +155,7 @@ if (empty($errors)) {
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: var(--bg-body);
             color: var(--text-main);
             min-height: 100vh;

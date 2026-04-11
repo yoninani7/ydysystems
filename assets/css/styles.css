@@ -1,3 +1,55 @@
+/* Plus Jakarta Sans weights used in your UI */
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  src: url('../fonts/PlusJakartaSans-ExtraLight.ttf') format('truetype');
+  font-weight: 200; /* Used in .art-value */
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  src: url('../fonts/PlusJakartaSans-Regular.ttf') format('truetype');
+  font-weight: 400; /* Standard body text */
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  src: url('../fonts/PlusJakartaSans-Medium.ttf') format('truetype');
+  font-weight: 500; /* Used in .sub-link and .db-hero-sub */
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  src: url('../fonts/PlusJakartaSans-SemiBold.ttf') format('truetype');
+  font-weight: 600; /* Used in .nav-trigger, .btn, and .stat-label */
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  src: url('../fonts/PlusJakartaSans-Bold.ttf') format('truetype');
+  font-weight: 700; /* Used in .card-title, .u-name, and .de-value */
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  src: url('../fonts/PlusJakartaSans-ExtraBold.ttf') format('truetype');
+  font-weight: 800; /* Used in .sidebar-brand, .page-title, and .art-label */
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  src: url('../fonts/PlusJakartaSans-ExtraBold.ttf') format('truetype');
+  font-weight: 900; /* Used in your table.tbl th */
+  font-style: normal;
+}
+
+/* JetBrains Mono used for IDs and Monospaced data */
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('../fonts/JetBrainsMono-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+}
+
 :root{--primary:#15b201;--primary-light:#f1fcf0;--primary-dark:#0f8a00;--sidebar-w:268px;--header-h:60px;--bg:#f1f5f9;--surface:#ffffff;--border:#e2e8f0;--text:#0f172a;--muted:#64748b;--success:#16a34a;--success-bg:#dcfce7;--warning:#d97706;--warning-bg:#fef3c7;--danger:#dc2626;--danger-bg:#fee2e2;--info:#0891b2;--info-bg:#cffafe;--radius:10px;--shadow:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.05);--shadow-md:0 4px 6px -1px rgba(0,0,0,.07),0 2px 4px -1px rgba(0,0,0,.05);--transition:.28s cubic-bezier(.4,0,.2,1)}
 *{margin:0;padding:0;box-sizing:border-box;scrollbar-width:thin;scrollbar-color:#cbd5e1 transparent}
 ::-webkit-scrollbar{width:6px;height:6px}

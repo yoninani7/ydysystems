@@ -8,11 +8,9 @@ include 'includes/header.php';
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>YDY HRM Enterprise</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="dns-prefetch" href="https://unpkg.com">
-<link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+ 
+<script src="assets/js/lucide.min.js"></script>
+<script src="assets/js/chart.js"></script> 
 <link rel="stylesheet" href="assets/css/styles.css">  
 
 </head>
@@ -168,7 +166,7 @@ include 'includes/topbar.php';
       <section id="ob-step-1" class="form-section-content active">
         <div class="form-header-pro">
           <div class="input-group-label">Personal Identity</div>
-          <p class="input-group-sub">Establish the primary legal identity and demographic profile for the master record.</p>
+          <p class="input-group-sub">Establish the primary legal identity for the master record.</p>
         </div>
         <div class="identity-master-wrapper">
          <div class="avatar-upload-zone">
@@ -239,7 +237,7 @@ include 'includes/topbar.php';
 <section id="ob-step-3" class="form-section-content">
   <div class="form-header-pro">
     <div class="input-group-label">Employment Placement</div>
-    <p class="input-group-sub">Mapping the position within the corporate structure based on employment type.</p>
+    <p class="input-group-sub">Mapping the position within the company structure based on employment type.</p>
   </div>
   
   <div class="form-grid fg-3">
