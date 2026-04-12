@@ -1077,57 +1077,471 @@ function initPage(id){
     });
   break;
   case 'asset-tracking':
-      buildTable('tbl-assets', {
-        columns: [
-          { key: 'id', label: 'Item Code' },
-          { key: 'name', label: 'Asset Name' },
-          { key: 'cat', label: 'Category' },
-          { key: 'serial', label: 'Serial number' },
-          { key: 'val', label: 'Asset Value' },
-          { key: 'user', label: 'Previous custodian' },
-          { key: 'user', label: 'Current custodian' },
-          { key: 'loc', label: 'Location' }, 
-          { key: 'war', label: 'Warranty' }, 
-          { 
-            key: '_', 
-            label: 'Actions', 
-            render: (v, row) => `
-              <div style="display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 8px; width: 100%;">
-                <button class="btn btn-xs btn-secondary" title="View Details">
-                  <i data-lucide="eye" size="10"></i>
-                </button>
-                <button class="btn btn-xs btn-secondary" onclick="openReassignModal('${row.name}','${row.user}')" title="Reassign">
-                  <i data-lucide="shuffle" size="10"></i>
-                </button>
-              </div>`
-          }
-        ],
-        rows: gen(50, i => {
-          const categories = ['IT Hardware', 'Fleet/Vehicles', 'Office Furniture', 'Networking', 'Security'];
-          const cats = categories[i % categories.length];
-          const price = randInt(2000, 850000);
+      fetch('api/employees/fetch_assets.php')
+        .then(r => r.json())
+        .then(res => {
+          if (!res.success) throw new Error(res.message);
           
-          return {
-            id: `AST-${2000 + i}`,
-            name: i % 4 === 0 ? 'MacBook Pro M3' : i % 4 === 1 ? 'Toyota Hilux Pickup' : i % 4 === 2 ? 'Executive Desk Pro' : 'Cisco Firewall X1',
-            cat: b('neutral', cats),
-            val: `ETB ${price.toLocaleString()}`,
-            user: names[i % names.length],
-            war: `202${randInt(6, 8)}-12-31` 
-          };
+          const el = document.getElementById('tbl-assets');
+          if (el) delete el.dataset.built; // Allow re-render
+
+          buildTable('tbl-assets', {
+            columns: [
+              { key: 'id', label: 'Item Code' },
+              { key: 'name', label: 'Asset Name' },
+              { key: 'cat', label: 'Category' },
+              { key: 'serial', label: 'Serial number' },
+              { 
+                key: 'val', 
+                label: 'Asset Value',
+                render: (v) => v ? 'ETB ' + parseFloat(v).toLocaleString() : '—'
+              },
+              { key: 'user_prev', label: 'Previous custodian' },
+              { key: 'user', label: 'Current custodian' },
+              { key: 'loc', label: 'Location' }, 
+              { key: 'war', label: 'Warranty' }, 
+              { 
+                key: '_', 
+                label: 'Actions', 
+                render: (v, row) => `
+                  <div style="display: flex; gap: 8px; justify-content: center;">
+                    <button class="btn btn-xs btn-secondary" title="View Details">
+                      <i data-lucide="eye" size="10"></i>
+                    </button>
+                    <button class="btn btn-xs btn-secondary" onclick="openReassignModal('${row.name}','${row.user}')" title="Reassign">
+                      <i data-lucide="shuffle" size="10"></i>
+                    </button>
+                  </div>`
+              }
+            ],
+            rows: res.data
+          });
         })
-      });
+        .catch(err => {
+          console.error(err);
+          document.getElementById('tbl-assets').innerHTML =
+            `<p style="padding:20px;color:#dc2626;">Error loading assets: ${err.message}</p>`;
+        });
       break;
-    case 'document-vault':initVaultMatrix();break;
-    case 'job-vacancies':buildTable('tbl-vacancies',{columns:[ {key:'title',label:'Position'},{key:'dept',label:'Department'},{key:'branch',label:'Branch Name'},{key:'type',label:'Type'},{key:'posted',label:'Posted'},{key:'deadline',label:'Deadline'},{key:'description',label:'Job Description'},{key:'requirements',label:'Requirements'},{key:'status',label:'Status'},ac],rows:gen(23,i=>({ title:['Senior Dev','Sales Rep','HR Coordinator','Finance Analyst','UX Designer','DevOps','QA Engineer','Data Analyst','Legal Counsel','Support Specialist'][i%10],dept:rand(depts),branch:['Remote','New York','Hybrid','Atlanta','London'][i%5],type:['Full-Time','Contract','Part-Time'][i%3],posted:`Mar ${randInt(1,18)}, 2026`,deadline:`Apr ${randInt(5,30)}, 2026`}))});break;
-    case 'candidates':buildTable('tbl-candidates',{columns:[ {key:'name',label:'Candidate'},{key:'position',label:'Applied For'},{key:'applied',label:'Applied'},{key:'stage',label:'Stage'},ac],rows:gen(45,i=>({ name:names[i%names.length],position:['Senior Dev','Sales Rep','HR Coordinator','Finance Analyst'][i%4],applied:`Mar ${randInt(1,18)}, 2026`,stage:['Applied','Screening','Interview','Assessment','Offer','Hired'][i%6]}))});break;
-    case 'interview-tracker':buildTable('tbl-interviews',{columns:[ {key:'candidate',label:'Candidate'},{key:'position',label:'Position'},{key:'interviewer',label:'Interviewer'},{key:'date',label:'Date'},{key:'time',label:'Time'},{key:'mode',label:'Mode'},{key:'result',label:'Result'},ac],rows:gen(30,i=>({ candidate:names[i%names.length],position:['Senior Dev','Sales Rep','HR Coordinator'][i%3],interviewer:names[(i+5)%names.length],date:`Mar ${randInt(18,31)}, 2026`,time:`${randInt(9,17)}:00`,mode:['In-Person','Video Call','Phone'][i%3],result:[b('success','Passed'),b('danger','Failed'),b('warning','On Hold'),b('info','Scheduled')][i%4]}))});break;
-    case 'internship':buildTable('tbl-internship',{columns:[{key:'id',label:'Intern ID'},{key:'name',label:'Full Name'},{key:'uni',label:'Institution'},{key:'dept',label:'Assigned Dept'},{key:'mentor',label:'Mentor'},{key:'start',label:'Start Date'},{key:'end',label:'End Date'},{key:'eval',label:'Evaluation'},{key:'status',label:'Status'},ac],rows:gen(35,i=>({id:`INT-26-${String(i+1).padStart(3,'0')}`,name:names[i%names.length],uni:['AAU','ASTU','Unity','Hilcoe','MicroLink'][i%5],dept:rand(depts),mentor:names[(i+5)%names.length],start:'Feb 01, 2026',end:'May 30, 2026',eval:i%4===0?b('primary','92%'):'Pending',status:i%6===0?b('neutral','Completed'):b('success','Active')}))});break;
-    case 'daily-attendance':buildTable('tbl-attendance',{columns:[ {key:'name',label:'Employee'},{key:'dept',label:'Dept'},{key:'shift',label:'Shift'},{key:'in',label:'Check In'},{key:'out',label:'Check Out'},{key:'hours',label:'Hours'},{key:'ot',label:'OT'},{key:'status',label:'Status'},ac],rows:gen(50,i=>({ name:names[i%names.length],dept:rand(depts),shift:'Day',in:`0${randInt(8,9)}:${['00','15','30','45'][i%4]}`,out:`17:${['00','15','30'][i%3]}`,hours:randInt(7,9)+'.0',ot:i%5===0?'1.5':'0',status:i%8===0?b('warning','Late'):i%15===0?b('danger','Absent'):b('success','Present')}))});break;
+      case 'document-vault':initVaultMatrix();break;
+   case 'job-vacancies':
+      fetch('api/talent/fetch_vacancies.php')
+        .then(r => r.json())
+        .then(res => {
+          if (!res.success) throw new Error(res.message);
+          
+          const el = document.getElementById('tbl-vacancies');
+          if (el) delete el.dataset.built;
+
+          buildTable('tbl-vacancies', {
+            columns: [
+              { key: 'title', label: 'Position' },
+              { key: 'dept',  label: 'Department' },
+              { key: 'branch', label: 'Branch' },
+              { key: 'type',   label: 'Type' },
+              { key: 'posted', label: 'Posted' },
+              { key: 'deadline', label: 'Deadline' },
+              { 
+                key: 'status', 
+                label: 'Status',
+                render: (v) => {
+                  const s = v.toLowerCase();
+                  if (s === 'open') return b('success', 'Open');
+                  if (s === 'closed') return b('danger', 'Closed');
+                  if (s === 'filled') return b('neutral', 'Filled');
+                  if (s === 'on hold') return b('warning', 'On Hold');
+                  return b('info', v);
+                }
+              },
+              {
+                key: '_',
+                label: 'Actions',
+                render: () => `
+                  <div class="flex-row">
+                    <button class="btn btn-xs btn-secondary" title="View Details"><i data-lucide="eye" size="10"></i></button>
+                    <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;">
+                      <i data-lucide="trash-2" size="10"></i>
+                    </button>
+                  </div>`
+              }
+            ],
+            rows: res.data
+          });
+        })
+        .catch(err => {
+          console.error(err);
+          document.getElementById('tbl-vacancies').innerHTML =
+            `<p style="padding:20px;color:#dc2626;">Error loading vacancies: ${err.message}</p>`;
+        });
+      break;
+    case 'candidates':
+      fetch('api/talent/fetch_candidates.php')
+        .then(r => r.json())
+        .then(res => {
+          if (!res.success) throw new Error(res.message);
+          
+          const el = document.getElementById('tbl-candidates');
+          if (el) delete el.dataset.built;
+
+          buildTable('tbl-candidates', {
+            columns: [
+              { key: 'name', label: 'Candidate' },
+              { key: 'position', label: 'Applied For' },
+              { key: 'applied', label: 'Applied Date' },
+              { 
+                key: 'stage', 
+                label: 'Stage',
+                render: (v) => {
+                  const s = v.toLowerCase();
+                  if (s === 'hired') return b('success', 'Hired');
+                  if (s === 'rejected') return b('danger', 'Rejected');
+                  if (s === 'interview') return b('warning', 'Interview');
+                  if (s === 'offer') return b('primary', 'Offer Made');
+                  if (s === 'screening') return b('info', 'Screening');
+                  return b('neutral', v);
+                }
+              },
+              {
+                key: '_',
+                label: 'Actions',
+                render: () => `
+                  <div class="flex-row">
+                     
+                    <button class="btn btn-xs btn-secondary" title="Download CV"><i data-lucide="download" size="10"></i></button>
+                     
+                  </div>`
+              }
+            ],
+            rows: res.data
+          });
+        })
+        .catch(err => {
+          console.error(err);
+          document.getElementById('tbl-candidates').innerHTML =
+            `<p style="padding:20px;color:#dc2626;">Error loading candidates: ${err.message}</p>`;
+        });
+      break;
+    case 'interview-tracker':
+      fetch('api/talent/fetch_interviews.php')
+        .then(r => r.json())
+        .then(res => {
+          if (!res.success) throw new Error(res.message);
+          
+          const el = document.getElementById('tbl-interviews');
+          if (el) delete el.dataset.built;
+
+          buildTable('tbl-interviews', {
+            columns: [
+              { key: 'candidate', label: 'Candidate' },
+              { key: 'position', label: 'Position' },
+              { key: 'interviewer', label: 'Interviewer' },
+              { key: 'date', label: 'Date' },
+              { key: 'time', label: 'Time' },
+              { key: 'mode', label: 'Mode' },
+              { 
+                key: 'result', 
+                label: 'Result',
+                render: (v) => {
+                  const s = v.toLowerCase();
+                  if (s === 'passed') return b('success', 'Passed');
+                  if (s === 'failed') return b('danger', 'Failed');
+                  if (s === 'scheduled') return b('info', 'Scheduled');
+                  if (s === 'on hold') return b('warning', 'On Hold');
+                  if (s === 'no show') return b('neutral', 'No Show');
+                  return b('primary', v);
+                }
+              },
+              {
+                key: '_',
+                label: 'Actions',
+                render: () => `
+                  <div class="flex-row">
+                    <button class="btn btn-xs btn-secondary" title="Edit Interview"><i data-lucide="edit-3" size="10"></i></button>                      
+                  </div>`
+              }
+            ],
+            rows: res.data
+          });
+        })
+        .catch(err => {
+          console.error(err);
+          document.getElementById('tbl-interviews').innerHTML =
+            `<p style="padding:20px;color:#dc2626;">Error loading interviews: ${err.message}</p>`;
+        });
+      break;
+   case 'internship':
+      fetch('api/talent/fetch_internships.php')
+        .then(r => r.json())
+        .then(res => {
+          if (!res.success) throw new Error(res.message);
+          
+          const el = document.getElementById('tbl-internship');
+          if (el) delete el.dataset.built;
+
+          buildTable('tbl-internship', {
+            columns: [
+              {key:'id_code', label:'Intern ID'},
+              {key:'name', label:'Full Name'},
+              {key:'uni', label:'Institution'},
+              {key:'dept', label:'Assigned Dept'},
+              {key:'mentor', label:'Mentor'},
+              {key:'start', label:'Start Date'},
+              {key:'end', label:'End Date'},
+              {
+                key:'eval',
+                label:'Evaluation',
+                render: (v) => {
+                    if (!v || v === '0.00') return '<span style="color:var(--muted)">Pending</span>';
+                    return b('primary', parseFloat(v).toFixed(0) + '%');
+                }
+              },
+              {
+                key:'status',
+                label:'Status',
+                render: (v) => {
+                  if (v === 'Active') return b('success', 'Active');
+                  if (v === 'Completed') return b('neutral', 'Completed');
+                  if (v === 'Terminated') return b('danger', 'Terminated');
+                  return b('info', v);
+                }
+              },
+              {
+                key: '_',
+                label: 'Actions',
+                render: () => `
+                  <div class="flex-row">
+                    <button class="btn btn-xs btn-secondary" title="Evaluation Form"><i data-lucide="clipboard-check" size="10"></i></button>
+                    <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;">
+                      <i data-lucide="trash-2" size="10"></i>
+                    </button>
+                  </div>`
+              }
+            ],
+            rows: res.data
+          });
+        })
+        .catch(err => {
+          console.error(err);
+          document.getElementById('tbl-internship').innerHTML =
+            `<p style="padding:20px;color:#dc2626;">Error loading internships: ${err.message}</p>`;
+        });
+      break;
+
+    case 'daily-attendance':
+      fetch('api/attendance/fetch_daily.php')
+        .then(r => r.json())
+        .then(res => {
+          if (!res.success) throw new Error(res.message);
+          
+          const el = document.getElementById('tbl-attendance');
+          if (el) delete el.dataset.built;
+
+          buildTable('tbl-attendance', {
+            columns: [
+              { key: 'name', label: 'Employee' },
+              { key: 'dept', label: 'Dept' },
+              { key: 'shift', label: 'Shift' },
+              { 
+                key: 'checkin', 
+                label: 'Check In', 
+                render: (v) => v ? v.substring(0, 5) : '—' 
+              },
+              { 
+                key: 'checkout', 
+                label: 'Check Out', 
+                render: (v) => v ? v.substring(0, 5) : '—' 
+              },
+              { key: 'hours', label: 'Hours' },
+              { key: 'ot', label: 'OT' },
+              { 
+                key: 'status', 
+                label: 'Status',
+                render: (v, row) => {
+                  // Logic to show "Late" badge if the DB flag is set
+                  if (row.is_late == 1) return b('warning', 'Late');
+                  
+                  if (v === 'P') return b('success', 'Present');
+                  if (v === 'A') return b('danger', 'Absent');
+                  if (v === 'L') return b('info', 'On Leave');
+                  if (v === 'H') return b('neutral', 'Half Day');
+                  if (v === 'O') return b('neutral', 'Off');
+                  return b('neutral', v);
+                }
+              },
+              {
+                key: '_',
+                label: 'Actions',
+                render: () => `
+                  <div class="flex-row">
+                    <button class="btn btn-xs btn-secondary" title="View Logs"><i data-lucide="eye" size="10"></i></button>
+                    <button class="btn btn-xs btn-secondary" title="Edit Entry"><i data-lucide="edit-2" size="10"></i></button>
+                  </div>`
+              }
+            ],
+            rows: res.data
+          });
+        })
+        .catch(err => {
+          console.error(err);
+          document.getElementById('tbl-attendance').innerHTML =
+            `<p style="padding:20px;color:#dc2626;">Error loading attendance: ${err.message}</p>`;
+        });
+      break;
     case 'overtime-requests':buildTable('tbl-overtime',{columns:[ {key:'emp',label:'Employee'},{key:'dept',label:'Dept'},{key:'date',label:'Date'},{key:'hours',label:'OT Hours'},{key:'reason',label:'Reason'},{key:'submitted',label:'Submitted'},{key:'status',label:'Status'},ac],rows:gen(25,i=>({ emp:names[i%names.length],dept:rand(depts),date:`Mar ${randInt(1,20)}, 2026`,hours:randInt(1,4)+'.0',reason:['Project deadline','Client request','Coverage','System migration','Month-end close'][i%5],submitted:`Mar ${randInt(1,18)}, 2026`,status:[statusBadge.pending,statusBadge.approved,statusBadge.rejected][i%3]}))});break;
-    case 'attendance-reports':buildTable('tbl-attendance-reports',{columns:[{key:'dept',label:'Department'},{key:'total',label:'Total Emp'} ,{key:'absent',label:'Absent Days'},{key:'leave',label:'Leave Days'},{key:'late',label:'Late Arrivals'},{key:'ot',label:'Total OT Hrs'},{key:'rate',label:'Attendance Rate'},ac],rows:gen(10,i=>({dept:depts[i],total:randInt(40,300) ,absent:randInt(10,80),leave:randInt(20,100),late:randInt(5,30),ot:randInt(20,200),rate:randInt(90,99)+'%'}))});break;
-    case 'leave-types':buildTable('tbl-leave-types',{columns:[ {key:'name',label:'Leave Type'},{key:'days',label:'Days/Year'},{key:'carry',label:'Carryover'},{key:'paid',label:'Paid'},{key:'approval',label:'Needs Approval'},ac],rows:[{ name:'Annual Leave',days:20,carry:'5 days',paid:'Yes',approval:'Yes'},{ name:'Sick Leave',days:10,carry:'0 days',paid:'Yes',approval:'No (with cert)'},{ name:'Maternity Leave',days:90,carry:'N/A',paid:'Yes',approval:'Yes'},{ name:'Paternity Leave',days:14,carry:'N/A',paid:'Yes',approval:'Yes'},{ name:'Bereavement Leave',days:5,carry:'N/A',paid:'Yes',approval:'Yes'},{ name:'Unpaid Leave',days:'—',carry:'N/A',paid:'No',approval:'Yes'},{ name:'Study/Exam Leave',days:5,carry:'N/A',paid:'Partial',approval:'Yes'},{ name:'Public Holiday',days:12,carry:'N/A',paid:'Yes',approval:'N/A'}]});break;
-    case 'leave-requests':buildTable('tbl-leave-requests',{columns:[ {key:'emp',label:'Employee'},{key:'dept',label:'Department'},{key:'type',label:'Leave Type'},{key:'approver',label:'Approver'},{key:'from',label:'From'},{key:'to',label:'To'},{key:'days',label:'Days'},{key:'reason',label:'Reason'},{key:'status',label:'Status'},ac],rows:gen(40,i=>({ emp:names[i%names.length],dept:rand(depts),type:['Annual','Sick','Maternity','Bereavement','Unpaid'][i%5],from:`Mar ${randInt(18,25)}, 2026`,to:`Mar ${randInt(26,31)}, 2026`,days:randInt(1,7),reason:['Vacation','Medical','Personal'][i%3],status:[statusBadge.approved,statusBadge.rejected][i%2]}))});break;
+    case 'attendance-reports':
+      fetch('api/attendance/fetch_reports.php')
+        .then(r => r.json())
+        .then(res => {
+          if (!res.success) throw new Error(res.message);
+          
+          const el = document.getElementById('tbl-attendance-reports');
+          if (el) delete el.dataset.built;
+
+          buildTable('tbl-attendance-reports', {
+            columns: [
+              { key: 'dept', label: 'Department' },
+              { key: 'total', label: 'Total Emp' },
+              { key: 'absent', label: 'Absent Days' },
+              { key: 'leave_days', label: 'Leave Days' },
+              { key: 'late', label: 'Late Arrivals' },
+              { 
+                key: 'ot', 
+                label: 'Total OT Hrs',
+                render: (v) => parseFloat(v).toFixed(1)
+              },
+              { 
+                key: 'rate', 
+                label: 'Attendance Rate',
+                render: (v) => {
+                    const val = parseFloat(v);
+                    let color = 'var(--success)';
+                    if (val < 90) color = 'var(--warning)';
+                    if (val < 75) color = 'var(--danger)';
+                    return `<b style="color:${color}">${val}%</b>`;
+                }
+              } 
+            ],
+            rows: res.data
+          });
+        })
+        .catch(err => {
+          console.error(err);
+          document.getElementById('tbl-attendance-reports').innerHTML =
+            `<p style="padding:20px;color:#dc2626;">Error loading reports: ${err.message}</p>`;
+        });
+      break;
+    case 'leave-types':
+      fetch('api/leave/fetch_leave_types.php')
+        .then(r => r.json())
+        .then(res => {
+          if (!res.success) throw new Error(res.message);
+          
+          const el = document.getElementById('tbl-leave-types');
+          if (el) delete el.dataset.built;
+
+          buildTable('tbl-leave-types', {
+            columns: [
+              { key: 'name', label: 'Leave Type' },
+              { 
+                key: 'days', 
+                label: 'Days/Year',
+                render: (v) => v ? v : '—' 
+              },
+              { 
+                key: 'carry', 
+                label: 'Carryover',
+                render: (v) => v ? v + ' days' : '0 days'
+              },
+              { 
+                key: 'paid', 
+                label: 'Paid Status',
+                render: (v) => v === 'Yes' ? b('success', 'Paid') : (v === 'No' ? b('danger', 'Unpaid') : b('warning', v))
+              },
+              { 
+                key: 'approval', 
+                label: 'Needs Approval',
+                render: (v) => v == 1 ? 'Yes' : 'No'
+              },
+              {
+                key: '_',
+                label: 'Actions',
+                render: () => `
+                  <div class="flex-row">
+                    <button class="btn btn-xs btn-secondary" title="Edit Settings"><i data-lucide="settings" size="10"></i></button>
+                    <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;">
+                      <i data-lucide="trash-2" size="10"></i>
+                    </button>
+                  </div>`
+              }
+            ],
+            rows: res.data
+          });
+        })
+        .catch(err => {
+          console.error(err);
+          document.getElementById('tbl-leave-types').innerHTML =
+            `<p style="padding:20px;color:#dc2626;">Error loading leave types: ${err.message}</p>`;
+        });
+      break;
+      
+    case 'leave-requests':
+      fetch('api/leave/fetch_requests.php')
+        .then(r => r.json())
+        .then(res => {
+          if (!res.success) throw new Error(res.message);
+          
+          const el = document.getElementById('tbl-leave-requests');
+          if (el) delete el.dataset.built;
+
+          buildTable('tbl-leave-requests', {
+            columns: [
+              { key: 'emp', label: 'Employee' },
+              { key: 'dept', label: 'Department' },
+              { key: 'type', label: 'Leave Type' },
+              { 
+                key: 'approver', 
+                label: 'Approver',
+                render: (v) => v ? v : '<span style="color:var(--muted)">—</span>'
+              },
+              { key: 'from', label: 'From' },
+              { key: 'to', label: 'To' },
+              { key: 'days', label: 'Days' },
+              { 
+                key: 'reason', 
+                label: 'Reason',
+                render: (v) => `<span title="${v}" style="display:block; max-width:120px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${v}</span>`
+              },
+              { 
+                key: 'status', 
+                label: 'Status',
+                render: (v) => {
+                  if (v === 'Approved') return b('success', 'Approved');
+                  if (v === 'Rejected') return b('danger', 'Rejected');
+                  if (v === 'Pending') return b('warning', 'Pending');
+                  return b('neutral', v);
+                }
+              },
+              {
+                key: '_',
+                label: 'Actions',
+                render: (v, row) => `
+                  <div class="flex-row">
+                    ${row.status === 'Pending' ? 
+                      `<button class="btn btn-xs btn-primary" title="Process Request"><i data-lucide="check-square" size="10"></i> Review</button>` : 
+                      `<button class="btn btn-xs btn-secondary" title="View Details"><i data-lucide="eye" size="10"></i></button>`
+                    }
+                  </div>`
+              }
+            ],
+            rows: res.data
+          });
+        })
+        .catch(err => {
+          console.error(err);
+          document.getElementById('tbl-leave-requests').innerHTML =
+            `<p style="padding:20px;color:#dc2626;">Error loading leave requests: ${err.message}</p>`;
+        });
+      break;
     case 'leave-entitlement':buildTable('tbl-leave-entitlement',{columns:[{key:'id',label:'Emp ID'},{key:'name',label:'Employee'},{key:'dept',label:'Department'},{key:'al_total',label:'AL Total'},{key:'al_used',label:'AL Used'},{key:'al_bal',label:'AL Balance'},{key:'sl_used',label:'SL Used'},{key:'sl_bal',label:'SL Balance'},{key:'carry',label:'Carried Over'},ac],rows:gen(48,i=>({id:`E${String(i+1).padStart(4,'0')}`,name:names[i%names.length],dept:rand(depts),al_total:20,al_used:randInt(0,18),al_bal:randInt(2,20),sl_used:randInt(0,8),sl_bal:randInt(2,10),carry:randInt(0,5)}))});break;
     case 'medical-claims':buildTable('tbl-medical',{columns:[{key:'id',label:'Claim ID'},{key:'emp',label:'Employee'},{key:'dept',label:'Department'},{key:'category',label:'Category'},{key:'amount',label:'Amount'},{key:'submitted',label:'Submitted'},{key:'receipt',label:'Receipt'},{key:'status',label:'Status'},ac],rows:gen(35,i=>({id:`MC-${String(i+1).padStart(3,'0')}`,emp:names[i%names.length],dept:rand(depts),category:['Doctor Visit','Specialist','Prescription','Dental','Vision','Hospital'][i%6],amount:fmtMoney(randInt(50,1500)),submitted:`Mar ${randInt(1,18)}, 2026`,receipt:'Yes',status:[statusBadge.pending,statusBadge.approved,statusBadge.rejected][i%3]}))});break;
     case 'training-needs':buildTable('tbl-training-needs',{columns:[ {key:'dept',label:'Department'},{key:'skill',label:'Skill Gap'},{key:'priority',label:'Priority'},{key:'emp_count',label:'Affected'},{key:'proposed',label:'Proposed Training'},{key:'status',label:'Status'},ac],rows:gen(20,i=>({ dept:rand(depts),skill:['Leadership','Excel Advanced','Cloud Computing','Project Management','Customer Service','Data Analytics','Cybersecurity','Presentation Skills'][i%8],priority:i%3===0?b('danger','High'):i%3===1?b('warning','Medium'):b('neutral','Low'),emp_count:randInt(5,80),proposed:['Workshop','Online Course','Mentoring','Certification Program','Conference'][i%5],status:[statusBadge.pending,statusBadge.approved,b('success','Ongoing')][i%3]}))});break;
