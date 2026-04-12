@@ -752,3 +752,49 @@ th.sticky-emp.sticky-head { z-index: 50; top: 0; left: 0; background: #f8fafc !i
   transition: opacity 0.2s ease, visibility 0.2s ease;
   transition-delay: 300ms;
 }
+/* Ensure the button matches your high-end theme */
+#btn-save-master-bottom.btn-primary {
+    background: var(--primary); /* The bright green from your charts */
+    color: #ffffff;
+    border-radius: 8px; /* Matching your card/chart radii */
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    letter-spacing: -0.01em;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+#btn-save-master-bottom.btn-primary:hover {
+    background: #129a01; /* Slightly more saturated green on hover */
+    transform: translateY(-1px);
+    box-shadow: 0 6px 15px rgba(21, 178, 1, 0.45);
+}
+
+#btn-save-master-bottom.btn-primary:active {
+    transform: translateY(0);
+}
+
+/* Style for the icon inside the button */
+#btn-save-master-bottom i {
+    stroke-width: 2.5px; /* Makes the Lucide icon look bolder and more premium */
+}
+/* This makes the spinner icon actually rotate */
+.spin {
+  animation: spin 1s linear infinite;
+  display: inline-block;
+  margin-right: 8px; /* adds space between spinner and text */
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Ensure the SVG is sized correctly inside the button */
+button .spin svg {
+  width: 16px;
+  height: 16px;
+}

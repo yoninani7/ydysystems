@@ -134,7 +134,7 @@ CREATE TABLE employees (
     hire_date                 DATE,
     contract_end_date         DATE         NULL,                -- for fixed-term / internship
     hours_per_week            INT          NULL,                -- for part-time
-    probation_period          VARCHAR(50),                      -- e.g. '90 Days (Standard)'
+    probation_period          VARCHAR(50),                      -- e.g. '60 Days (Standard)'
     project_name              VARCHAR(200) NULL,                -- for temporary/casual type
     reports_to_id             INT          NULL,                -- self-join → manager
 

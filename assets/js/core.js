@@ -341,67 +341,142 @@ function moveOnboarding(dir){
 }
 
 // 2. Blocks side-nav jumps if current section is invalid
-function jumpToStep(step){
-  if(step > currentObStep) {
-    const cur=[...document.querySelectorAll(`#ob-step-${currentObStep} .master-req`)];
-    if(cur.some(i=>!i.value.trim())) { moveOnboarding(1); return; }
+function jumpToStep(step) {
+  // 1. Prevent skipping ahead if current step is invalid
+  if (step > currentObStep) {
+    const cur = [...document.querySelectorAll(`#ob-step-${currentObStep} .master-req`)];
+    if (cur.some(i => !i.value.trim())) { 
+      moveOnboarding(1); // This triggers the red error highlights
+      return; 
+    }
   }
   
-  currentObStep=step;
-  if(step === 6) renderSummary();
+  currentObStep = step;
+  if (step === 6) renderSummary();
 
-  document.querySelectorAll('#p-add-employee .form-section-content').forEach(s=>s.classList.remove('active'));
+  // 2. Update Section Visibility
+  document.querySelectorAll('#p-add-employee .form-section-content').forEach(s => s.classList.remove('active'));
   document.getElementById(`ob-step-${step}`).classList.add('active');
   
-  // Left Sidebar Nav Updates
-  document.querySelectorAll('.step-pro').forEach((item,idx)=>{
-    const sNum=idx+1;
-    item.classList.toggle('active',sNum===step);
-    item.classList.toggle('done',sNum<step);
-    item.querySelector('.step-idx').innerHTML=sNum<step?'<i data-lucide="check" size="14"></i>':sNum;
+  // 3. Update Sidebar Steps UI
+  document.querySelectorAll('.step-pro').forEach((item, idx) => {
+    const sNum = idx + 1;
+    item.classList.toggle('active', sNum === step);
+    item.classList.toggle('done', sNum < step);
+    const idxEl = item.querySelector('.step-idx');
+    if (idxEl) {
+       idxEl.innerHTML = sNum < step ? '<i data-lucide="check" size="14"></i>' : sNum;
+    }
   });
 
-  // Bottom Nav Controls
-  const dots = document.getElementById('ob-dots'), 
-        next = document.getElementById('ob-next'), 
-        bottomCommit = document.getElementById('btn-save-master-bottom'),
-        prev = document.getElementById('ob-prev');
+  // 4. THE ACTUAL PROGRESS LOGIC
+  const totalSteps = 6;
+  const progressPercent = Math.round((step / totalSteps) * 100);
+  
+  const progressBar = document.getElementById('master-progress-line');
+  const progressText = document.getElementById('master-progress-percent');
+  
+  if (progressBar) progressBar.style.width = progressPercent + '%';
+  if (progressText) progressText.textContent = progressPercent + '%';
 
-  prev.style.visibility = step === 1 ? 'hidden' : 'visible';
+  // Change bar color to Success Green on final step
+  if (step === 6) {
+      progressBar.style.background = '#15b201'; // Premium Green
+      progressText.style.color = '#15b201';
+  } else {
+      progressBar.style.background = 'var(--primary)';
+      progressText.style.color = 'var(--primary)';
+  }
+
+  // 5. Bottom Nav Controls (Dots vs Button)
+  const dots = document.getElementById('ob-dots');
+  const next = document.getElementById('ob-next');
+  const prev = document.getElementById('ob-prev');
+  const bottomCommit = document.getElementById('btn-save-master-bottom');
+
+  if (prev) prev.style.visibility = step === 1 ? 'hidden' : 'visible';
+  if (dots) dots.style.display = step === 6 ? 'none' : 'flex';
+  if (next) {
+      next.style.display = step === 6 ? 'none' : 'flex';
+      next.innerHTML = step === 5 ? 'Review Record <i data-lucide="chevron-right" size="14"></i>' : 'Next Step <i data-lucide="chevron-right" size="14"></i>';
+  }
+  if (bottomCommit) bottomCommit.style.display = step === 6 ? 'flex' : 'none';
   
-  // THE SWAP: If step 6, hide dots/next and show large Add button
-  dots.style.display = step === 6 ? 'none' : 'flex';
-  next.style.display = step === 6 ? 'none' : 'flex';
-  bottomCommit.style.display = step === 6 ? 'flex' : 'none';
-  
-  next.innerHTML = step === 5 ? 'Review All Steps' : 'Next Step <i data-lucide="chevron-right" size="14"></i>';
-  
-  document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('active',(i+1)===step));
-  document.getElementById('master-progress-line').style.width=(step/totalObSteps*100)+'%';
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', (i + 1) === step));
   
   validateMasterRecord();
-  lcIcons(document.getElementById('p-add-employee'));
-}function renderSummary() {
-  const area = document.getElementById('summary-render-area');
-  if(!area) return;
-  const getV = (id) => document.getElementById(id)?.value || '—';
-  
-  const sections = [
-    { title: 'Identity', icon: 'user', fields: [['Name', `${getV('o-fname')} ${getV('o-lname')}`], ['DOB', getV('o-dob')], ['Gender', getV('o-gender')]] },
-    { title: 'Contact', icon: 'mail', fields: [['Phone', getV('o-phone')], ['Email', getV('o-email')], ['City', getV('o-city')]] },
-    { title: 'Employment', icon: 'briefcase', fields: [['Dept', getV('o-dept')], ['Role', getV('o-pos')], ['Joined', getV('o-hire')]] },
-    { title: 'Financial', icon: 'credit-card', fields: [['Salary', getV('o-sal')], ['Bank', getV('o-bank')], ['Account', getV('o-acc')]] },
-    { title: 'Compliance', icon: 'shield', fields: [['ID Number', getV('o-idno')], ['Emergency', getV('o-ename')], ['E-Phone', getV('o-ephone')]] }
-  ];
+  lcIcons(); // Refresh icons for the checkmarks in the sidebar
+}
 
-  area.innerHTML = sections.map(sec => `
-    <div class="review-sec">
-      <div class="review-sec-title"><i data-lucide="${sec.icon}" size="12"></i>${sec.title}</div>
-      ${sec.fields.map(f => `<div class="review-row"><span class="rev-label">${f[0]}</span><span class="rev-val">${f[1]}</span></div>`).join('')}
-    </div>
-  `).join('');
-  lcIcons(area);
-}// 3. Real-time Button States & auto-clears red highlights
+function renderSummary() {
+  const area = document.getElementById('summary-render-area');
+  if (!area) return;
+
+  // Helper to get value or a dash if empty
+  const getV = (id) => {
+    const el = document.getElementById(id);
+    return el && el.value.trim() !== "" ? el.value.trim() : '<span style="color:var(--muted); font-weight:400;">—</span>';
+  };
+
+  // 1. Update Header Identity
+  const fullName = `${getV('o-fname')} ${document.getElementById('o-mname').value} ${getV('o-lname')}`.replace(/\s+/g, ' ');
+  document.getElementById('rev-full-name').innerHTML = fullName;
+  document.getElementById('rev-badge-dept').textContent = getV('o-dept');
+  document.getElementById('rev-badge-type').textContent = getV('o-etype');
+
+  // 2. Sync Avatar
+  const sourceImg = document.getElementById('avatar-img-output');
+  const targetImg = document.getElementById('rev-img');
+  if (sourceImg && sourceImg.style.display !== 'none') {
+    targetImg.src = sourceImg.src;
+    targetImg.style.opacity = "1";
+  } else {
+    targetImg.src = 'assets/img/bgwhitel.png'; // Fallback
+    targetImg.style.opacity = "0.3";
+  }
+
+  // 3. Static Sections
+  document.getElementById('rev-dob').innerHTML = getV('o-dob');
+  document.getElementById('rev-gender').innerHTML = getV('o-gender');
+  document.getElementById('rev-phone').innerHTML = getV('o-phone');
+  document.getElementById('rev-email').innerHTML = getV('o-email');
+
+  document.getElementById('rev-pos').innerHTML = getV('o-pos');
+  document.getElementById('rev-dept').innerHTML = getV('o-dept');
+  document.getElementById('rev-etype').innerHTML = getV('o-etype');
+
+  const rawSal = document.getElementById('o-sal').value;
+  document.getElementById('rev-sal').innerHTML = rawSal ? 'ETB ' + parseFloat(rawSal).toLocaleString() : '—';
+  document.getElementById('rev-bank').innerHTML = getV('o-bank');
+  document.getElementById('rev-acc').innerHTML = getV('o-acc');
+  document.getElementById('rev-tin').innerHTML = getV('o-tin');
+
+  document.getElementById('rev-ename').innerHTML = getV('o-ename');
+  document.getElementById('rev-relation').innerHTML = getV('o-idno');
+  document.getElementById('rev-ephone').innerHTML = getV('o-ephone');
+
+  // 4. DYNAMIC EMPLOYMENT FIELDS HANDLER
+  // This looks at all inputs inside the dynamic container from Step 3
+  const dynamicContainer = document.getElementById('dynamic-employment-fields');
+  const dynamicSummaryArea = document.getElementById('rev-dynamic-fields-area');
+  dynamicSummaryArea.innerHTML = ''; // Clear previous
+
+  if (dynamicContainer) {
+    const inputs = dynamicContainer.querySelectorAll('input');
+    inputs.forEach(input => {
+      // Find the label text for this input
+      const labelText = input.closest('.form-group')?.querySelector('label')?.textContent.replace('*', '').trim() || 'Detail';
+      const val = input.value.trim() || '—';
+      
+      // Append a new row to the summary for each dynamic field
+      const row = document.createElement('div');
+      row.className = 'review-row';
+      row.innerHTML = `<span class="rev-label">${labelText}</span><span class="rev-val">${val}</span>`;
+      dynamicSummaryArea.appendChild(row);
+    });
+  }
+}
+// 3. Real-time Button States & auto-clears red highlights
 function validateMasterRecord(){
   const all=[...document.querySelectorAll('#p-add-employee .master-req')], cur=[...document.querySelectorAll(`#ob-step-${currentObStep} .master-req`)];
   const allOk=all.every(i=>i.value.trim()), stepOk=cur.every(i=>i.value.trim());
@@ -428,12 +503,42 @@ function validateMasterRecord(){
   all.forEach(i=>{ if(i.value.trim()) i.classList.remove('field-error'); });
   lcIcons(val);
 }document.querySelectorAll('#p-add-employee input, #p-add-employee select, #p-add-employee textarea').forEach(input=>input.addEventListener('input',validateMasterRecord));
-function saveNewEmployee(){
-  const btn=document.getElementById('btn-save-master');
-  btn.innerHTML=`<i data-lucide="loader-2" class="spin" size="14"></i> Committing...`;
-  lcIcons(btn);
-  setTimeout(()=>{alert('Employee Master Record successfully created and synced with the database.');goPage('employee-directory');document.querySelectorAll('#p-add-employee input, #p-add-employee select').forEach(i=>i.value='');jumpToStep(1);btn.innerHTML=`<i data-lucide="shield-check" size="16"></i> Commit Record`;lcIcons(btn);},1500);
+
+function saveNewEmployee() {
+  const btnTop = document.getElementById('btn-save-master');
+  const btnBottom = document.getElementById('btn-save-master-bottom');
+  const allBtns = [btnTop, btnBottom];
+
+  allBtns.forEach(btn => {
+    if (btn) {
+      btn.disabled = true;
+      // We insert the <i> tag with the data-lucide attribute
+      btn.innerHTML = `<i data-lucide="loader-2" class="spin"></i> Finalizing Account...`;
+      
+      // IMPORTANT: Tell Lucide to look at THIS specific button and turn the <i> into an SVG
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons({
+          nodes: [btn]
+        });
+      }
+    }
+  });
+
+  // Simulate API call
+  setTimeout(() => {
+    showNotification("Success", "Employee profile has been created.", "success");
+    goPage('employee-directory');
+    
+    // Reset buttons after transition
+    setTimeout(() => {
+        btnTop.innerHTML = `<i data-lucide="shield-check"></i> Commit Record`;
+        btnBottom.innerHTML = `<i data-lucide="user-plus"></i> Add Employee`;
+        allBtns.forEach(b => { if(b) b.disabled = false; });
+        lucide.createIcons(); // Final refresh for all icons
+    }, 1000);
+  }, 2000);
 }
+
 function previewAvatar(input){
   if(input.files&&input.files[0]){
     const reader=new FileReader();
@@ -1593,11 +1698,11 @@ function updateEmploymentFields(type) {
   <label>Probation Period *</label>
   <div class="as-combo-container">
     <input type="text" id="o-probation" class="form-ctrl master-req" 
-           placeholder="Select Period..." value="90 Days (Standard)"
+           placeholder="Select Period..." value="60 Days (Standard)"
            onfocus="showAsDrop('as-drop-probation')" readonly>
     <div class="as-combo-results" id="as-drop-probation">
-      <div class="as-res-item" onclick="selectAsItem('o-probation','as-drop-probation','90 Days (Standard)')">90 Days (Standard)</div>
-      <div class="as-res-item" onclick="selectAsItem('o-probation','as-drop-probation','60 Days')">60 Days</div>
+      <div class="as-res-item" onclick="selectAsItem('o-probation','as-drop-probation','90 Days')">90 Days</div>
+      <div class="as-res-item" onclick="selectAsItem('o-probation','as-drop-probation','60 Days (Standard)')">60 Days (Standard)</div>
       <div class="as-res-item" onclick="selectAsItem('o-probation','as-drop-probation','45 Days')">45 Days</div>
       <div class="as-res-item" onclick="selectAsItem('o-probation','as-drop-probation','No Probation')">No Probation</div>
     </div>
@@ -1605,46 +1710,54 @@ function updateEmploymentFields(type) {
     </div>
   `;
 
+  
   switch (type) {
     case 'full-time':
       html = `
-        <div class="form-group"><label>Hiring Date *</label><input type="date" class="form-ctrl master-req" id="o-hire"></div>
+        <div class="form-group"><label>Hiring Date *</label>
+             <input type="date" class="form-ctrl master-req" id="o-hire" onclick="this.showPicker()" style="cursor:pointer"></div>
         ${probationHtml}
-        <div class="form-group"><label>Reporting To *</label><input type="text" class="form-ctrl master-req" id="o-reports" placeholder="Search Manager..."></div>
+        <div class="form-group"><label>Reporting To </label><input type="text" class="form-ctrl" id="o-reports" placeholder="Search Manager..."></div>
       `;
       break;
 
     case 'contract':
       html = `
-        <div class="form-group"><label>Contract Start *</label><input type="date" class="form-ctrl master-req" id="o-hire"></div>
-        <div class="form-group"><label>Contract End *</label><input type="date" class="form-ctrl master-req" id="o-end-date"></div>
+        <div class="form-group"><label>Contract Start *</label>
+             <input type="date" class="form-ctrl master-req" id="o-hire" onclick="this.showPicker()" style="cursor:pointer"></div>
+        <div class="form-group"><label>Contract End *</label>
+             <input type="date" class="form-ctrl master-req" id="o-end-date" onclick="this.showPicker()" style="cursor:pointer"></div>
         ${probationHtml}
-        <div class="form-group" style="grid-column: span 3;"><label>Reporting To *</label><input type="text" class="form-ctrl master-req" id="o-reports" placeholder="Search Manager..."></div>
+        <div class="form-group" style="grid-column: span 3;"><label>Reporting To </label><input type="text" class="form-ctrl" id="o-reports" placeholder="Search Manager..."></div>
       `;
       break;
 
     case 'part-time':
       html = `
-        <div class="form-group"><label>Hiring Date *</label><input type="date" class="form-ctrl master-req" id="o-hire"></div>
+        <div class="form-group"><label>Hiring Date *</label>
+             <input type="date" class="form-ctrl master-req" id="o-hire" onclick="this.showPicker()" style="cursor:pointer"></div>
         <div class="form-group"><label>Hours Per Week *</label><input type="number" class="form-ctrl master-req" id="o-hours" placeholder="e.g. 20"></div>
         ${probationHtml}
-        <div class="form-group" style="grid-column: span 3;"><label>Reporting To *</label><input type="text" class="form-ctrl master-req" id="o-reports" placeholder="Search Manager..."></div>
+        <div class="form-group" style="grid-column: span 3;"><label>Reporting To</label><input type="text" class="form-ctrl" id="o-reports" placeholder="Search Manager..."></div>
       `;
       break;
 
     case 'internship':
       html = `
-        <div class="form-group"><label>Internship Start *</label><input type="date" class="form-ctrl master-req" id="o-hire"></div>
-        <div class="form-group"><label>Internship End *</label><input type="date" class="form-ctrl master-req" id="o-end-date"></div>
-        <div class="form-group"><label>Assigned Mentor *</label><input type="text" class="form-ctrl master-req" id="o-reports" placeholder="Full name of Mentor"></div>
+        <div class="form-group"><label>Internship Start *</label>
+             <input type="date" class="form-ctrl master-req" id="o-hire" onclick="this.showPicker()" style="cursor:pointer"></div>
+        <div class="form-group"><label>Internship End *</label>
+             <input type="date" class="form-ctrl master-req" id="o-end-date" onclick="this.showPicker()" style="cursor:pointer"></div>
+        <div class="form-group"><label>Assigned Mentor</label><input type="text" class="form-ctrl" id="o-reports" placeholder="Full name of Mentor"></div>
       `;
       break;
 
     case 'temporary':
       html = `
         <div class="form-group"><label>Project Name *</label><input type="text" class="form-ctrl master-req" id="o-project" placeholder="e.g. Infrastructure Audit"></div>
-        <div class="form-group"><label>Assignment Start *</label><input type="date" class="form-ctrl master-req" id="o-hire"></div>
-        <div class="form-group"><label>Project Supervisor *</label><input type="text" class="form-ctrl master-req" id="o-reports" placeholder="Search Supervisor..."></div>
+        <div class="form-group"><label>Assignment Start *</label>
+             <input type="date" class="form-ctrl master-req" id="o-hire" onclick="this.showPicker()" style="cursor:pointer"></div>
+        <div class="form-group"><label>Project Supervisor </label><input type="text" class="form-ctrl" id="o-reports" placeholder="Search Supervisor..."></div>
       `;
       break;
   }
@@ -1718,3 +1831,40 @@ function openConfirm(title, message) {
 function closeConfirm() {
   document.getElementById('confirm-modal').classList.remove('open');
 }
+  function previewAvatar(input) {
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+
+      // 1. Validation: Size Check
+      if (file.size > maxSize) {
+        showNotification("File Too Large", "The image exceeds the 5MB limit. Please upload a smaller photo.", "error");
+        input.value = ""; // Reset the input
+        return;
+      }
+
+      // 2. Validation: Type Check
+      if (!file.type.startsWith('image/')) {
+        showNotification("Invalid File", "Please select a valid image file (JPG, PNG, WebP).", "error");
+        input.value = "";
+        return;
+      }
+
+      // 3. Success: Process Preview
+      const reader = new FileReader();
+      reader.onload = e => {
+        const preview = document.getElementById('avatar-img-output');
+        const icon = document.getElementById('placeholder-icon');
+        const box = document.getElementById('avatar-preview-box');
+        
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+        icon.style.display = 'none';
+        
+        // Visual feedback that the image is accepted
+        box.style.borderStyle = 'solid';
+        box.style.borderColor = 'var(--primary)';
+      };
+      reader.readAsDataURL(file);
+    }
+  }
