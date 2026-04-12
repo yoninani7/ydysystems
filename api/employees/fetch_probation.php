@@ -23,8 +23,7 @@ try {
             pr.status
         FROM probation_records pr
         JOIN employees e ON pr.employee_id = e.id
-        LEFT JOIN departments d ON e.department_id = d.id
-        WHERE e.status = 'Active'
+        LEFT JOIN departments d ON e.department_id = d.id 
         ORDER BY pr.end_date ASC
     ");
     

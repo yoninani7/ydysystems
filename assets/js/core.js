@@ -341,71 +341,46 @@ function moveOnboarding(dir){
 }
 
 // 2. Blocks side-nav jumps if current section is invalid
-function jumpToStep(step) {
-  // 1. Prevent skipping ahead if current step is invalid
-  if (step > currentObStep) {
-    const cur = [...document.querySelectorAll(`#ob-step-${currentObStep} .master-req`)];
-    if (cur.some(i => !i.value.trim())) { 
-      moveOnboarding(1); // This triggers the red error highlights
-      return; 
-    }
+function jumpToStep(step){
+  if(step > currentObStep) {
+    const cur=[...document.querySelectorAll(`#ob-step-${currentObStep} .master-req`)];
+    if(cur.some(i=>!i.value.trim())) { moveOnboarding(1); return; }
   }
   
-  currentObStep = step;
-  if (step === 6) renderSummary();
+  currentObStep=step;
+  if(step === 6) renderSummary();
 
-  // 2. Update Section Visibility
-  document.querySelectorAll('#p-add-employee .form-section-content').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('#p-add-employee .form-section-content').forEach(s=>s.classList.remove('active'));
   document.getElementById(`ob-step-${step}`).classList.add('active');
   
-  // 3. Update Sidebar Steps UI
-  document.querySelectorAll('.step-pro').forEach((item, idx) => {
-    const sNum = idx + 1;
-    item.classList.toggle('active', sNum === step);
-    item.classList.toggle('done', sNum < step);
-    const idxEl = item.querySelector('.step-idx');
-    if (idxEl) {
-       idxEl.innerHTML = sNum < step ? '<i data-lucide="check" size="14"></i>' : sNum;
-    }
+  // Left Sidebar Nav Updates
+  document.querySelectorAll('.step-pro').forEach((item,idx)=>{
+    const sNum=idx+1;
+    item.classList.toggle('active',sNum===step);
+    item.classList.toggle('done',sNum<step);
+    item.querySelector('.step-idx').innerHTML=sNum<step?'<i data-lucide="check" size="14"></i>':sNum;
   });
 
-  // 4. THE ACTUAL PROGRESS LOGIC
-  const totalSteps = 6;
-  const progressPercent = Math.round((step / totalSteps) * 100);
-  
-  const progressBar = document.getElementById('master-progress-line');
-  const progressText = document.getElementById('master-progress-percent');
-  
-  if (progressBar) progressBar.style.width = progressPercent + '%';
-  if (progressText) progressText.textContent = progressPercent + '%';
+  // Bottom Nav Controls
+  const dots = document.getElementById('ob-dots'), 
+        next = document.getElementById('ob-next'), 
+        bottomCommit = document.getElementById('btn-save-master-bottom'),
+        prev = document.getElementById('ob-prev');
 
-  // Change bar color to Success Green on final step
-  if (step === 6) {
-      progressBar.style.background = '#15b201'; // Premium Green
-      progressText.style.color = '#15b201';
-  } else {
-      progressBar.style.background = 'var(--primary)';
-      progressText.style.color = 'var(--primary)';
-  }
-
-  // 5. Bottom Nav Controls (Dots vs Button)
-  const dots = document.getElementById('ob-dots');
-  const next = document.getElementById('ob-next');
-  const prev = document.getElementById('ob-prev');
-  const bottomCommit = document.getElementById('btn-save-master-bottom');
-
-  if (prev) prev.style.visibility = step === 1 ? 'hidden' : 'visible';
-  if (dots) dots.style.display = step === 6 ? 'none' : 'flex';
-  if (next) {
-      next.style.display = step === 6 ? 'none' : 'flex';
-      next.innerHTML = step === 5 ? 'Review Record <i data-lucide="chevron-right" size="14"></i>' : 'Next Step <i data-lucide="chevron-right" size="14"></i>';
-  }
-  if (bottomCommit) bottomCommit.style.display = step === 6 ? 'flex' : 'none';
+  prev.style.visibility = step === 1 ? 'hidden' : 'visible';
   
-  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', (i + 1) === step));
+  // THE SWAP: If step 6, hide dots/next and show large Add button
+  dots.style.display = step === 6 ? 'none' : 'flex';
+  next.style.display = step === 6 ? 'none' : 'flex';
+  bottomCommit.style.display = step === 6 ? 'flex' : 'none';
+  
+  next.innerHTML = step === 5 ? 'Review All Steps' : 'Next Step <i data-lucide="chevron-right" size="14"></i>';
+  
+  document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('active',(i+1)===step));
+  document.getElementById('master-progress-line').style.width=(step/totalObSteps*100)+'%';
   
   validateMasterRecord();
-  lcIcons(); // Refresh icons for the checkmarks in the sidebar
+  lcIcons(document.getElementById('p-add-employee'));
 }
 
 function renderSummary() {
@@ -997,93 +972,111 @@ function initPage(id){
     });
   break;
   case 'retirement-planner':
-      // Generate mock data specifically for retirement
-      const retirementRows = gen(20, i => {
-        const isRetired = i > 5; // First 5 are upcoming, rest are already retired
-        const today = new Date();
-        const retDate = new Date();
-        
-        if (!isRetired) {
-          // Set retirement date within the next 90 days
-          retDate.setDate(today.getDate() + randInt(10, 85));
-        } else {
-          // Set retirement date in the past
-          retDate.setDate(today.getDate() - randInt(10, 200));
-        }
+  fetch('api/employees/fetch_retirement.php')
+    .then(r => r.json())
+    .then(res => {
+      if (!res.success) throw new Error(res.message);
+      
+      const el = document.getElementById('tbl-retirement');
+      if (el) delete el.dataset.built;
 
-        return {
-          name: names[i % names.length],
-          dept: rand(depts),
-          age: isRetired ? 60 : 59,
-          tenure: randInt(20, 35) + " yrs",
-          date: retDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-          status: isRetired ? b('neutral', 'Retired') : b('warning', 'Upcoming (90D)'),
-          pension: i % 3 === 0 ? b('success', 'Verified') : b('warning', 'In Progress')
-        };
-      });
-
-      // Update the counter in the stat card
-      document.getElementById('count-upcoming-ret').textContent = "5";
+      // Update the "Upcoming Retirement" count badge in the UI
+      // We count how many people reach retirement in the next 90 days
+      const upcomingCount = res.data.filter(emp => emp.days <= 90 && emp.days >= 0).length;
+      const countEl = document.getElementById('count-upcoming-ret');
+      if (countEl) countEl.textContent = upcomingCount;
 
       buildTable('tbl-retirement', {
         columns: [
-          { key: 'name', label: 'Employee' },
-          { key: 'dept', label: 'Department' },
-          { key: 'age', label: 'Age' },
+          { key: 'name',   label: 'Employee' },
+          { key: 'dept',   label: 'Department' },
+          { key: 'age',    label: 'Age' },
           { key: 'tenure', label: 'Service Period' },
-          { key: 'date', label: 'Retirement Date' },
-          { key: 'status', label: 'Status' },
-          { key: 'pension', label: 'Pension Status' },
+          { key: 'date',   label: 'Retirement Date' },
+          { 
+            key: 'days',   
+            label: 'Status',
+            render: (v) => {
+              const days = parseInt(v);
+              if (days < 0) return b('neutral', 'Retired');
+              if (days <= 90) return b('danger', `Upcoming (${days}D)`);
+              if (days <= 365) return b('warning', 'Within Year');
+              return b('info', 'Active');
+            }
+          },
+          { 
+            key: 'pension', 
+            label: 'Pension Status', 
+            render: () => b('warning', 'In Progress') // Defaulting as this is usually manual
+          },
           { 
             key: '_', 
             label: 'Actions', 
-            render: (v, row) => `
+            render: () => `
               <div class="flex-row">
                 <button class="btn btn-xs btn-secondary" title="Succession Plan"><i data-lucide="user-plus" size="10"></i></button>
                 <button class="btn btn-xs btn-primary" title="Clearance"><i data-lucide="clipboard-check" size="10"></i></button>
               </div>`
           }
         ],
-        rows: retirementRows,
+        rows: res.data,
         perPage: 10
       });
-      break;
-    /* Locate this section inside the initPage function */
-
-case 'former-employees':
-  buildTable('tbl-former-employees', {
-    columns: [
-      { key: 'name', label: 'Employee' },
-      { key: 'dept', label: 'Last Department' },
-      { key: 'role', label: 'Last Role' },
-      { key: 'exitDate', label: 'Exit Date' },
-      { key: 'type', label: 'Reason' },
-      { key: 'duration', label: 'Duration' },
-      { key: 'rehire', label: 'Rehire possibility' },
-      /* Custom Actions column - Only Trash Icon */
-      {
-        key: '_',
-        label: 'Actions',
-        render: () => `
-          <div class="flex-row">
-            <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;">
-              <i data-lucide="trash-2" size="10"></i>
-            </button>
-          </div>`
-      }
-    ],
-    rows: gen(25, i => ({
-      name: names[i % names.length],
-      dept: rand(depts),
-      role: ['Manager', 'Analyst', 'Dev', 'Lead'][i % 4],
-      exitDate: `Jan ${randInt(1, 31)}, 2026`,
-      type: (i % 5 === 2) ? b('danger', 'Terminated') : b('neutral', 'Resigned'),
-      duration: randInt(1, 10) + ' yrs',
-      rehire: (i % 6 === 0) ? b('danger', 'No') : b('success', 'Yes')
-    }))
-  });
+    })
+    .catch(err => {
+      console.error(err);
+      document.getElementById('tbl-retirement').innerHTML =
+        `<p style="padding:20px;color:#dc2626;">Error loading retirement data: ${err.message}</p>`;
+    });
   break;
-    case 'asset-tracking':
+
+  case 'former-employees':
+  fetch('api/employees/fetch_former_employees.php')
+    .then(r => r.json())
+    .then(res => {
+      if (!res.success) throw new Error(res.message);
+      
+      const el = document.getElementById('tbl-former-employees');
+      if (el) delete el.dataset.built; // Clear built guard
+
+      buildTable('tbl-former-employees', {
+        columns: [
+          { key: 'name',     label: 'Employee' },
+          { key: 'dept',     label: 'Last Department' },
+          { key: 'role',     label: 'Last Role' },
+          { key: 'exitDate', label: 'Exit Date' },
+          { 
+            key: 'type',     
+            label: 'Reason',
+            render: (v) => v === 'Terminated' ? b('danger', v) : b('neutral', v)
+          },
+          { key: 'duration', label: 'Duration' },
+          { 
+            key: 'rehire',   
+            label: 'Rehire possibility',
+            render: (v) => v === 'No' ? b('danger', 'No') : b('success', 'Yes')
+          },
+          {
+            key: '_',
+            label: 'Actions',
+            render: () => `
+              <div class="flex-row">
+                <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;">
+                  <i data-lucide="trash-2" size="10"></i>
+                </button>
+              </div>`
+          }
+        ],
+        rows: res.data
+      });
+    })
+    .catch(err => {
+      console.error(err);
+      document.getElementById('tbl-former-employees').innerHTML =
+        `<p style="padding:20px;color:#dc2626;">Error loading former employees: ${err.message}</p>`;
+    });
+  break;
+  case 'asset-tracking':
       buildTable('tbl-assets', {
         columns: [
           { key: 'id', label: 'Item Code' },
@@ -1141,8 +1134,117 @@ case 'former-employees':
     case 'training-schedule':buildTable('tbl-training-schedule',{columns:[ {key:'course',label:'Course'},{key:'dept',label:'Department'},{key:'trainer',label:'Trainer'},{key:'date',label:'Date'},{key:'time',label:'Time'},{key:'venue',label:'Venue'},{key:'seats',label:'Enrolled/Seats'},{key:'status',label:'Status'},ac],rows:gen(20,i=>({ course:['Leadership 101','Advanced Excel','AWS Cloud','PMP Prep','Python Basics'][i%5],dept:rand(depts),trainer:names[i%names.length],date:`${['Apr','May','Jun'][i%3]} ${randInt(1,28)}, 2026`,time:`${randInt(9,14)}:00`,venue:['Room A','Room B','Online','HQ Auditorium'][i%4],seats:`${randInt(5,25)}/${randInt(25,30)}`,status:i%3===0?b('success','Confirmed'):b('warning','Open')}))});break;
     case 'performance-reviews':buildTable('tbl-reviews',{columns:[ {key:'emp',label:'Employee'},{key:'dept',label:'Department'},{key:'reviewer',label:'Reviewer'},{key:'period',label:'Period'},{key:'score',label:'Overall Score'},{key:'rank',label:'Rating'},{key:'status',label:'Status'},ac],rows:gen(35,i=>({ emp:names[i%names.length],dept:rand(depts),reviewer:names[(i+4)%names.length],period:'Q1 2026',score:(randInt(60,100)/10).toFixed(1)+' / 10',rank:['Exceptional','Exceeds','Meets','Below'][i%4],status:i%4===0?statusBadge.pending:b('success','Submitted')}))});break;
     case '360-feedback':buildTable('tbl-360',{columns:[ {key:'subject',label:'Subject'},{key:'dept',label:'Department'},{key:'total',label:'Respondents'},{key:'complete',label:'Completed'},{key:'avg',label:'Avg Score'},{key:'status',label:'Status'},ac],rows:gen(20,i=>({ subject:names[i%names.length],dept:rand(depts),total:randInt(5,12),complete:randInt(3,12),avg:(randInt(60,100)/10).toFixed(1)+'/10',status:i%3===0?b('success','Closed'):i%3===1?b('success','Open'):b('warning','In Progress')}))});break;
-    case 'Promote/Demote':buildTable('tbl-Promote/Demote',{columns:[{key:'emp',label:'Employee'},{key:'type',label:'Change Type'},{key:'from_pos',label:'Prev Position'},{key:'to_pos',label:'Current Position'},{key:'dept',label:'Dept'},{key:'sal_from',label:'Old Salary'},{key:'sal_to',label:'New Salary'},{key:'eff_date',label:'Effective'},{key:'status',label:'Status'},ac],rows:gen(18,i=>({ emp:names[i%names.length],from_pos:['Junior Dev','Sales Rep','HR Assistant','Analyst'][i%4],to_pos:['Senior Dev','Senior Rep','HR Manager','Senior Analyst'][i%4],dept:rand(depts),sal_from:fmtMoney(randInt(40,70)*1000),sal_to:fmtMoney(randInt(70,100)*1000),eff_date:'Apr 1, 2026',status:[statusBadge.pending,statusBadge.approved,b('info','Processing')][i%3],type:[statusBadge.pending,statusBadge.approved][i%3]}))});break;
-    case 'transfers':buildTable('tbl-transfers-dept',{columns:[ {key:'emp',label:'Employee'},{key:'from_dept',label:'From Department'},{key:'to_dept',label:'To Department'},{key:'from_branch',label:'From Branch'},{key:'to_branch',label:'To Branch'},{key:'req_date',label:'Requested'},{key:'eff_date',label:'Effective'},{key:'status',label:'Status'},ac],rows:gen(20,i=>({ emp:names[i%names.length],from_dept:rand(depts),to_dept:rand(depts),from_branch:'HQ',to_branch:['North','South','West','APAC'][i%4],req_date:`Mar ${randInt(1,18)}, 2026`,eff_date:'Apr 1, 2026',status:[statusBadge.pending,statusBadge.approved][i%2]}))});break;
+    case 'Promote/Demote':
+  fetch('api/movement/fetch_promotions.php')
+    .then(r => r.json())
+    .then(res => {
+      if (!res.success) throw new Error(res.message);
+      
+      const el = document.getElementById('tbl-Promote/Demote');
+      if (el) delete el.dataset.built;
+
+      buildTable('tbl-Promote/Demote', {
+        columns: [
+          { key: 'emp',      label: 'Employee' },
+          { 
+            key: 'type',     
+            label: 'Type',
+            render: (v) => v === 'Promotion' ? b('success', v) : b('warning', v)
+          },
+          { key: 'from_pos', label: 'Prev Position' },
+          { key: 'to_pos',   label: 'Current Position' },
+          { key: 'dept',     label: 'Dept' },
+          { 
+            key: 'sal_from', 
+            label: 'Old Salary',
+            render: (v) => v ? 'ETB ' + parseFloat(v).toLocaleString() : '—'
+          },
+          { 
+            key: 'sal_to',   
+            label: 'New Salary',
+            render: (v) => v ? 'ETB ' + parseFloat(v).toLocaleString() : '—'
+          },
+          { key: 'eff_date', label: 'Effective' },
+          { 
+            key: 'status',   
+            label: 'Status',
+            render: (v) => {
+                if (v === 'Approved') return statusBadge.approved;
+                if (v === 'Pending') return statusBadge.pending;
+                if (v === 'Rejected') return statusBadge.rejected;
+                return b('info', v);
+            }
+          },
+          {
+            key: '_',
+            label: 'Actions',
+            render: () => `
+              <div class="flex-row">
+                <button class="btn btn-xs btn-secondary"><i data-lucide="eye" size="10"></i></button>
+                <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;">
+                  <i data-lucide="trash-2" size="10"></i>
+                </button>
+              </div>`
+          }
+        ],
+        rows: res.data
+      });
+    })
+    .catch(err => {
+      console.error(err);
+      document.getElementById('tbl-Promote/Demote').innerHTML =
+        `<p style="padding:20px;color:#dc2626;">Error loading movement data: ${err.message}</p>`;
+    });
+  break;
+    case 'transfers':
+  fetch('api/movement/fetch_transfers.php')
+    .then(r => r.json())
+    .then(res => {
+      if (!res.success) throw new Error(res.message);
+      
+      const el = document.getElementById('tbl-transfers-dept');
+      if (el) delete el.dataset.built;
+
+      buildTable('tbl-transfers-dept', {
+        columns: [
+          { key: 'emp',         label: 'Employee' },
+          { key: 'from_dept',   label: 'From Department' },
+          { key: 'to_dept',     label: 'To Department' },
+          { key: 'from_branch', label: 'From Branch' },
+          { key: 'to_branch',   label: 'To Branch' },
+          { key: 'req_date',    label: 'Requested' },
+          { key: 'eff_date',    label: 'Effective' },
+          { 
+            key: 'status',      
+            label: 'Status',
+            render: (v) => {
+                if (v === 'Approved') return statusBadge.approved;
+                if (v === 'Pending') return statusBadge.pending;
+                if (v === 'Rejected') return statusBadge.rejected;
+                return b('info', v);
+            }
+          },
+          {
+            key: '_',
+            label: 'Actions',
+            render: () => `
+              <div class="flex-row">
+                <button class="btn btn-xs btn-secondary" title="View Details"><i data-lucide="eye" size="10"></i></button>
+                <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;">
+                  <i data-lucide="trash-2" size="10"></i>
+                </button>
+              </div>`
+          }
+        ],
+        rows: res.data
+      });
+    })
+    .catch(err => {
+      console.error(err);
+      document.getElementById('tbl-transfers-dept').innerHTML =
+        `<p style="padding:20px;color:#dc2626;">Error loading transfer data: ${err.message}</p>`;
+    });
+  break;
     case 'attendance': initAttendanceGrid(); break;
     case 'disciplinary-actions':buildTable('tbl-disciplinary',{columns:[ {key:'emp',label:'Employee'},{key:'dept',label:'Department'},{key:'type',label:'Action Type'},{key:'incident',label:'Incident Date'},{key:'issued',label:'Issued'},{key:'issuer',label:'Issued By'}, ac],rows:gen(18,i=>({ emp:names[i%names.length],dept:rand(depts),type:['Verbal Warning','Written Warning','Final Warning','Suspension','Demotion'][i%5],incident:`Feb ${randInt(1,28)}, 2026`,issued:`Mar ${randInt(1,15)}, 2026`,issuer:names[(i+3)%names.length]}))});break;
     case 'resignations':buildTable('tbl-resignations',{columns:[ {key:'emp',label:'Employee'},{key:'dept',label:'Department'},{key:'type',label:'Reason'},{key:'filed',label:'Filed'},{key:'assigned',label:'Assigned To'},{key:'priority',label:'Priority'},{key:'status',label:'Status'},ac],rows:gen(15,i=>({ emp:names[i%names.length],dept:rand(depts),type:['Harassment','Unfair Treatment','Pay Dispute','Safety Concern','Discrimination','Work Conditions'][i%6],filed:`Mar ${randInt(1,18)}, 2026`,assigned:names[(i+2)%names.length],priority:i%3===0?b('danger','High'):i%3===1?b('warning','Medium'):b('neutral','Low'),status:i%4===0?b('success','Resolved'):i%4===1?statusBadge.pending:b('info','Under Review')}))});break;
