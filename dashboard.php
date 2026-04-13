@@ -25,7 +25,8 @@ include 'includes/sidebar.php';
 <?php
 include 'includes/topbar.php'; 
 ?>
-  <div class="content-area" id="content-area"> 
+  <div class="content-area" id="content-area">
+
 <!-- DASHBOARD -->
 <div class="page active" id="p-dashboard">
   <header class="db-hero-banner" style="padding:16px 28px;min-height:auto;position:relative;">
@@ -58,7 +59,7 @@ include 'includes/topbar.php';
     <div class="card" style="padding:24px;border-radius:20px;background:#fff;">
       <div class="card-header" style="border:none;padding:0 0 20px 0;">
         <div>
-          <div class="card-title" style="font-size:1.15rem;color:#0f172a;font-weight:800;">Total employee Distribution</div>
+          <div class="card-title" style="font-size:1.15rem;color:#0f172a;font-weight:800;">Headcount Distribution</div>
           <div class="page-sub">Departmental workload and personnel breakdown</div>
         </div>
       </div>
@@ -156,15 +157,5 @@ include 'includes/footer.php';
 ?>
 <!-- Toast Notification Container -->
 <div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none;"></div>
-
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        var startPage = window.location.hash
-            ? window.location.hash.replace("#", "")
-            : "dashboard";
-        goPage(startPage);
-    });
-</script>
-
 </body>
 </html>
