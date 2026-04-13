@@ -1028,8 +1028,78 @@ CREATE INDEX IF NOT EXISTS idx_cand_vacancy_id
 
 CREATE INDEX IF NOT EXISTS idx_cand_status
     ON candidates (status);
- 
- 
+   
+CREATE INDEX IF NOT EXISTS idx_emp_dept_id
+    ON employees (department_id);
+
+CREATE INDEX IF NOT EXISTS idx_emp_position_id
+    ON employees (job_position_id);
+
+CREATE INDEX IF NOT EXISTS idx_emp_branch_id
+    ON employees (branch_id);
+
+CREATE INDEX IF NOT EXISTS idx_emp_type_id
+    ON employees (employment_type_id);
+
+CREATE INDEX IF NOT EXISTS idx_emp_status
+    ON employees (status);
+
+CREATE INDEX IF NOT EXISTS idx_emp_name
+    ON employees (first_name, last_name);
+
+CREATE INDEX IF NOT EXISTS idx_emp_hire_date
+    ON employees (hire_date);
+
+CREATE INDEX IF NOT EXISTS idx_emp_contract_end
+    ON employees (contract_end_date);
+
+-- users table: joined to employees on every employee list query
+CREATE INDEX IF NOT EXISTS idx_users_employee_id
+    ON users (employee_id);
+
+-- attendance table: queried by date and by employee constantly
+CREATE INDEX IF NOT EXISTS idx_att_employee_id
+    ON attendance (employee_id);
+
+CREATE INDEX IF NOT EXISTS idx_att_date
+    ON attendance (attendance_date);
+
+CREATE INDEX IF NOT EXISTS idx_att_emp_date
+    ON attendance (employee_id, attendance_date);
+
+-- leave_requests table
+CREATE INDEX IF NOT EXISTS idx_leave_employee_id
+    ON leave_requests (employee_id);
+
+CREATE INDEX IF NOT EXISTS idx_leave_status
+    ON leave_requests (status);
+
+-- audit_logs table: dashboard fetches last 5 sorted by date
+CREATE INDEX IF NOT EXISTS idx_audit_logged_at
+    ON audit_logs (logged_at);
+
+-- probation_records table
+CREATE INDEX IF NOT EXISTS idx_prob_employee_id
+    ON probation_records (employee_id);
+
+CREATE INDEX IF NOT EXISTS idx_prob_end_date
+    ON probation_records (end_date);
+
+-- employee_contracts table
+CREATE INDEX IF NOT EXISTS idx_contract_employee_id
+    ON employee_contracts (employee_id);
+
+-- assets table
+CREATE INDEX IF NOT EXISTS idx_asset_custodian
+    ON assets (current_custodian_id);
+
+-- transfers and promotions tables
+CREATE INDEX IF NOT EXISTS idx_transfer_employee_id
+    ON transfers (employee_id);
+
+CREATE INDEX IF NOT EXISTS idx_promotion_employee_id
+    ON promotions (employee_id);
+
 
 -- -- Employment Types (matches the UI dropdown exactly)
 -- INSERT INTO employment_types (name, description, benefits) VALUES
