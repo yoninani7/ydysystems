@@ -3083,4 +3083,3 @@ function closeConfirm() {
       reader.readAsDataURL(file);
     }
   }
-  
