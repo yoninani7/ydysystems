@@ -9,9 +9,9 @@ include 'includes/header.php';
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>YDY HRM Enterprise</title>
  
-<script src="assets/js/lucide.min.js"></script>
-<script src="assets/js/chart.js"></script> 
-<link rel="stylesheet" href="assets/css/styles.css">  
+<script src="assets/js/chart.js" defer></script> 
+<script src="assets/js/lucide.min.js" defer></script>
+<link rel="stylesheet" href="assets/css/styles.css" defer>  
 
 </head>
 <body>
