@@ -929,6 +929,105 @@ CREATE INDEX idx_att_stats ON attendance(status, year, month);
 -- 5. Optimization for Leave requests (finding overlaps or pending items)
 -- This speeds up the "Can this person take leave?" check
 CREATE INDEX idx_leave_overlap ON leave_requests(employee_id, status, from_date, to_date);
+-- =============================================================
+-- PERFORMANCE INDEXES
+-- Added to optimize JOIN queries and filtered lookups.
+-- Run these after creating all tables.
+-- =============================================================
+
+-- Indexes on employees table
+-- The employee list query JOINs on these four foreign key columns.
+-- Without these, every JOIN does a full table scan.
+CREATE INDEX IF NOT EXISTS idx_emp_department_id
+    ON employees (department_id);
+
+CREATE INDEX IF NOT EXISTS idx_emp_job_position_id
+    ON employees (job_position_id);
+
+CREATE INDEX IF NOT EXISTS idx_emp_branch_id
+    ON employees (branch_id);
+
+CREATE INDEX IF NOT EXISTS idx_emp_employment_type_id
+    ON employees (employment_type_id);
+
+-- Status filter — used in WHERE e.status = "Active"
+CREATE INDEX IF NOT EXISTS idx_emp_status
+    ON employees (status);
+
+-- Search by name — used in WHERE first_name LIKE ? OR last_name LIKE ?
+CREATE INDEX IF NOT EXISTS idx_emp_name
+    ON employees (first_name, last_name);
+
+-- Hire date — used in probation tracker and contract renewal queries
+CREATE INDEX IF NOT EXISTS idx_emp_hire_date
+    ON employees (hire_date);
+
+-- Date of birth — used in retirement planner
+CREATE INDEX IF NOT EXISTS idx_emp_dob
+    ON employees (date_of_birth);
+
+-- Index on users table
+-- The employee query JOINs users ON e.id = u.employee_id
+CREATE INDEX IF NOT EXISTS idx_users_employee_id
+    ON users (employee_id);
+
+-- Indexes on attendance_records table
+-- Attendance is queried heavily by date and by employee
+CREATE INDEX IF NOT EXISTS idx_att_employee_id
+    ON attendance_records (employee_id);
+
+CREATE INDEX IF NOT EXISTS idx_att_date
+    ON attendance_records (date);
+
+CREATE INDEX IF NOT EXISTS idx_att_emp_date
+    ON attendance_records (employee_id, date);
+
+-- Indexes on leave_requests table
+CREATE INDEX IF NOT EXISTS idx_leave_employee_id
+    ON leave_requests (employee_id);
+
+CREATE INDEX IF NOT EXISTS idx_leave_status
+    ON leave_requests (status);
+
+CREATE INDEX IF NOT EXISTS idx_leave_type_id
+    ON leave_requests (leave_type_id);
+
+-- Indexes on audit_logs table
+-- The dashboard query fetches the last 5 logs ORDER BY logged_at DESC
+CREATE INDEX IF NOT EXISTS idx_audit_logged_at
+    ON audit_logs (logged_at);
+
+CREATE INDEX IF NOT EXISTS idx_audit_user
+    ON audit_logs (user_name);
+
+CREATE INDEX IF NOT EXISTS idx_audit_module
+    ON audit_logs (module);
+
+-- Indexes on medical_claims table
+CREATE INDEX IF NOT EXISTS idx_claims_employee_id
+    ON medical_claims (employee_id);
+
+CREATE INDEX IF NOT EXISTS idx_claims_status
+    ON medical_claims (status);
+
+-- Indexes on overtime_requests table
+CREATE INDEX IF NOT EXISTS idx_overtime_employee_id
+    ON overtime_requests (employee_id);
+
+-- Indexes on performance_reviews table
+CREATE INDEX IF NOT EXISTS idx_perf_employee_id
+    ON performance_reviews (employee_id);
+
+-- Indexes on disciplinary_actions table
+CREATE INDEX IF NOT EXISTS idx_disc_employee_id
+    ON disciplinary_actions (employee_id);
+
+-- Indexes on job_applications / candidates table
+CREATE INDEX IF NOT EXISTS idx_cand_vacancy_id
+    ON candidates (vacancy_id);
+
+CREATE INDEX IF NOT EXISTS idx_cand_status
+    ON candidates (status);
  
  
 
