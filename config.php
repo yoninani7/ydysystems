@@ -31,8 +31,8 @@ define('REMEMBER_ME_TTL', 60 * 60 * 24 * 30);
 define('MAX_LOGIN_ATTEMPTS', 5);
 define('LOCKOUT_SECONDS', 900);
 
-// ── Inactivity timeout (20 minutes) ─────────────────────────────────────────────
-define('INACTIVITY_TIMEOUT',1200); // 
+// ── Inactivity timeout (15 minutes) ─────────────────────────────────────────────
+define('INACTIVITY_TIMEOUT',900); // 
 
 define('BASE_URL', rtrim(str_replace(
     str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']),
