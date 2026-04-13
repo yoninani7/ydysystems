@@ -1,9 +1,6 @@
-<?php 
-// 1. Include your existing connection
+<?php  
 include '../config.php'; 
-
-// 2. Fetch the data (assuming your connection variable is $pdo or $conn)
-// Replace $pdo with your actual connection variable name
+ 
 $stmt = $pdo->query("SELECT * FROM company_profile LIMIT 1");
 $cp = $stmt->fetch();
 
