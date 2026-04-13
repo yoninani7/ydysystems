@@ -1,5 +1,5 @@
 <!-- EMPLOYEE DIRECTORY -->
-       
+      <div class="page" id="p-employee-directory">
         <div class="page-header">
           <div>
             <div class="page-title">Employee Profile</div>
@@ -31,4 +31,4 @@
         </div>
         
         <div id="tbl-employees"></div>
-    
+      </div>
