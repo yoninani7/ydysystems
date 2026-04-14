@@ -9,98 +9,150 @@
     <div class="modal-body" style="overflow:visible;">
       <div class="form-grid fg-2">
         <div class="form-group" style="grid-column:span 2;"><label>Department Name *</label><input id="dept-name" placeholder="e.g. Engineering"></div>
-        <div class="form-group" style="position:relative;">
+        <div class="form-group" style="position:relative;grid-column:span 2;">
           <label>Head of Department</label>
           <div class="as-combo-container">
             <input type="text" id="as-input-dept-head" placeholder="Type name to search..." onfocus="showAsDrop('as-drop-dept-head')" oninput="filterAsDrop('as-input-dept-head','as-drop-dept-head')">
             <div class="as-combo-results" id="as-drop-dept-head"></div>
           </div>
         </div>
-        <div class="form-group">
-          <label>Location</label>
-          <div class="as-combo-container">
-  <input type="text" id="dept-location" class="form-ctrl" placeholder="Select Location..." 
-         onfocus="showAsDrop('as-drop-dept-loc')" readonly>
-  <div class="as-combo-results" id="as-drop-dept-loc">
-    <div class="as-res-item" onclick="selectAsItem('dept-location','as-drop-dept-loc','Addis Ababa')">Addis Ababa</div>
-    <div class="as-res-item" onclick="selectAsItem('dept-location','as-drop-dept-loc','Mekelle')">Mekelle</div>
-    <div class="as-res-item" onclick="selectAsItem('dept-location','as-drop-dept-loc','Adama')">Adama</div>
-    <div class="as-res-item" onclick="selectAsItem('dept-location','as-drop-dept-loc','Remote')">Remote</div>
-  </div>
-</div>
-        </div>
+         
         <div class="form-group" style="grid-column:span 2;"><label>Status</label><div class="as-combo-container">
-  <input type="text" id="dept-status" class="form-ctrl" placeholder="Select Status..." 
+  <input type="text" id="dept-status" class="form-ctrl" value="Active" 
          onfocus="showAsDrop('as-drop-dept-status')" readonly>
   <div class="as-combo-results" id="as-drop-dept-status">
     <div class="as-res-item" onclick="selectAsItem('dept-status','as-drop-dept-status','Active')">Active</div>
     <div class="as-res-item" onclick="selectAsItem('dept-status','as-drop-dept-status','Inactive')">Inactive</div>
   </div>
-</div></div>
+  </div></div>
+        </div>
       </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeDeptModal()">Cancel</button>
-      <button class="btn btn-primary" onclick=""><i data-lucide="check" size="13"></i>Create Department</button>
-    </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeDeptModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveDepartment()"><i data-lucide="check" size="13"></i>Create Department</button>
+      </div>
   </div>
 </div>
 
+<!-- MODAL: ADD NEW JOB POSITION -->
 <div class="modal-overlay" id="modal-add-job-position" onclick="closeJobModal(event)">
   <div class="modal-box" style="max-width:500px;overflow:visible;">
     <div class="modal-header">
-      <div><div style="font-size:1rem;font-weight:800;">Add New Job Position</div><div style="font-size:.75rem;color:var(--muted);margin-top:3px;">Define a new role and headcount requirements</div></div>
+      <div>
+        <div style="font-size:1rem;font-weight:800;">Add New Job Position</div>
+        <div style="font-size:.75rem;color:var(--muted);margin-top:3px;">Define a new role and headcount requirements</div>
+      </div>
       <button class="icon-btn" onclick="closeJobModal()"><i data-lucide="x" size="15"></i></button>
     </div>
     <div class="modal-body" style="overflow:visible;">
       <div class="form-grid fg-2">
-        <div class="form-group" style="grid-column:span 2;"><label>Job Title *</label><input id="job-title" placeholder="e.g. Senior Software Engineer"></div>
+        <!-- Job Title -->
+        <div class="form-group" style="grid-column:span 2;">
+          <label>Job Title *</label>
+          <input id="job-title" placeholder="e.g. Senior Software Engineer" class="form-ctrl" oninput="this.classList.remove('field-error')">
+        </div>
+        
+        <!-- Department Selection -->
         <div class="form-group" style="position:relative;grid-column:span 2;">
-          <label>Department</label>
+          <label>Department *</label>
           <div class="as-combo-container">
-            <input type="text" id="as-input-job-dept" placeholder="Search department..." onfocus="showAsDrop('as-drop-job-dept')" oninput="filterAsDrop('as-input-job-dept','as-drop-job-dept')">
+            <input type="text" id="as-input-job-dept" placeholder="Search department..." 
+                   onfocus="showAsDrop('as-drop-job-dept')" 
+                   oninput="filterAsDrop('as-input-job-dept','as-drop-job-dept'); this.classList.remove('field-error')">
             <div class="as-combo-results" id="as-drop-job-dept"></div>
+          </div>
+        </div>
+
+        <!-- Operating Status (Added for consistency) -->
+        <div class="form-group" style="grid-column:span 2;">
+          <label>Status</label>
+          <div class="as-combo-container">
+            <input type="text" id="job-status" class="form-ctrl" value="Active" onfocus="showAsDrop('as-drop-job-status')" readonly>
+            <div class="as-combo-results" id="as-drop-job-status">
+              <div class="as-res-item" onclick="selectAsItem('job-status','as-drop-job-status','Active')">Active</div>
+              <div class="as-res-item" onclick="selectAsItem('job-status','as-drop-job-status','Inactive')">Inactive</div>
+            </div>
           </div>
         </div>
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeJobModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="saveJobPosition()"><i data-lucide="check" size="13"></i>Create Position</button>
+      <button class="btn btn-primary" id="btn-save-job" onclick="saveJobPosition()">
+        <i data-lucide="check" size="13"></i>Create Position
+      </button>
     </div>
   </div>
 </div>
 
 <div class="modal-overlay" id="modal-add-branch" onclick="closeBranchModal(event)">
-  <div class="modal-box" style="max-width:500px;overflow:visible;">
+  <div class="modal-box" style="max-width:550px; overflow:visible;">
     <div class="modal-header">
-      <div><div style="font-size:1rem;font-weight:800;">Add New Branch</div><div style="font-size:.75rem;color:var(--muted);margin-top:3px;">Register a new corporate location</div></div>
+      <div>
+        <div style="font-size:1rem; font-weight:800;">Add New Branch</div>
+        <div style="font-size:.75rem; color:var(--muted); margin-top:3px;">Register a new corporate location and contact details</div>
+      </div>
       <button class="icon-btn" onclick="closeBranchModal()"><i data-lucide="x" size="15"></i></button>
     </div>
+    
     <div class="modal-body" style="overflow:visible;">
       <div class="form-grid fg-2">
-        <div class="form-group"><label>Branch Name *</label><input id="branch-name" placeholder="e.g. East Hub"></div>
-        <div class="form-group"><label>City</label><input id="branch-city" placeholder="e.g. Adama"></div>
+        <!-- row 1: Branch Name -->
+        <div class="form-group" style="grid-column: span 2;">
+          <label>Branch Name *</label>
+          <input type="text" id="branch-name" placeholder="e.g. Headquarters / North Hub" class="form-ctrl">
+        </div>
+
+        <!-- row 2: Manager & Status -->
         <div class="form-group" style="position:relative;">
           <label>Branch Manager</label>
           <div class="as-combo-container">
-            <input type="text" id="as-input-branch-mgr" placeholder="Search manager..." onfocus="showAsDrop('as-drop-branch-mgr')" oninput="filterAsDrop('as-input-branch-mgr','as-drop-branch-mgr')">
+            <input type="text" id="as-input-branch-mgr" placeholder="Search manager..." 
+                   onfocus="showAsDrop('as-drop-branch-mgr')" 
+                   oninput="filterAsDrop('as-input-branch-mgr','as-drop-branch-mgr')">
             <div class="as-combo-results" id="as-drop-branch-mgr"></div>
           </div>
         </div>
-        <div class="form-group" style="grid-column:span 2;"><label>Status</label><div class="as-combo-container">
-  <input type="text" id="branch-status" class="form-ctrl" placeholder="Select Status..." 
-         onfocus="showAsDrop('as-drop-branch-status')" readonly>
-  <div class="as-combo-results" id="as-drop-branch-status">
-    <div class="as-res-item" onclick="selectAsItem('branch-status','as-drop-branch-status','Active')">Active</div>
-    <div class="as-res-item" onclick="selectAsItem('branch-status','as-drop-branch-status','Inactive')">Inactive</div>
-  </div>
-</div></div>
+
+        <div class="form-group">
+          <label>Operating Status</label>
+          <div class="as-combo-container">
+            <input type="text" id="branch-status" class="form-ctrl" value="Active" 
+                   onfocus="showAsDrop('as-drop-branch-status')" readonly>
+            <div class="as-combo-results" id="as-drop-branch-status">
+              <div class="as-res-item" onclick="selectAsItem('branch-status','as-drop-branch-status','Active')">Active</div>
+              <div class="as-res-item" onclick="selectAsItem('branch-status','as-drop-branch-status','Inactive')">Inactive</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- row 3: Phone & Email -->
+        <div class="form-group">
+          <label>Phone Number</label>
+          <input type="text" id="branch-phone" placeholder="+251..." class="form-ctrl">
+        </div>
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" id="branch-email" placeholder="branch@company.com" class="form-ctrl">
+        </div>
+
+        <!-- row 4: City & Full Address -->
+        <div class="form-group">
+          <label>City</label>
+          <input type="text" id="branch-city" placeholder="e.g. Addis Ababa" class="form-ctrl">
+        </div>
+        <div class="form-group">
+          <label>Specific Address</label>
+          <input type="text" id="branch-address" placeholder="Sub-city, Woreda, Building..." class="form-ctrl">
+        </div>
       </div>
     </div>
+
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeBranchModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="saveBranch()"><i data-lucide="check" size="13"></i>Create Branch</button>
+      <button class="btn btn-primary" id="btn-save-branch" onclick="saveBranch()">
+        <i data-lucide="check" size="13"></i>Create Branch
+      </button>
     </div>
   </div>
 </div>
