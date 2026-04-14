@@ -332,8 +332,66 @@ function selectRole(el,name){document.querySelectorAll('.role-pill').forEach(p=>
 // ── MODALS ──
 function openModal(id){document.getElementById(id).classList.add('open');lcIcons(document.getElementById(id));}
 function closeModal(id,e){if(!e||e.target===e.currentTarget)document.getElementById(id).classList.remove('open');}
-function openDeptModal(){openModal('modal-add-dept');}
+function openDeptModal() {
+    openModal('modal-add-dept');
+    // Populate the dropdowns with existing data
+    populateAsDrop('as-drop-dept-head');   // Uses global 'names'
+    populateAsDrop('as-drop-dept-branch'); // You can populate this with your branch list
+}
+
 function closeDeptModal(e){closeModal('modal-add-dept',e);} 
+function saveDepartment() {
+    // 1. Get Elements
+    const nameEl = document.getElementById('dept-name');
+    const headEl = document.getElementById('as-input-dept-head');
+    const statusEl = document.getElementById('dept-status');
+    const btn = document.querySelector('#modal-add-dept .btn-primary');
+
+    // 2. Clear previous errors
+    nameEl.classList.remove('field-error');
+
+    // 3. Validation Logic
+    let isValid = true;
+    
+    if (!nameEl.value.trim()) {
+        nameEl.classList.add('field-error');
+        isValid = false;
+    }
+
+    // 4. If invalid, stop and notify
+    if (!isValid) {
+        showNotification("Required Field", "Please enter the Department Name.", "warning");
+        nameEl.focus();
+        return;
+    }
+
+    // 5. Proceed to "Saving" State
+    const originalHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<i data-lucide="loader-2" class="spin" size="13"></i> Saving...`;
+    lcIcons(btn); // Refresh the loader icon
+
+    // 6. Simulate API Call
+    setTimeout(() => {
+        // Success Actions
+        showNotification("Success", "New department registered successfully.", "success");
+        
+        // Reset Form
+        nameEl.value = '';
+        headEl.value = '';
+        statusEl.value = 'Active';
+
+        // Reset Button
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+        lcIcons(btn);
+
+        // Close and Refresh
+        closeDeptModal();
+        inited.delete('departments'); // Force table refresh
+        goPage('departments'); 
+    }, 1000);
+}
 function openAssetModal(){openModal('modal-add-asset');}
 function closeAssetModal(e){closeModal('modal-add-asset',e);}
 function saveNewAsset(){const name=document.getElementById('as-new-name').value;if(!name){alert('Asset Name is required.');return;}alert(`Asset "${name}" registered successfully.`);closeAssetModal();}
@@ -341,12 +399,118 @@ function openReassignModal(assetName,currentCustodian){document.getElementById('
 function closeReassignModal(e){closeModal('modal-reassign-asset',e);}
 function saveReassignment(){const o=document.getElementById('as-input-reassign').value,a=document.getElementById('reassign-display-name').textContent;if(!o){alert('Please select a new custodian.');return;}alert(`Reassignment Successful: ${a} has been transferred to ${o}.`);closeReassignModal();}
 function openJobModal(){openModal('modal-add-job-position');}
-function closeJobModal(e){closeModal('modal-add-job-position',e);}
-function saveJobPosition(){const title=document.getElementById('job-title').value.trim();if(!title){alert('Job Title is required.');return;}const btn=document.querySelector('#modal-add-job-position .btn-primary');btn.innerHTML=`<i data-lucide="loader-2" class="spin" size="13"></i> Saving...`;lcIcons(btn.parentElement);setTimeout(()=>{alert(`Success: ${title} created.`);document.getElementById('job-title').value='';document.getElementById('as-input-job-dept').value='';closeJobModal();btn.innerHTML=`<i data-lucide="check" size="13"></i>Create Position`;lcIcons(btn.parentElement);},600);}
+function closeJobModal(e){closeModal('modal-add-job-position',e);} 
+function openJobModal() {
+    openModal('modal-add-job-position');
+    // Assuming your 'depts' array is available globally
+    const drop = document.getElementById('as-drop-job-dept');
+    drop.innerHTML = depts.map(d => `<div class="as-res-item" onclick="selectAsItem('as-input-job-dept','as-drop-job-dept','${d}')">${d}</div>`).join('');
+}
+function saveJobPosition() {
+    // 1. Get Elements
+    const titleEl = document.getElementById('job-title');
+    const deptEl = document.getElementById('as-input-job-dept');
+    const statusEl = document.getElementById('job-status');
+    const btn = document.getElementById('btn-save-job');
+
+    // 2. Reset visual errors
+    titleEl.classList.remove('field-error');
+    deptEl.classList.remove('field-error');
+
+    // 3. Validation Logic
+    let isValid = true;
+    let errorMsg = "";
+
+    if (!titleEl.value.trim()) {
+        titleEl.classList.add('field-error');
+        isValid = false;
+        errorMsg = "Job Title is required.";
+    }
+    
+    if (!deptEl.value.trim()) {
+        deptEl.classList.add('field-error');
+        isValid = false;
+        if(!errorMsg) errorMsg = "Please select a Department.";
+    }
+
+    // 4. Stop if invalid
+    if (!isValid) {
+        showNotification("Required Fields", errorMsg, "warning");
+        return;
+    }
+
+    // 5. Loading State
+    const originalHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<i data-lucide="loader-2" class="spin" size="13"></i> Creating...`;
+    lcIcons(btn);
+
+    // 6. Simulated API Call
+    setTimeout(() => {
+        showNotification("Success", `Position "${titleEl.value}" created successfully.`, "success");
+
+        // Reset inputs
+        titleEl.value = '';
+        deptEl.value = '';
+        statusEl.value = 'Active';
+
+        // Reset Button
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+        lcIcons(btn);
+
+        // Close and Refresh
+        closeJobModal();
+        inited.delete('job-positions'); // Force table refresh
+        goPage('job-positions');
+    }, 800);
+}
+
+
 function openBranchModal(){openModal('modal-add-branch');}
 function closeBranchModal(e){closeModal('modal-add-branch',e);}
-function saveBranch(){const name=document.getElementById('branch-name').value.trim();if(!name){alert('Branch Name is required.');return;}const btn=document.querySelector('#modal-add-branch .btn-primary');btn.innerHTML=`<i data-lucide="loader-2" class="spin" size="13"></i> Saving...`;lcIcons(btn.parentElement);setTimeout(()=>{alert(`Success: ${name} has been registered.`);document.getElementById('branch-name').value='';document.getElementById('branch-city').value='';document.getElementById('as-input-branch-mgr').value='';closeBranchModal();btn.innerHTML=`<i data-lucide="check" size="13"></i>Create Branch`;lcIcons(btn.parentElement);},600);}
+function saveBranch() {
+    // Collect all fields
+    const data = {
+        name: document.getElementById('branch-name').value.trim(),
+        manager: document.getElementById('as-input-branch-mgr').value,
+        status: document.getElementById('branch-status').value || 'Active',
+        phone: document.getElementById('branch-phone').value.trim(),
+        email: document.getElementById('branch-email').value.trim(),
+        city: document.getElementById('branch-city').value.trim(),
+        address: document.getElementById('branch-address').value.trim()
+    };
 
+    // Validation
+    if (!data.name) {
+        showNotification("Required", "Branch Name is mandatory.", "warning");
+        return;
+    }
+    
+    const btn = document.getElementById('btn-save-branch');
+    btn.disabled = true;
+    btn.innerHTML = `<i data-lucide="loader-2" class="spin" size="13"></i> Saving...`;
+    lcIcons(btn);
+
+    // Simulated API call matching your fetch logic
+    setTimeout(() => {
+        showNotification("Success", `${data.name} has been added to offices.`, "success");
+        
+        // Reset inputs
+        const inputs = ['branch-name', 'as-input-branch-mgr', 'branch-status', 'branch-phone', 'branch-email', 'branch-city', 'branch-address'];
+        inputs.forEach(id => document.getElementById(id).value = '');
+        
+        btn.disabled = false;
+        btn.innerHTML = `<i data-lucide="check" size="13"></i>Create Branch`;
+        lcIcons(btn);
+        
+        closeBranchModal();
+        
+        // Refresh table
+        inited.delete('branch-offices');
+        goPage('branch-offices');
+    }, 800);
+}
 // ── ASSET DROPDOWNS ──
 function showAsDrop(id){const d=document.getElementById(id);if(!d.innerHTML.trim())populateAsDrop(id);d.classList.add('active');}
 function filterAsDrop(inputId,dropId){const val=document.getElementById(inputId).value.toLowerCase(),d=document.getElementById(dropId);if(!d.innerHTML.trim())populateAsDrop(dropId);d.querySelectorAll('.as-res-item').forEach(item=>{item.style.display=item.textContent.toLowerCase().includes(val)?'block':'none';});d.classList.add('active');}
@@ -747,6 +911,7 @@ function initPage(id){
             { key: 'title', label: 'Job Title' },
             { key: 'dept',  label: 'Department' },
             { key: 'count', label: 'Headcount' },
+            { key: 'status', label: 'Status' },
             {
               key: '_',
               label: 'Actions',
