@@ -62,6 +62,7 @@ CREATE TABLE branches (
     manager_id  INT             NULL,
     status      ENUM('Active','Inactive') DEFAULT 'Active',
     created_at  TIMESTAMP       DEFAULT CURRENT_TIMESTAMP,
+    deleted_at  TIMESTAMP       NULL DEFAULT NULL,  
     updated_at  TIMESTAMP       DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
@@ -72,6 +73,7 @@ CREATE TABLE departments (
     branch_id        INT          NULL,
     status           ENUM('Active','Inactive') DEFAULT 'Active',
     created_at       TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+    deleted_at       TIMESTAMP    NULL DEFAULT NULL,
     updated_at       TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (branch_id) REFERENCES branches(id) ON DELETE SET NULL
 );
@@ -83,6 +85,7 @@ CREATE TABLE job_positions (
     headcount     INT           DEFAULT 0,
     status        ENUM('Active','Inactive') DEFAULT 'Active',
     created_at    TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
+    deleted_at    TIMESTAMP     NULL DEFAULT NULL,
     updated_at    TIMESTAMP     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL
 );
@@ -127,6 +130,7 @@ CREATE TABLE employees (
     emergency_contact_relation VARCHAR(100),
     status                    ENUM('Active','Inactive','On Leave','Resigned','Terminated','Retired') DEFAULT 'Active',
     created_at                TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+    deleted_at                TIMESTAMP    NULL DEFAULT NULL,
     updated_at                TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (department_id)      REFERENCES departments(id)      ON DELETE SET NULL,
     FOREIGN KEY (job_position_id)    REFERENCES job_positions(id)    ON DELETE SET NULL,
@@ -321,6 +325,7 @@ CREATE TABLE internships (
     status           ENUM('Active','Completed','Terminated') DEFAULT 'Active',
     potential_hire   BOOLEAN      DEFAULT FALSE,
     created_at       TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+    deleted_at         TIMESTAMP    NULL DEFAULT NULL,
     updated_at       TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL,
     FOREIGN KEY (mentor_id)     REFERENCES employees(id)   ON DELETE SET NULL
@@ -412,6 +417,7 @@ CREATE TABLE leave_types (
     is_paid          ENUM('Yes','No','Partial') DEFAULT 'Yes',
     requires_approval BOOLEAN     DEFAULT TRUE,
     description      TEXT,
+    deleted_at       TIMESTAMP    NULL DEFAULT NULL,
     created_at       TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -681,6 +687,7 @@ CREATE TABLE users (
     status        ENUM('Active','Inactive') DEFAULT 'Active',
     last_login    TIMESTAMP    NULL,
     created_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+    deleted_at    TIMESTAMP    NULL DEFAULT NULL,
     updated_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE RESTRICT,
     FOREIGN KEY (employee_id)   REFERENCES employees(id)   ON DELETE SET NULL,
@@ -804,6 +811,9 @@ CREATE INDEX idx_disc_employee_id   ON disciplinary_actions(employee_id);
 -- Vacancies
 CREATE INDEX idx_vacancies_status_deadline ON job_vacancies(status, deadline_date);
 
+CREATE INDEX idx_emp_deleted_at ON employees(deleted_at);
+CREATE INDEX idx_dept_deleted_at ON departments(deleted_at);
+CREATE INDEX idx_user_deleted_at ON users(deleted_at); 
 -- ============================================================
 -- VIEWS (Required by PHP fetch scripts)
 -- ============================================================
@@ -839,7 +849,8 @@ LEFT JOIN departments d ON e.department_id = d.id
 LEFT JOIN job_positions jp ON e.job_position_id = jp.id
 LEFT JOIN branches b ON e.branch_id = b.id
 LEFT JOIN employment_types et ON e.employment_type_id = et.id
-LEFT JOIN employees mgr ON e.reports_to_id = mgr.id;
+LEFT JOIN employees mgr ON e.reports_to_id = mgr.id
+WHERE e.deleted_at IS NULL;
 
 CREATE OR REPLACE VIEW v_employee_compliance_status AS
 SELECT 
@@ -851,6 +862,7 @@ SELECT
     ROUND((COUNT(ed.id) / (SELECT COUNT(*) FROM document_types WHERE is_mandatory = 1)) * 100, 2) AS compliance_percentage
 FROM employees e
 LEFT JOIN employee_documents ed ON e.id = ed.employee_id
+WHERE e.deleted_at IS NULL
 GROUP BY e.id;
 
 CREATE OR REPLACE VIEW v_leave_balances AS
@@ -866,7 +878,8 @@ SELECT
     (le.total_days + le.carried_over_days - le.used_days) AS remaining_balance
 FROM leave_entitlements le
 JOIN employees e ON le.employee_id = e.id
-JOIN leave_types lt ON le.leave_type_id = lt.id;
+JOIN leave_types lt ON le.leave_type_id = lt.id
+WHERE e.deleted_at IS NULL;
 
 CREATE OR REPLACE VIEW v_asset_registry AS
 SELECT 
@@ -884,7 +897,8 @@ SELECT
 FROM assets a
 LEFT JOIN asset_categories ac ON a.category_id = ac.id
 LEFT JOIN employees e ON a.current_custodian_id = e.id
-LEFT JOIN branches b ON a.location_branch_id = b.id;
+LEFT JOIN branches b ON a.location_branch_id = b.id
+WHERE e.deleted_at IS NULL;
 
 CREATE OR REPLACE VIEW v_dept_structure_stats AS
 SELECT 
@@ -894,7 +908,8 @@ SELECT
     (SELECT COUNT(*) FROM employees WHERE department_id = d.id AND status = 'Active') AS active_headcount,
     (SELECT COUNT(*) FROM job_positions WHERE department_id = d.id) AS total_positions
 FROM departments d
-LEFT JOIN employees e ON d.head_employee_id = e.id;
+LEFT JOIN employees e ON d.head_employee_id = e.id
+WHERE e.deleted_at IS NULL;
 
 CREATE OR REPLACE VIEW v_retirement_forecast AS
 SELECT 
@@ -905,8 +920,7 @@ SELECT
     years_of_service,
     DATE_ADD(date_of_birth, INTERVAL 60 YEAR) AS scheduled_retirement_date,
     DATEDIFF(DATE_ADD(date_of_birth, INTERVAL 60 YEAR), CURDATE()) AS days_until_retirement
-FROM v_employee_master
-WHERE current_age >= 55;
+FROM v_employee_master;
 
 CREATE OR REPLACE VIEW v_vacancy_pipeline AS
 SELECT 
@@ -920,7 +934,7 @@ SELECT
     SUM(CASE WHEN c.current_stage = 'Offer' THEN 1 ELSE 0 END) AS offers_made
 FROM job_vacancies jv
 LEFT JOIN departments d ON jv.department_id = d.id
-LEFT JOIN candidates c ON jv.id = c.vacancy_id
+LEFT JOIN candidates c ON jv.id = c.vacancy_id 
 GROUP BY jv.id;
 
 CREATE OR REPLACE VIEW v_exit_clearance_master AS
@@ -938,7 +952,8 @@ SELECT
     s.status AS separation_status
 FROM separations s
 JOIN employees e ON s.employee_id = e.id
-LEFT JOIN exit_clearances ec ON s.id = ec.separation_id;
+LEFT JOIN exit_clearances ec ON s.id = ec.separation_id
+WHERE e.deleted_at IS NULL;
 
 CREATE OR REPLACE VIEW v_attendance_monthly_ledger AS
 SELECT 
@@ -957,6 +972,7 @@ SELECT
 FROM attendance a
 JOIN employees e ON a.employee_id = e.id
 LEFT JOIN departments d ON e.department_id = d.id
+WHERE e.deleted_at IS NULL
 GROUP BY a.employee_id, a.year, a.month;
 
 CREATE OR REPLACE VIEW v_contract_renewal_alerts AS
@@ -975,7 +991,7 @@ SELECT
     END AS renewal_urgency_status
 FROM employees e
 JOIN employment_types et ON e.employment_type_id = et.id
-WHERE e.contract_end_date IS NOT NULL AND e.status = 'Active';
+WHERE e.contract_end_date IS NOT NULL AND e.status = 'Active' AND e.deleted_at IS NULL;
 
 CREATE OR REPLACE VIEW v_dept_financial_summary AS
 SELECT 
@@ -988,6 +1004,7 @@ SELECT
     MAX(e.gross_salary) AS max_salary
 FROM departments d
 LEFT JOIN employees e ON d.id = e.department_id AND e.status = 'Active'
+WHERE e.deleted_at IS NULL
 GROUP BY d.id;
 
 CREATE OR REPLACE VIEW v_employee_career_path AS
@@ -1005,9 +1022,9 @@ SELECT
     effective_date,
     CONCAT('Transferred to ', (SELECT name FROM departments WHERE id = to_department_id)) AS details,
     status
-FROM transfers
+FROM transfers 
 ORDER BY effective_date DESC;
-
+ 
 CREATE OR REPLACE VIEW v_probation_risk_assessment AS
 SELECT 
     pr.employee_id,
@@ -1018,7 +1035,7 @@ SELECT
     (SELECT AVG(overall_score) FROM performance_reviews WHERE employee_id = pr.employee_id) AS avg_review_score
 FROM probation_records pr
 JOIN employees e ON pr.employee_id = e.id
-WHERE pr.status = 'Active';
+WHERE pr.status = 'Active' AND e.deleted_at IS NULL;
 
 CREATE OR REPLACE VIEW v_critical_audit_logs AS
 SELECT 
@@ -1030,7 +1047,7 @@ SELECT
     ip_address
 FROM audit_logs
 WHERE action IN ('DELETE', 'UPDATE') 
-   OR module IN ('Settings', 'Roles & Permissions', 'User Management')
+   OR module IN ('Settings', 'Roles & Permissions', 'User Management') 
 ORDER BY logged_at DESC;
 
 CREATE OR REPLACE VIEW v_dashboard_hero_stats AS
@@ -1041,7 +1058,7 @@ SELECT
     (SELECT COUNT(*) FROM leave_requests WHERE status = 'Pending') AS pending_leave_approvals,
     (SELECT COUNT(*) FROM employees WHERE contract_end_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 15 DAY)) AS critical_expiring_contracts,
     (SELECT COUNT(*) FROM asset_categories) AS total_asset_categories
-FROM dual;
+FROM dual ;
 
 CREATE OR REPLACE VIEW v_vault_missing_documents AS
 SELECT 
@@ -1055,7 +1072,8 @@ CROSS JOIN document_types dt
 LEFT JOIN employee_documents ed ON e.id = ed.employee_id AND dt.id = ed.document_type_id
 WHERE dt.is_mandatory = 1 
 AND ed.id IS NULL 
-AND e.status = 'Active';
+AND e.status = 'Active'
+AND e.deleted_at IS NULL;
 
 CREATE OR REPLACE VIEW v_user_access_resolver AS
 SELECT 
@@ -1069,7 +1087,7 @@ FROM users u
 JOIN roles r ON u.role_id = r.id
 CROSS JOIN modules m
 LEFT JOIN role_permissions rp ON r.id = rp.role_id AND m.id = rp.module_id
-LEFT JOIN user_permission_overrides upo ON u.id = upo.user_id AND m.id = upo.module_id;
+LEFT JOIN user_permission_overrides upo ON u.id = upo.user_id AND m.id = upo.module_id ;
 
 CREATE OR REPLACE VIEW v_analytics_demographics AS
 SELECT 
@@ -1084,7 +1102,7 @@ SELECT
     department_id,
     COUNT(*) AS head_count
 FROM employees
-WHERE status = 'Active'
+WHERE status = 'Active' AND deleted_at IS NULL
 GROUP BY gender, age_group, department_id;
 
 -- ============================================================
