@@ -102,39 +102,86 @@ function toggleNav(el, id) {
   sub.classList.toggle('open', !isOpen);
 }
 function goPage(id, el) {
-  // 1. Save the current page ID to the URL hash
-  window.location.hash = id;
-
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  const pg = document.getElementById('p-' + id);
-  if (pg) pg.classList.add('active');
-
-  // 2. If 'el' is not provided (on refresh), find the sidebar element automatically
-  if (!el) {
-    el = document.querySelector(`.sub-link[onclick*="'${id}'"], .dash-link[onclick*="'${id}'"]`);
-  }
-
-  document.getElementById('page-title').textContent = el ? el.textContent.trim() : id.replace(/-/g, ' ');
-  
   document.querySelectorAll('.sub-link, .dash-link').forEach(l => l.classList.remove('active'));
   if (el) el.classList.add('active');
-  
-  document.querySelectorAll('.nav-trigger').forEach(t => t.classList.remove('parent-active'));
-  
-  const parentSub = el && el.closest('.submenu');
-  if (parentSub) {
-    const trigger = document.querySelector(`.nav-trigger[onclick*="${parentSub.id}"]`);
-    if (trigger) {
-      trigger.classList.add('parent-active');
-      // Also ensure the submenu is visible on refresh
-      parentSub.classList.add('open');
-      trigger.classList.add('open');
-    }
-  }
 
-  initPage(id);
-  if (isMobile()) closeMobileSidebar();
+  // Update the browser URL without reloading
+  const url = new URL(window.location.href);
+  url.searchParams.set('page', id);
+  history.pushState({ page: id }, '', url.toString());
+
+  // Load only the inner content via AJAX
+  const contentArea = document.getElementById('content-area');
+  contentArea.style.opacity = '0.4';
+
+fetch('dashboard.php?page=' + encodeURIComponent(id) + '&ajax=1')
+    .then(r => r.text())
+    .then(html => {
+      contentArea.innerHTML = html;
+      contentArea.style.opacity = '1';
+      lcIcons(contentArea);
+
+      // Update page title
+      const titleEl = document.getElementById('page-title'); 
+      if (titleEl) { 
+        let rawText = el ? el.textContent.trim() : id.replace(/-/g, ' '); 
+        const capitalizedText = rawText.charAt(0).toUpperCase() + rawText.slice(1); 
+        titleEl.textContent = capitalizedText;
+      }
+      // ── Re-execute any <script> tags injected via innerHTML ──
+      contentArea.querySelectorAll('script').forEach(oldScript => {
+        const newScript = document.createElement('script');
+        [...oldScript.attributes].forEach(attr => newScript.setAttribute(attr.name, attr.value));
+        newScript.textContent = oldScript.textContent;
+        oldScript.parentNode.replaceChild(newScript, oldScript);
+      });
+
+      // Clear the init guard so the page re-initializes with the fresh DOM
+      inited.delete(id);
+      inited.delete('dashboard-main-chart');
+      inited.delete('analytics');
+
+      if (typeof initPage === 'function') initPage(id);
+    })
+    .catch(() => { contentArea.style.opacity = '1'; });
 }
+
+// Handle browser back/forward buttons
+window.addEventListener('popstate', (e) => {
+  const page = (e.state && e.state.page) || 'dashboard';
+  const link = document.querySelector(`.sub-link[onclick*="'${page}'"], .dash-link[onclick*="'${page}'"]`);
+  goPage(page, link);
+});
+
+window.addEventListener('DOMContentLoaded', () => {
+  lcIcons();
+  
+  const urlParams = new URLSearchParams(window.location.search);
+  const currentPage = urlParams.get('page') || 'dashboard';
+  
+  // Highlight active sidebar link
+  document.querySelectorAll('.sub-link, .dash-link').forEach(l => l.classList.remove('active'));
+  const activeLink = document.querySelector(`.sub-link[onclick*="'${currentPage}'"], .dash-link[onclick*="'${currentPage}'"]`);
+  if (activeLink) activeLink.classList.add('active');
+  
+  // Set page title
+  const titleEl = document.getElementById('page-title');
+  if (titleEl) {
+    titleEl.textContent = activeLink ? activeLink.textContent.trim() : currentPage.replace(/-/g, ' ');
+  }
+  
+  // Make the loaded page visible (add 'active' class to its .page div)
+  const contentArea = document.getElementById('content-area');
+  if (contentArea) {
+    const pageDiv = contentArea.querySelector('.page');
+    if (pageDiv) pageDiv.classList.add('active');
+  }
+  
+  // Initialize the page (tables, charts, etc.)
+  if (typeof initPage === 'function') {
+    initPage(currentPage);
+  }
+});
 
 // ── PAGINATED TABLE BUILDER ──
 window.changePg=(id,dir)=>{const c=document.getElementById(id);const np=c._page()+dir;const tp=Math.ceil(c._rows.length/c._perPage);if(np>=1&&np<=tp)c._setPage(np);};
@@ -2373,18 +2420,19 @@ function initPage(id){
   }
 }
 
-// ── STARTUP: single icon pass on the static DOM ──
 window.addEventListener('DOMContentLoaded', () => {
   lcIcons();
-  
-  // Check if there is a page ID in the URL hash (e.g., #employee-directory)
-  const currentHash = window.location.hash.replace('#', '');
-  
-  // If a hash exists and the page element exists, go to that page. Otherwise, default to dashboard.
-  if (currentHash && document.getElementById('p-' + currentHash)) {
-    goPage(currentHash);
-  } else {
-    goPage('dashboard');
+  // Set page title based on current page parameter
+  const urlParams = new URLSearchParams(window.location.search);
+  const currentPage = urlParams.get('page') || 'dashboard';
+  const titleEl = document.getElementById('page-title');
+  if (titleEl) {
+    const activeLink = document.querySelector(`.sub-link[onclick*="'${currentPage}'"], .dash-link[onclick*="'${currentPage}'"]`);
+    titleEl.textContent = activeLink ? activeLink.textContent.trim() : currentPage.replace(/-/g, ' ');
+  }
+  // Initialize the current page
+  if (typeof initPage === 'function') {
+    initPage(currentPage);
   }
 });
 window.addEventListener('hashchange', () => {
