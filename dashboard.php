@@ -13,6 +13,7 @@ include 'includes/header.php';
 <script src="assets/js/lucide.min.js" defer></script>
 <link rel="stylesheet" href="assets/css/styles.css" defer>  
 
+<script src="assets/js/htmx.min.js"></script>
 </head>
 <body>
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeMobileSidebar()"></div> 
