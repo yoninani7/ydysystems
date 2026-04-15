@@ -334,63 +334,65 @@ function openModal(id){document.getElementById(id).classList.add('open');lcIcons
 function closeModal(id,e){if(!e||e.target===e.currentTarget)document.getElementById(id).classList.remove('open');}
 function openDeptModal() {
     openModal('modal-add-dept');
-    // Populate the dropdowns with existing data
-    populateAsDrop('as-drop-dept-head');   // Uses global 'names'
-    populateAsDrop('as-drop-dept-branch'); // You can populate this with your branch list
+    // Clear previous values
+    document.getElementById('dept-name').value = '';
+    document.getElementById('as-input-dept-head').value = '';
+    // Remove any existing hidden ID field
+    const existingHidden = document.getElementById('as-input-dept-head_id');
+    if (existingHidden) existingHidden.remove();
+    // Reset status to Active
+    document.getElementById('dept-status').value = 'Active';
 }
 
 function closeDeptModal(e){closeModal('modal-add-dept',e);} 
 function saveDepartment() {
-    // 1. Get Elements
-    const nameEl = document.getElementById('dept-name');
-    const headEl = document.getElementById('as-input-dept-head');
-    const statusEl = document.getElementById('dept-status');
-    const btn = document.querySelector('#modal-add-dept .btn-primary');
+    const deptName = document.getElementById('dept-name').value.trim();
+    const headId = document.getElementById('as-input-dept-head_id')?.value || '';
+    const status = document.getElementById('dept-status').value || 'Active';
+    const csrfToken = document.getElementById('dept_csrf_token')?.value || '';
 
-    // 2. Clear previous errors
-    nameEl.classList.remove('field-error');
-
-    // 3. Validation Logic
-    let isValid = true;
-    
-    if (!nameEl.value.trim()) {
-        nameEl.classList.add('field-error');
-        isValid = false;
-    }
-
-    // 4. If invalid, stop and notify
-    if (!isValid) {
-        showNotification("Required Field", "Please enter the Department Name.", "warning");
-        nameEl.focus();
+    if (!deptName) {
+        showNotification("Required", "Department name is required.", "warning");
         return;
     }
 
-    // 5. Proceed to "Saving" State
+    const btn = document.querySelector('#modal-add-dept .btn-primary');
     const originalHtml = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = `<i data-lucide="loader-2" class="spin" size="13"></i> Saving...`;
-    lcIcons(btn); // Refresh the loader icon
+    lcIcons(btn);
 
-    // 6. Simulate API Call
-    setTimeout(() => {
-        // Success Actions
-        showNotification("Success", "New department registered successfully.", "success");
-        
-        // Reset Form
-        nameEl.value = '';
-        headEl.value = '';
-        statusEl.value = 'Active';
+    const data = {
+        dept_name: deptName,
+        dept_head_id: headId,
+        dept_status: status,
+        csrf_token: csrfToken
+    };
 
-        // Reset Button
+    fetch('api/companyprofile/add_department.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            showNotification("Success", result.message, "success");
+            closeDeptModal();
+            inited.delete('departments');
+            goPage('departments');
+        } else {
+            showNotification("Error", result.message, "error");
+        }
+    })
+    .catch(error => {
+        showNotification("Error", "Network error: " + error.message, "error");
+    })
+    .finally(() => {
         btn.disabled = false;
         btn.innerHTML = originalHtml;
         lcIcons(btn);
-
-        // Close and Refresh
-        closeDeptModal();
-        inited.delete('departments'); // Force table refresh
-        goPage('departments'); 
-    }, 1000);
+    });
 }
 function openAssetModal(){openModal('modal-add-asset');}
 function closeAssetModal(e){closeModal('modal-add-asset',e);}
@@ -402,22 +404,27 @@ function openJobModal(){openModal('modal-add-job-position');}
 function closeJobModal(e){closeModal('modal-add-job-position',e);} 
 function openJobModal() {
     openModal('modal-add-job-position');
-    // Assuming your 'depts' array is available globally
-    const drop = document.getElementById('as-drop-job-dept');
-    drop.innerHTML = depts.map(d => `<div class="as-res-item" onclick="selectAsItem('as-input-job-dept','as-drop-job-dept','${d}')">${d}</div>`).join('');
+    // Clear previous values
+    document.getElementById('job-title').value = '';
+    document.getElementById('as-input-job-dept').value = '';
+    // Remove any existing hidden ID field
+    const existingHidden = document.getElementById('as-input-job-dept_id');
+    if (existingHidden) existingHidden.remove();
+    // Reset status to Active
+    document.getElementById('job-status').value = 'Active';
 }
 function saveJobPosition() {
-    // 1. Get Elements
     const titleEl = document.getElementById('job-title');
-    const deptEl = document.getElementById('as-input-job-dept');
-    const statusEl = document.getElementById('job-status');
+    const deptId = document.getElementById('as-input-job-dept_id')?.value || '';
+    const status = document.getElementById('job-status').value || 'Active';
+    const csrfToken = document.getElementById('job_csrf_token')?.value || '';
     const btn = document.getElementById('btn-save-job');
 
-    // 2. Reset visual errors
+    // Reset visual errors
     titleEl.classList.remove('field-error');
-    deptEl.classList.remove('field-error');
+    const deptInput = document.getElementById('as-input-job-dept');
+    deptInput.classList.remove('field-error');
 
-    // 3. Validation Logic
     let isValid = true;
     let errorMsg = "";
 
@@ -427,92 +434,126 @@ function saveJobPosition() {
         errorMsg = "Job Title is required.";
     }
     
-    if (!deptEl.value.trim()) {
-        deptEl.classList.add('field-error');
+    if (!deptId) {
+        deptInput.classList.add('field-error');
         isValid = false;
-        if(!errorMsg) errorMsg = "Please select a Department.";
+        if (!errorMsg) errorMsg = "Please select a Department.";
     }
 
-    // 4. Stop if invalid
     if (!isValid) {
         showNotification("Required Fields", errorMsg, "warning");
         return;
     }
 
-    // 5. Loading State
     const originalHtml = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = `<i data-lucide="loader-2" class="spin" size="13"></i> Creating...`;
     lcIcons(btn);
 
-    // 6. Simulated API Call
-    setTimeout(() => {
-        showNotification("Success", `Position "${titleEl.value}" created successfully.`, "success");
+    const data = {
+        job_title: titleEl.value.trim(),
+        job_dept_id: deptId,
+        job_status: status,
+        csrf_token: csrfToken
+    };
 
-        // Reset inputs
-        titleEl.value = '';
-        deptEl.value = '';
-        statusEl.value = 'Active';
-
-        // Reset Button
+    fetch('api/companyprofile/add_job_position.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            showNotification("Success", result.message, "success");
+            closeJobModal();
+            inited.delete('job-positions');
+            goPage('job-positions');
+        } else {
+            showNotification("Error", result.message, "error");
+        }
+    })
+    .catch(error => {
+        showNotification("Error", "Network error: " + error.message, "error");
+    })
+    .finally(() => {
         btn.disabled = false;
         btn.innerHTML = originalHtml;
         lcIcons(btn);
-
-        // Close and Refresh
-        closeJobModal();
-        inited.delete('job-positions'); // Force table refresh
-        goPage('job-positions');
-    }, 800);
+    });
 }
 
 
 function openBranchModal(){openModal('modal-add-branch');}
 function closeBranchModal(e){closeModal('modal-add-branch',e);}
 function saveBranch() {
-    // Collect all fields
     const data = {
-        name: document.getElementById('branch-name').value.trim(),
-        manager: document.getElementById('as-input-branch-mgr').value,
-        status: document.getElementById('branch-status').value || 'Active',
-        phone: document.getElementById('branch-phone').value.trim(),
-        email: document.getElementById('branch-email').value.trim(),
-        city: document.getElementById('branch-city').value.trim(),
-        address: document.getElementById('branch-address').value.trim()
+        branch_name:    document.getElementById('branch-name').value.trim(),
+        branch_manager: document.getElementById('as-input-branch-mgr').value,
+        branch_status:  document.getElementById('branch-status').value || 'Active',
+        branch_phone:   document.getElementById('branch-phone').value.trim(),
+        branch_email:   document.getElementById('branch-email').value.trim(),
+        branch_city:    document.getElementById('branch-city').value.trim(),
+        branch_address: document.getElementById('branch-address').value.trim(),
+        csrf_token:     document.getElementById('branch_csrf_token').value   // ← ADD THIS
     };
 
-    // Validation
-    if (!data.name) {
+    if (!data.branch_name) {
         showNotification("Required", "Branch Name is mandatory.", "warning");
         return;
     }
-    
+
     const btn = document.getElementById('btn-save-branch');
+    const originalHtml = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = `<i data-lucide="loader-2" class="spin" size="13"></i> Saving...`;
     lcIcons(btn);
 
-    // Simulated API call matching your fetch logic
-    setTimeout(() => {
-        showNotification("Success", `${data.name} has been added to offices.`, "success");
-        
-        // Reset inputs
-        const inputs = ['branch-name', 'as-input-branch-mgr', 'branch-status', 'branch-phone', 'branch-email', 'branch-city', 'branch-address'];
-        inputs.forEach(id => document.getElementById(id).value = '');
-        
+    fetch('api/companyprofile/add_branch.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            showNotification("Success", result.message, "success");
+            closeBranchModal();
+            inited.delete('branch-offices');
+            goPage('branch-offices');
+        } else {
+            showNotification("Error", result.message, "error");
+        }
+    })
+    .catch(error => {
+        showNotification("Error", "Network error: " + error.message, "error");
+    })
+    .finally(() => {
         btn.disabled = false;
-        btn.innerHTML = `<i data-lucide="check" size="13"></i>Create Branch`;
+        btn.innerHTML = originalHtml;
         lcIcons(btn);
-        
-        closeBranchModal();
-        
-        // Refresh table
-        inited.delete('branch-offices');
-        goPage('branch-offices');
-    }, 800);
+    });
 }
 // ── ASSET DROPDOWNS ──
-function showAsDrop(id){const d=document.getElementById(id);if(!d.innerHTML.trim())populateAsDrop(id);d.classList.add('active');}
+function showAsDrop(dropdownId) {
+    const dropContainer = document.getElementById(dropdownId);
+    const inputId = dropdownId.replace('as-drop-', 'as-input-');
+    const inputEl = document.getElementById(inputId);
+    
+    let type = inputEl?.getAttribute('data-dropdown-type');
+    if (!type) {
+        // Fallback guessing
+        if (dropdownId.includes('dept')) type = 'departments';
+        else if (dropdownId.includes('branch')) type = 'branches';
+        else if (dropdownId.includes('pos') || dropdownId.includes('job')) type = 'job_positions';
+        else if (dropdownId.includes('emp') || dropdownId.includes('custodian') || dropdownId.includes('manager')) type = 'employees';
+        else if (dropdownId.includes('employment')) type = 'employment_types';
+        else type = 'employees';
+    }
+    
+    const searchTerm = inputEl?.value || '';
+    populateAsDrop(dropdownId, type, searchTerm);
+}
 function filterAsDrop(inputId,dropId){const val=document.getElementById(inputId).value.toLowerCase(),d=document.getElementById(dropId);if(!d.innerHTML.trim())populateAsDrop(dropId);d.querySelectorAll('.as-res-item').forEach(item=>{item.style.display=item.textContent.toLowerCase().includes(val)?'block':'none';});d.classList.add('active');}
 function selectAsItem(inputId,dropId,name){document.getElementById(inputId).value=name;document.getElementById(dropId).classList.remove('active');}
 function selectMonth(name, val) {
@@ -2916,22 +2957,7 @@ function savePermissionChanges() {
     }, 1000);
 }
 
-// Initialize individual search populator
-document.addEventListener('DOMContentLoaded', () => {
-    // We need to inject the specific selection logic for the perms search
-    window.populateAsDrop = function(id) {
-        const d = document.getElementById(id);
-        const inputId = id.replace('as-drop-','as-input-');
-        
-        d.innerHTML = names.map(n => {
-            // If it's the permissions search, use the specific selection function
-            const clickFn = (id === 'as-drop-perm-user') 
-                ? `selectUserForPerms('${n}')` 
-                : `selectAsItem('${inputId}','${id}','${n}')`;
-            return `<div class="as-res-item" onclick="${clickFn}">${n}</div>`;
-        }).join('');
-    };
-});
+ 
 
 const ATT_CODES = ['P', 'H', 'A', 'L', 'O'];
 function buildMatrix() {
@@ -3296,3 +3322,128 @@ function closeConfirm() {
       reader.readAsDataURL(file);
     }
   }
+
+// Cache for dropdown data to avoid repeated calls
+// Cache for dropdown data
+const dropdownCache = {};
+
+async function populateAsDrop(dropdownId, type, searchTerm = '') {
+    const dropContainer = document.getElementById(dropdownId);
+    if (!dropContainer) return;
+
+    dropContainer.innerHTML = '<div class="as-res-item" style="color:var(--muted);">Loading...</div>';
+    dropContainer.classList.add('active');
+
+    const cacheKey = `${type}:${searchTerm}`;
+    if (dropdownCache[cacheKey]) {
+        renderDropdownItems(dropContainer, dropdownCache[cacheKey]);
+        return;
+    }
+
+    try {
+        const url = `api/1common/fetch_dropdown.php?type=${encodeURIComponent(type)}&search=${encodeURIComponent(searchTerm)}`;
+        const response = await fetch(url);
+        const result = await response.json();
+
+        if (result.success && result.data.length > 0) {
+            dropdownCache[cacheKey] = result.data;
+            renderDropdownItems(dropContainer, result.data);
+        } else {
+            dropContainer.innerHTML = '<div class="as-res-item" style="color:var(--muted);">No results found</div>';
+        }
+    } catch (err) {
+    console.error('Dropdown error:', err);
+    dropContainer.innerHTML = '<div class="as-res-item" style="color:var(--danger);">Error loading data</div>';
+}
+}
+function toggleStaticDrop(dropId) {
+    const drop = document.getElementById(dropId);
+    if (!drop) return;
+    // Close any other open dropdowns
+    document.querySelectorAll('.as-combo-results').forEach(d => {
+        if (d.id !== dropId) d.classList.remove('active');
+    });
+    drop.classList.toggle('active');
+}
+function renderDropdownItems(container, items) {
+    const inputId = container.id.replace('as-drop-', 'as-input-');
+    container.innerHTML = '';
+    items.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'as-res-item';
+        div.textContent = item.label;
+        div.setAttribute('data-value', item.value);
+        div.setAttribute('onclick', `selectAsItemWithValue('${inputId}', '${container.id}', '${item.label.replace(/'/g, "\\'")}', '${item.value}')`);
+        container.appendChild(div);
+    });
+}
+
+function selectAsItemWithValue(inputId, dropId, displayText, value) {
+    const inputEl = document.getElementById(inputId);
+    inputEl.value = displayText;
+    
+    let hiddenId = inputId + '_id';
+    let hiddenEl = document.getElementById(hiddenId);
+    if (!hiddenEl) {
+        hiddenEl = document.createElement('input');
+        hiddenEl.type = 'hidden';
+        hiddenEl.id = hiddenId;
+        inputEl.parentNode.appendChild(hiddenEl);
+    }
+    hiddenEl.value = value;
+    
+    document.getElementById(dropId).classList.remove('active');
+}
+
+function showAsDrop(dropdownId) {
+    const dropContainer = document.getElementById(dropdownId);
+    const inputId = dropdownId.replace('as-drop-', 'as-input-');
+    const inputEl = document.getElementById(inputId);
+    
+    let type = inputEl?.getAttribute('data-dropdown-type');
+    if (!type) {
+        if (dropdownId.includes('dept')) type = 'departments';
+        else if (dropdownId.includes('branch')) type = 'branches';
+        else if (dropdownId.includes('pos') || dropdownId.includes('job')) type = 'job_positions';
+        else if (dropdownId.includes('emp') || dropdownId.includes('custodian') || dropdownId.includes('manager')) type = 'employees';
+        else if (dropdownId.includes('employment')) type = 'employment_types';
+        else type = 'employees';
+    }
+    
+    const searchTerm = inputEl?.value || '';
+    populateAsDrop(dropdownId, type, searchTerm);
+}
+
+function filterAsDrop(inputId, dropId) {
+    const searchTerm = document.getElementById(inputId).value.toLowerCase();
+    const container = document.getElementById(dropId);
+    if (!container) return;
+    
+    const items = container.querySelectorAll('.as-res-item');
+    let hasVisible = false;
+    items.forEach(item => {
+        const text = item.textContent.toLowerCase();
+        if (text.includes(searchTerm)) {
+            item.style.display = 'block';
+            hasVisible = true;
+        } else {
+            item.style.display = 'none';
+        }
+    });
+    
+    if (!hasVisible && container.innerHTML.trim() !== '') {
+        // Optional: show "no results" inside the dropdown
+        const noResult = container.querySelector('.no-result-msg');
+        if (!noResult) {
+            const msg = document.createElement('div');
+            msg.className = 'as-res-item no-result-msg';
+            msg.textContent = 'No matching results';
+            msg.style.color = 'var(--muted)';
+            container.appendChild(msg);
+        }
+    } else {
+        const noResult = container.querySelector('.no-result-msg');
+        if (noResult) noResult.remove();
+    }
+    container.classList.add('active');
+}
