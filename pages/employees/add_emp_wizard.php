@@ -233,8 +233,8 @@
     
     <!-- Dynamic Container (appears based on employment type) -->
     <div id="dynamic-employment-fields" class="form-grid fg-3 mt-4" style="border-top: 1px dashed var(--border); padding-top: 20px; display: none;">
-        <!-- Content injected via JS -->
-    </div>
+    <!-- Content injected via JS -->
+</div>
 </section>
 
             <section id="ob-step-4" class="form-section-content">

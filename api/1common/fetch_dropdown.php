@@ -55,6 +55,14 @@ $search = $_GET['search'] ?? '';
 $search_condition = '';
 $params = [];
 
+// Additional filter for job_positions by department_id
+$extra_condition = '';
+if ($type === 'job_positions' && !empty($_GET['department_id'])) {
+    $dept_id = (int)$_GET['department_id'];
+    $extra_condition = " AND department_id = :dept_id";
+    $params[':dept_id'] = $dept_id;
+}
+
 if ($search !== '') {
     $search_condition = " AND {$config['display_column']} LIKE :search";
     $params[':search'] = "%$search%";
@@ -64,7 +72,7 @@ try {
     $pdo = get_pdo();
     $sql = "SELECT {$config['value_column']} AS value, {$config['display_column']} AS label 
             FROM {$config['table']} 
-            WHERE {$config['where']} $search_condition
+            WHERE {$config['where']} $extra_condition $search_condition
             ORDER BY label ASC
             LIMIT 50";
     $stmt = $pdo->prepare($sql);

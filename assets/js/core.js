@@ -583,7 +583,7 @@ function showAsDrop(dropdownId) {
     let inputId = dropdownId.replace('as-drop-', 'as-input-');
     let inputEl = document.getElementById(inputId);
 
-    // Fallback: wizard inputs use 'o-*' naming, not 'as-input-*'
+    // Fallback for wizard inputs
     if (!inputEl && dropContainer) {
         inputEl = dropContainer.closest('.as-combo-container')?.querySelector('input');
         if (inputEl) inputId = inputEl.id;
@@ -591,7 +591,31 @@ function showAsDrop(dropdownId) {
     if (!inputEl) return;
 
     let type = inputEl?.getAttribute('data-dropdown-type');
-  }
+    if (!type) {
+        if (dropdownId.includes('dept')) type = 'departments';
+        else if (dropdownId.includes('branch')) type = 'branches';
+        else if (dropdownId.includes('pos') || dropdownId.includes('job')) type = 'job_positions';
+        else if (dropdownId.includes('emp') || dropdownId.includes('custodian') || dropdownId.includes('manager')) type = 'employees';
+        else if (dropdownId.includes('employment') || dropdownId.includes('etype')) type = 'employment_types';
+        else type = 'employees';
+    }
+
+    // ─── INSERT THE SNIPPET HERE ──────────────────────────────────────────────
+    if (dropdownId === 'as-drop-pos') {
+        const deptHidden = document.getElementById('o-dept_id');
+        if (!deptHidden || !deptHidden.value) {
+            dropContainer.innerHTML = '<div class="as-res-item" style="color:var(--warning);">Please select a department first</div>';
+            dropContainer.classList.add('active');
+            return;
+        }
+        reloadJobPositionsDropdown(deptHidden.value);
+        return;
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
+    const searchTerm = inputEl?.value || '';
+    populateAsDrop(dropdownId, type, searchTerm);
+}
 function enforceDropdownOnBlur(inputId) {
     const input = document.getElementById(inputId);
     if (!input) return;
@@ -3192,96 +3216,97 @@ function openEmployeeVault(name, id) {
     lcIcons(listContainer);
 }
 function updateEmploymentFields(type) {
-  const container = document.getElementById('dynamic-employment-fields');
-  if (!type) {
-    container.style.display = 'none';
-    return;
-  }
-  container.style.display = 'grid';
-  let html = '';
+    const container = document.getElementById('dynamic-employment-fields');
+    if (!container) {
+        console.error('Dynamic fields container not found');
+        return;
+    }
 
-  // Standard Probation options based on your company profile (90 days standard)
-  const probationHtml = ` 
-      <div class="form-group">
-  <label>Probation Period *</label>
-  <div class="as-combo-container">
-    <input type="text" id="o-probation" class="form-ctrl master-req" 
-           placeholder="Select Period..." value="60 Days (Standard)"
-           onfocus="showAsDrop('as-drop-probation')" readonly>
-    <div class="as-combo-results" id="as-drop-probation">
-      <div class="as-res-item" onclick="selectAsItem('o-probation','as-drop-probation','90 Days')">90 Days</div>
-      <div class="as-res-item" onclick="selectAsItem('o-probation','as-drop-probation','60 Days (Standard)')">60 Days (Standard)</div>
-      <div class="as-res-item" onclick="selectAsItem('o-probation','as-drop-probation','45 Days')">45 Days</div>
-      <div class="as-res-item" onclick="selectAsItem('o-probation','as-drop-probation','No Probation')">No Probation</div>
-    </div>
-  </div> 
-    </div>
-  `;
+    if (!type) {
+        container.style.display = 'none';
+        container.innerHTML = '';
+        return;
+    }
 
-  
-  switch (type) {
-    case 'full-time':
-      html = `
-        <div class="form-group"><label>Hiring Date *</label>
-             <input type="date" class="form-ctrl master-req" id="o-hire" onclick="this.showPicker()" style="cursor:pointer"></div>
-        ${probationHtml}
-        <div class="form-group"><label>Reporting To </label><input type="text" class="form-ctrl" id="o-reports" placeholder="Search Manager..."></div>
-      `;
-      break;
+    container.style.display = 'grid';
+    let html = '';
 
-    case 'contract':
-      html = `
-        <div class="form-group"><label>Contract Start *</label>
-             <input type="date" class="form-ctrl master-req" id="o-hire" onclick="this.showPicker()" style="cursor:pointer"></div>
-        <div class="form-group"><label>Contract End *</label>
-             <input type="date" class="form-ctrl master-req" id="o-end-date" onclick="this.showPicker()" style="cursor:pointer"></div>
-        ${probationHtml}
-        <div class="form-group" style="grid-column: span 3;"><label>Reporting To </label><input type="text" class="form-ctrl" id="o-reports" placeholder="Search Manager..."></div>
-      `;
-      break;
+    const probationHtml = ` 
+        <div class="form-group">
+            <label>Probation Period *</label>
+            <div class="as-combo-container">
+                <input type="text" id="o-probation" class="form-ctrl master-req" 
+                       placeholder="Select Period..." value="60 Days (Standard)"
+                       onfocus="showAsDrop('as-drop-probation')" readonly>
+                <div class="as-combo-results" id="as-drop-probation">
+                    <div class="as-res-item" onclick="selectAsItem('o-probation','as-drop-probation','90 Days')">90 Days</div>
+                    <div class="as-res-item" onclick="selectAsItem('o-probation','as-drop-probation','60 Days (Standard)')">60 Days (Standard)</div>
+                    <div class="as-res-item" onclick="selectAsItem('o-probation','as-drop-probation','45 Days')">45 Days</div>
+                    <div class="as-res-item" onclick="selectAsItem('o-probation','as-drop-probation','No Probation')">No Probation</div>
+                </div>
+            </div> 
+        </div>
+    `;
 
-    case 'part-time':
-      html = `
-        <div class="form-group"><label>Hiring Date *</label>
-             <input type="date" class="form-ctrl master-req" id="o-hire" onclick="this.showPicker()" style="cursor:pointer"></div>
-        <div class="form-group"><label>Hours Per Week *</label><input type="number" class="form-ctrl master-req" id="o-hours" placeholder="e.g. 20"></div>
-        ${probationHtml}
-        <div class="form-group" style="grid-column: span 3;"><label>Reporting To</label><input type="text" class="form-ctrl" id="o-reports" placeholder="Search Manager..."></div>
-      `;
-      break;
+    switch (type) {
+        case 'full-time':
+            html = `
+                <div class="form-group"><label>Hiring Date *</label>
+                    <input type="date" class="form-ctrl master-req" id="o-hire" onclick="this.showPicker()" style="cursor:pointer"></div>
+                ${probationHtml}
+                <div class="form-group"><label>Reporting To</label><input type="text" class="form-ctrl" id="o-reports" placeholder="Search Manager..."></div>
+            `;
+            break;
+        case 'contract':
+            html = `
+                <div class="form-group"><label>Contract Start *</label>
+                    <input type="date" class="form-ctrl master-req" id="o-hire" onclick="this.showPicker()" style="cursor:pointer"></div>
+                <div class="form-group"><label>Contract End *</label>
+                    <input type="date" class="form-ctrl master-req" id="o-end-date" onclick="this.showPicker()" style="cursor:pointer"></div>
+                ${probationHtml}
+                <div class="form-group" style="grid-column: span 2;"><label>Reporting To</label><input type="text" class="form-ctrl" id="o-reports" placeholder="Search Manager..."></div>
+            `;
+            break;
+        case 'part-time':
+            html = `
+                <div class="form-group"><label>Hiring Date *</label>
+                    <input type="date" class="form-ctrl master-req" id="o-hire" onclick="this.showPicker()" style="cursor:pointer"></div>
+                <div class="form-group"><label>Hours Per Week *</label><input type="number" class="form-ctrl master-req" id="o-hours" placeholder="e.g. 20"></div>
+                ${probationHtml}
+                <div class="form-group" style="grid-column: span 2;"><label>Reporting To</label><input type="text" class="form-ctrl" id="o-reports" placeholder="Search Manager..."></div>
+            `;
+            break;
+        case 'internship':
+            html = `
+                <div class="form-group"><label>Internship Start *</label>
+                    <input type="date" class="form-ctrl master-req" id="o-hire" onclick="this.showPicker()" style="cursor:pointer"></div>
+                <div class="form-group"><label>Internship End *</label>
+                    <input type="date" class="form-ctrl master-req" id="o-end-date" onclick="this.showPicker()" style="cursor:pointer"></div>
+                <div class="form-group"><label>Assigned Mentor</label><input type="text" class="form-ctrl" id="o-reports" placeholder="Full name of Mentor"></div>
+            `;
+            break;
+        case 'temporary':
+            html = `
+                <div class="form-group"><label>Project Name *</label><input type="text" class="form-ctrl master-req" id="o-project" placeholder="e.g. Infrastructure Audit"></div>
+                <div class="form-group"><label>Assignment Start *</label>
+                    <input type="date" class="form-ctrl master-req" id="o-hire" onclick="this.showPicker()" style="cursor:pointer"></div>
+                <div class="form-group"><label>Project Supervisor</label><input type="text" class="form-ctrl" id="o-reports" placeholder="Search Supervisor..."></div>
+            `;
+            break;
+        default:
+            console.warn('Unknown employment type:', type);
+            html = `<p style="color:var(--muted); grid-column:span 3;">No additional fields required for this employment type.</p>`;
+    }
 
-    case 'internship':
-      html = `
-        <div class="form-group"><label>Internship Start *</label>
-             <input type="date" class="form-ctrl master-req" id="o-hire" onclick="this.showPicker()" style="cursor:pointer"></div>
-        <div class="form-group"><label>Internship End *</label>
-             <input type="date" class="form-ctrl master-req" id="o-end-date" onclick="this.showPicker()" style="cursor:pointer"></div>
-        <div class="form-group"><label>Assigned Mentor</label><input type="text" class="form-ctrl" id="o-reports" placeholder="Full name of Mentor"></div>
-      `;
-      break;
+    container.innerHTML = html;
+    lcIcons(container);
 
-    case 'temporary':
-      html = `
-        <div class="form-group"><label>Project Name *</label><input type="text" class="form-ctrl master-req" id="o-project" placeholder="e.g. Infrastructure Audit"></div>
-        <div class="form-group"><label>Assignment Start *</label>
-             <input type="date" class="form-ctrl master-req" id="o-hire" onclick="this.showPicker()" style="cursor:pointer"></div>
-        <div class="form-group"><label>Project Supervisor </label><input type="text" class="form-ctrl" id="o-reports" placeholder="Search Supervisor..."></div>
-      `;
-      break;
-  }
-
-  container.innerHTML = html;
-  
-  // Re-initialize icons for the new elements
-  lcIcons(container);
-
-  // Attach validation listeners to the newly created inputs
-  container.querySelectorAll('input, select').forEach(input => {
-    input.addEventListener('input', validateMasterRecord);
-  });
-  
-  // Refresh the global validation state
-  validateMasterRecord();
+    // Attach validation listeners
+    container.querySelectorAll('input, select').forEach(input => {
+        input.addEventListener('input', validateMasterRecord);
+    });
+    
+    validateMasterRecord();
 }
 function showNotification(title, message, type = 'success') {
     const container = document.getElementById('toast-container');
@@ -3536,21 +3561,33 @@ window.selectAsItemWithValue = function(inputId, dropId, displayText, value) {
     const dropContainer = document.getElementById(dropId);
     if (dropContainer) dropContainer.classList.remove('active');
 
-    // Trigger validation (for wizard)
+    // Trigger validation
     if (typeof validateMasterRecord === 'function') validateMasterRecord();
-        // Trigger dynamic employment fields when type is chosen in the wizard
+
+    // Handle department selection: reload job positions
+    if (inputId === 'o-dept') {
+        // Clear the job position field
+        const posInput = document.getElementById('o-pos');
+        if (posInput) {
+            posInput.value = '';
+            const posHidden = document.getElementById('o-pos_id');
+            if (posHidden) posHidden.value = '';
+        }
+        // Reload job positions dropdown with department filter
+        reloadJobPositionsDropdown(value);
+    }
+
+    // Handle employment type selection for dynamic fields
     if (inputId === 'o-etype') {
-        const typeMap = {
-            'full time':   'full-time',
-            'full-time':   'full-time',
-            'contract':    'contract',
-            'part time':   'part-time',
-            'part-time':   'part-time',
-            'internship':  'internship',
-            'temporary':   'temporary',
-            'temp':        'temporary'
-        };
-        const normalized = typeMap[displayText.toLowerCase().trim()] || null;
+        const rawText = displayText.trim();
+        const normalizedRaw = rawText.toLowerCase().replace(/[-\s]+/g, '');
+        let normalized = null;
+        if (normalizedRaw.includes('fulltime') || normalizedRaw.includes('permanent')) normalized = 'full-time';
+        else if (normalizedRaw.includes('contract')) normalized = 'contract';
+        else if (normalizedRaw.includes('parttime')) normalized = 'part-time';
+        else if (normalizedRaw.includes('intern')) normalized = 'internship';
+        else if (normalizedRaw.includes('temp')) normalized = 'temporary';
+        
         if (typeof updateEmploymentFields === 'function') {
             updateEmploymentFields(normalized);
         }
@@ -3615,7 +3652,31 @@ window.selectAttDept = function(name, val) {
     document.getElementById('att-dept-select').value = val;
     document.getElementById('as-drop-att-dept').classList.remove('active');
 };
- 
+ function reloadJobPositionsDropdown(departmentId) {
+    const dropContainer = document.getElementById('as-drop-pos');
+    if (!dropContainer) return;
+
+    // Show loading
+    dropContainer.innerHTML = '<div class="as-res-item" style="color:var(--muted);">Loading...</div>';
+    dropContainer.classList.add('active');
+
+    const type = 'job_positions';
+    const url = `api/1common/fetch_dropdown.php?type=${type}&department_id=${departmentId}`;
+
+    fetch(url)
+        .then(r => r.json())
+        .then(result => {
+            if (result.success && result.data) {
+                renderDropdownItems(dropContainer, result.data);
+            } else {
+                dropContainer.innerHTML = '<div class="as-res-item" style="color:var(--muted);">No positions found</div>';
+            }
+        })
+        .catch(err => {
+            console.error('Error loading job positions:', err);
+            dropContainer.innerHTML = '<div class="as-res-item" style="color:var(--danger);">Error loading</div>';
+        });
+}
  
  
  
