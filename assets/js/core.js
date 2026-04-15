@@ -334,25 +334,31 @@ function openModal(id){document.getElementById(id).classList.add('open');lcIcons
 function closeModal(id,e){if(!e||e.target===e.currentTarget)document.getElementById(id).classList.remove('open');}
 function openDeptModal() {
     openModal('modal-add-dept');
-    // Clear previous values
     document.getElementById('dept-name').value = '';
+    document.getElementById('dept-name').classList.remove('field-error'); // <-- clear error
     document.getElementById('as-input-dept-head').value = '';
-    // Remove any existing hidden ID field
     const existingHidden = document.getElementById('as-input-dept-head_id');
     if (existingHidden) existingHidden.remove();
-    // Reset status to Active
     document.getElementById('dept-status').value = 'Active';
+    enforceDropdownOnBlur('as-input-dept-head');
 }
 
 function closeDeptModal(e){closeModal('modal-add-dept',e);} 
 function saveDepartment() {
-    const deptName = document.getElementById('dept-name').value.trim();
+    const deptName = document.getElementById('dept-name');
+    const headInput = document.getElementById('as-input-dept-head');
     const headId = document.getElementById('as-input-dept-head_id')?.value || '';
     const status = document.getElementById('dept-status').value || 'Active';
     const csrfToken = document.getElementById('dept_csrf_token')?.value || '';
 
-    if (!deptName) {
-        showNotification("Required", "Department name is required.", "warning");
+    // Reset errors
+    deptName.classList.remove('field-error');
+
+    let isValid = true;
+    if (!deptName.value.trim()) {
+        deptName.classList.add('field-error');
+        isValid = false;
+        showNotification("Required", "Department name is mandatory.", "warning");
         return;
     }
 
@@ -363,7 +369,7 @@ function saveDepartment() {
     lcIcons(btn);
 
     const data = {
-        dept_name: deptName,
+        dept_name: deptName.value.trim(),
         dept_head_id: headId,
         dept_status: status,
         csrf_token: csrfToken
@@ -400,18 +406,15 @@ function saveNewAsset(){const name=document.getElementById('as-new-name').value;
 function openReassignModal(assetName,currentCustodian){document.getElementById('reassign-display-name').textContent=assetName;document.getElementById('reassign-display-curr').textContent=currentCustodian;document.getElementById('as-input-reassign').value='';openModal('modal-reassign-asset');}
 function closeReassignModal(e){closeModal('modal-reassign-asset',e);}
 function saveReassignment(){const o=document.getElementById('as-input-reassign').value,a=document.getElementById('reassign-display-name').textContent;if(!o){alert('Please select a new custodian.');return;}alert(`Reassignment Successful: ${a} has been transferred to ${o}.`);closeReassignModal();}
-function openJobModal(){openModal('modal-add-job-position');}
-function closeJobModal(e){closeModal('modal-add-job-position',e);} 
+ function closeJobModal(e){closeModal('modal-add-job-position',e);} 
 function openJobModal() {
     openModal('modal-add-job-position');
-    // Clear previous values
     document.getElementById('job-title').value = '';
     document.getElementById('as-input-job-dept').value = '';
-    // Remove any existing hidden ID field
     const existingHidden = document.getElementById('as-input-job-dept_id');
     if (existingHidden) existingHidden.remove();
-    // Reset status to Active
     document.getElementById('job-status').value = 'Active';
+    enforceDropdownOnBlur('as-input-job-dept');
 }
 function saveJobPosition() {
     const titleEl = document.getElementById('job-title');
@@ -484,22 +487,50 @@ function saveJobPosition() {
 }
 
 
-function openBranchModal(){openModal('modal-add-branch');}
+function openBranchModal() {
+    openModal('modal-add-branch');
+    document.getElementById('branch-name').value = '';
+    document.getElementById('branch-name').classList.remove('field-error'); // <-- clear error
+    document.getElementById('as-input-branch-mgr').value = '';
+    document.getElementById('as-input-branch-mgr').classList.remove('field-error');
+    document.getElementById('branch-status').value = 'Active';
+    document.getElementById('branch-phone').value = '';
+    document.getElementById('branch-email').value = '';
+    document.getElementById('branch-city').value = '';
+    document.getElementById('branch-address').value = '';
+    const existingHidden = document.getElementById('as-input-branch-mgr_id');
+    if (existingHidden) existingHidden.remove();
+    enforceDropdownOnBlur('as-input-branch-mgr');
+}
 function closeBranchModal(e){closeModal('modal-add-branch',e);}
 function saveBranch() {
-    const data = {
-        branch_name:    document.getElementById('branch-name').value.trim(),
-        branch_manager: document.getElementById('as-input-branch-mgr').value,
-        branch_status:  document.getElementById('branch-status').value || 'Active',
-        branch_phone:   document.getElementById('branch-phone').value.trim(),
-        branch_email:   document.getElementById('branch-email').value.trim(),
-        branch_city:    document.getElementById('branch-city').value.trim(),
-        branch_address: document.getElementById('branch-address').value.trim(),
-        csrf_token:     document.getElementById('branch_csrf_token').value   // ← ADD THIS
-    };
+    const branchName = document.getElementById('branch-name');
+    const managerInput = document.getElementById('as-input-branch-mgr');
+    const managerId = document.getElementById('as-input-branch-mgr_id')?.value || '';
+    const managerText = managerInput.value.trim();
+    const status = document.getElementById('branch-status').value || 'Active';
+    const phone = document.getElementById('branch-phone').value.trim();
+    const email = document.getElementById('branch-email').value.trim();
+    const city = document.getElementById('branch-city').value.trim();
+    const address = document.getElementById('branch-address').value.trim();
+    const csrfToken = document.getElementById('branch_csrf_token')?.value || '';
 
-    if (!data.branch_name) {
+    // Reset errors
+    branchName.classList.remove('field-error');
+    managerInput.classList.remove('field-error');
+
+    let isValid = true;
+
+    if (!branchName.value.trim()) {
+        branchName.classList.add('field-error');
         showNotification("Required", "Branch Name is mandatory.", "warning");
+        return;
+    }
+
+    // If user typed something in manager field but no hidden ID exists, it's invalid
+    if (managerText !== '' && managerId === '') {
+        managerInput.classList.add('field-error');
+        showNotification("Invalid Manager", "Please select a manager from the dropdown list.", "warning");
         return;
     }
 
@@ -508,6 +539,17 @@ function saveBranch() {
     btn.disabled = true;
     btn.innerHTML = `<i data-lucide="loader-2" class="spin" size="13"></i> Saving...`;
     lcIcons(btn);
+
+    const data = {
+        branch_name: branchName.value.trim(),
+        branch_manager_id: managerId,
+        branch_status: status,
+        branch_phone: phone,
+        branch_email: email,
+        branch_city: city,
+        branch_address: address,
+        csrf_token: csrfToken
+    };
 
     fetch('api/companyprofile/add_branch.php', {
         method: 'POST',
@@ -535,24 +577,37 @@ function saveBranch() {
     });
 }
 // ── ASSET DROPDOWNS ──
+
 function showAsDrop(dropdownId) {
     const dropContainer = document.getElementById(dropdownId);
     const inputId = dropdownId.replace('as-drop-', 'as-input-');
     const inputEl = document.getElementById(inputId);
     
-    let type = inputEl?.getAttribute('data-dropdown-type');
+    const type = inputEl?.getAttribute('data-dropdown-type');
     if (!type) {
-        // Fallback guessing
-        if (dropdownId.includes('dept')) type = 'departments';
-        else if (dropdownId.includes('branch')) type = 'branches';
-        else if (dropdownId.includes('pos') || dropdownId.includes('job')) type = 'job_positions';
-        else if (dropdownId.includes('emp') || dropdownId.includes('custodian') || dropdownId.includes('manager')) type = 'employees';
-        else if (dropdownId.includes('employment')) type = 'employment_types';
-        else type = 'employees';
+        toggleStaticDrop(dropdownId);
+        return;
     }
     
     const searchTerm = inputEl?.value || '';
     populateAsDrop(dropdownId, type, searchTerm);
+}
+function enforceDropdownOnBlur(inputId) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    // Remove previous listener to avoid duplicates, then add new one
+    const handler = function() {
+        const hidden = document.getElementById(this.id + '_id');
+        if (hidden && hidden.value === '' && this.value.trim() !== '') {
+            this.value = '';
+            showNotification("Invalid Selection", "Please select an option from the dropdown list.", "warning");
+            this.classList.add('field-error');
+        } else {
+            this.classList.remove('field-error');
+        }
+    };
+    input.removeEventListener('blur', handler);
+    input.addEventListener('blur', handler);
 }
 function filterAsDrop(inputId,dropId){const val=document.getElementById(inputId).value.toLowerCase(),d=document.getElementById(dropId);if(!d.innerHTML.trim())populateAsDrop(dropId);d.querySelectorAll('.as-res-item').forEach(item=>{item.style.display=item.textContent.toLowerCase().includes(val)?'block':'none';});d.classList.add('active');}
 function selectAsItem(inputId,dropId,name){document.getElementById(inputId).value=name;document.getElementById(dropId).classList.remove('active');}
@@ -734,6 +789,7 @@ function validateMasterRecord(){
 function saveNewEmployee() {
   const btnTop = document.getElementById('btn-save-master');
   const btnBottom = document.getElementById('btn-save-master-bottom');
+  const branchId = document.getElementById('o-branch_id')?.value || '';
   const allBtns = [btnTop, btnBottom];
 
   allBtns.forEach(btn => {
@@ -3352,9 +3408,9 @@ async function populateAsDrop(dropdownId, type, searchTerm = '') {
             dropContainer.innerHTML = '<div class="as-res-item" style="color:var(--muted);">No results found</div>';
         }
     } catch (err) {
-    console.error('Dropdown error:', err);
-    dropContainer.innerHTML = '<div class="as-res-item" style="color:var(--danger);">Error loading data</div>';
-}
+        console.error('Dropdown error:', err);
+        dropContainer.innerHTML = '<div class="as-res-item" style="color:var(--danger);">Error loading data</div>';
+    }
 }
 function toggleStaticDrop(dropId) {
     const drop = document.getElementById(dropId);
@@ -3380,7 +3436,10 @@ function renderDropdownItems(container, items) {
 
 function selectAsItemWithValue(inputId, dropId, displayText, value) {
     const inputEl = document.getElementById(inputId);
+    if (!inputEl) return;
+    
     inputEl.value = displayText;
+    inputEl.classList.remove('field-error');
     
     let hiddenId = inputId + '_id';
     let hiddenEl = document.getElementById(hiddenId);
@@ -3392,7 +3451,8 @@ function selectAsItemWithValue(inputId, dropId, displayText, value) {
     }
     hiddenEl.value = value;
     
-    document.getElementById(dropId).classList.remove('active');
+    const dropContainer = document.getElementById(dropId);
+    if (dropContainer) dropContainer.classList.remove('active');
 }
 
 function showAsDrop(dropdownId) {
@@ -3432,7 +3492,6 @@ function filterAsDrop(inputId, dropId) {
     });
     
     if (!hasVisible && container.innerHTML.trim() !== '') {
-        // Optional: show "no results" inside the dropdown
         const noResult = container.querySelector('.no-result-msg');
         if (!noResult) {
             const msg = document.createElement('div');
@@ -3445,5 +3504,6 @@ function filterAsDrop(inputId, dropId) {
         const noResult = container.querySelector('.no-result-msg');
         if (noResult) noResult.remove();
     }
+    
     container.classList.add('active');
 }

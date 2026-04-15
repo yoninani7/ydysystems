@@ -108,7 +108,7 @@
                             <div class="form-group">
                                 <label>Gender *</label>
                                 <div class="as-combo-container">
-                                    <input type="text" id="o-gender" class="form-ctrl master-req" placeholder="Select Gender..." onfocus="showAsDrop('as-drop-gender')" readonly>
+                                   <input type="text" id="o-gender" class="form-ctrl master-req" placeholder="Select Gender..." onfocus="toggleStaticDrop('as-drop-gender')" readonly>
                                     <div class="as-combo-results" id="as-drop-gender">
                                         <div class="as-res-item" onclick="selectAsItem('o-gender','as-drop-gender','Male')">Male</div>
                                         <div class="as-res-item" onclick="selectAsItem('o-gender','as-drop-gender','Female')">Female</div>
@@ -124,7 +124,7 @@
                             <div class="form-group">
                                 <label>Marital Status</label>
                                 <div class="as-combo-container">
-                                    <input type="text" id="o-marital" class="form-ctrl" placeholder="Select Marital Status..." onfocus="showAsDrop('as-drop-marital')" readonly>
+                                    <input type="text" id="o-marital" class="form-ctrl" placeholder="Select Marital Status..." onfocus="toggleStaticDrop('as-drop-marital')" readonly>
                                     <div class="as-combo-results" id="as-drop-marital">
                                         <div class="as-res-item" onclick="selectAsItem('o-marital','as-drop-marital','Single')">Single</div>
                                         <div class="as-res-item" onclick="selectAsItem('o-marital','as-drop-marital','Married')">Married</div>
@@ -170,57 +170,72 @@
             </section>
 
             <!-- EMPLOYMENT PLACEMENT (DYNAMIC VERSION) -->
-            <section id="ob-step-3" class="form-section-content">
-                <div class="form-header-pro">
-                    <div class="input-group-label">Employment Placement</div>
-                    <p class="input-group-sub">Mapping the position within the company structure based on employment type.</p>
-                </div>
-
-                <div class="form-grid fg-3">
-                    <div class="form-group">
-                        <label>Department *</label>
-                        <div class="as-combo-container">
-                            <input type="text" id="o-dept" class="form-ctrl master-req" placeholder="Select Department..." onfocus="showAsDrop('as-drop-dept')" readonly>
-                            <div class="as-combo-results" id="as-drop-dept">
-                                <div class="as-res-item" onclick="selectAsItem('o-dept','as-drop-dept','Engineering')">Engineering</div>
-                                <div class="as-res-item" onclick="selectAsItem('o-dept','as-drop-dept','Finance')">Finance</div>
-                                <div class="as-res-item" onclick="selectAsItem('o-dept','as-drop-dept','HR')">HR</div>
-                                <div class="as-res-item" onclick="selectAsItem('o-dept','as-drop-dept','Sales')">Sales</div>
-                                <div class="as-res-item" onclick="selectAsItem('o-dept','as-drop-dept','Marketing')">Marketing</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Job Position *</label>
-                        <div class="as-combo-container">
-                            <input type="text" id="o-pos" class="form-ctrl master-req" placeholder="Select Position..." onfocus="showAsDrop('as-drop-pos')" readonly>
-                            <div class="as-combo-results" id="as-drop-pos">
-                                <div class="as-res-item" onclick="selectAsItem('o-pos','as-drop-pos','Senior Dev')">Senior Dev</div>
-                                <div class="as-res-item" onclick="selectAsItem('o-pos','as-drop-pos','Analyst')">Analyst</div>
-                                <div class="as-res-item" onclick="selectAsItem('o-pos','as-drop-pos','Marketing Specialist')">Marketing Specialist</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Employment Type *</label>
-                        <div class="as-combo-container">
-                            <input type="text" id="o-etype" class="form-ctrl master-req" placeholder="Select Employment Type..." onfocus="showAsDrop('as-drop-etype')" readonly>
-                            <div class="as-combo-results" id="as-drop-etype">
-                                <div class="as-res-item" onclick="selectAsItem('o-etype','as-drop-etype','Permanent / Full-Time'); updateEmploymentFields('full-time')">Permanent / Full-Time</div>
-                                <div class="as-res-item" onclick="selectAsItem('o-etype','as-drop-etype','Fixed-Term Contract'); updateEmploymentFields('contract')">Fixed-Term Contract</div>
-                                <div class="as-res-item" onclick="selectAsItem('o-etype','as-drop-etype','Part-Time'); updateEmploymentFields('part-time')">Part-Time</div>
-                                <div class="as-res-item" onclick="selectAsItem('o-etype','as-drop-etype','Internship'); updateEmploymentFields('internship')">Internship</div>
-                                <div class="as-res-item" onclick="selectAsItem('o-etype','as-drop-etype','Temporary / Casual'); updateEmploymentFields('temporary')">Temporary / Casual</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Dynamic Container -->
-                <div id="dynamic-employment-fields" class="form-grid fg-3 mt-4" style="border-top: 1px dashed var(--border); padding-top: 20px; display: none;">
-                    <!-- Content injected via JS -->
-                </div>
-            </section>
+     <section id="ob-step-3" class="form-section-content">
+    <div class="form-header-pro">
+        <div class="input-group-label">Employment Placement</div>
+        <p class="input-group-sub">Mapping the position within the company structure based on employment type.</p>
+    </div>
+    
+    <!-- 2x2 grid using fg-2 -->
+    <div class="form-grid fg-2">
+        <!-- Row 1: Department & Branch -->
+        <div class="form-group">
+            <label>Department *</label>
+            <div class="as-combo-container">
+                <input type="text" id="o-dept" class="form-ctrl master-req" 
+                    data-dropdown-type="departments"
+                    placeholder="Select Department..." 
+                    onfocus="showAsDrop('as-drop-dept')" 
+                    oninput="filterAsDrop('o-dept','as-drop-dept')"
+                    autocomplete="off">
+                <div class="as-combo-results" id="as-drop-dept"></div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Branch *</label>
+            <div class="as-combo-container">
+                <input type="text" id="o-branch" class="form-ctrl master-req" 
+                    data-dropdown-type="branches"
+                    placeholder="Select Branch..." 
+                    onfocus="showAsDrop('as-drop-branch')" 
+                    oninput="filterAsDrop('o-branch','as-drop-branch')"
+                    autocomplete="off">
+                <div class="as-combo-results" id="as-drop-branch"></div>
+            </div>
+        </div>
+        
+        <!-- Row 2: Job Position & Employment Type -->
+        <div class="form-group">
+            <label>Job Position *</label>
+            <div class="as-combo-container">
+                <input type="text" id="o-pos" class="form-ctrl master-req" 
+                    data-dropdown-type="job_positions"
+                    placeholder="Select Position..." 
+                    onfocus="showAsDrop('as-drop-pos')" 
+                    oninput="filterAsDrop('o-pos','as-drop-pos')"
+                    autocomplete="off">
+                <div class="as-combo-results" id="as-drop-pos"></div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Employment Type *</label>
+            <div class="as-combo-container">
+                <input type="text" id="o-etype" class="form-ctrl master-req" 
+                    data-dropdown-type="employment_types"
+                    placeholder="Select Employment Type..." 
+                    onfocus="showAsDrop('as-drop-etype')" 
+                    oninput="filterAsDrop('o-etype','as-drop-etype')"
+                    autocomplete="off">
+                <div class="as-combo-results" id="as-drop-etype"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Dynamic Container (appears based on employment type) -->
+    <div id="dynamic-employment-fields" class="form-grid fg-3 mt-4" style="border-top: 1px dashed var(--border); padding-top: 20px; display: none;">
+        <!-- Content injected via JS -->
+    </div>
+</section>
 
             <section id="ob-step-4" class="form-section-content">
                 <div class="input-group-label">Financial & Treasury</div>
@@ -237,7 +252,7 @@
                     <div class="form-group">
                         <label>Bank Name </label>
                         <div class="as-combo-container">
-                            <input type="text" id="o-bank" class="form-ctrl" placeholder="Select Bank..." onfocus="showAsDrop('as-drop-bank')" readonly>
+                           <input type="text" id="o-bank" class="form-ctrl" placeholder="Select Bank..." onfocus="toggleStaticDrop('as-drop-bank')" readonly>
                             <div class="as-combo-results" id="as-drop-bank">
                                 <div class="as-res-item" onclick="selectAsItem('o-bank','as-drop-bank','CBE')">CBE</div>
                                 <div class="as-res-item" onclick="selectAsItem('o-bank','as-drop-bank','Awash')">Awash</div>

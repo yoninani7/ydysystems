@@ -30,17 +30,17 @@ if (empty($_SESSION['user_id'])) {
         'where' => "status = 'Active' AND deleted_at IS NULL"
     ],
     'job_positions' => [
-        'table' => 'job_positions',
-        'value_column' => 'id',
-        'display_column' => 'title',
-        'where' => "status = 'Active' AND deleted_at IS NULL"
-    ],
+            'table' => 'job_positions',
+            'value_column' => 'id',
+            'display_column' => 'title',
+            'where' => "status = 'Active' AND deleted_at IS NULL"
+            ],
     'employment_types' => [
-        'table' => 'employment_types',
-        'value_column' => 'id',
-        'display_column' => 'name',
-        'where' => "1=1"
-    ]
+            'table' => 'employment_types',
+            'value_column' => 'id',
+            'display_column' => 'name',
+            'where' => "1=1"
+        ]
 ];
 
 $type = $_GET['type'] ?? '';

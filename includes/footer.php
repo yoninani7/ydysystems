@@ -102,7 +102,6 @@
 </div>
 
 <div class="modal-overlay" id="modal-add-branch" onclick="closeBranchModal(event)">
-  <input type="hidden" id="branch_csrf_token" value="<?php echo csrf_token(); ?>">
   <div class="modal-box" style="max-width:550px; overflow:visible;">
     <div class="modal-header">
       <div>
@@ -114,28 +113,32 @@
     
     <div class="modal-body" style="overflow:visible;">
       <div class="form-grid fg-2">
-        <!-- row 1: Branch Name -->
+        <!-- Branch Name -->
         <div class="form-group" style="grid-column: span 2;">
           <label>Branch Name *</label>
           <input type="text" id="branch-name" placeholder="e.g. Headquarters / North Hub" class="form-ctrl">
         </div>
 
-        <!-- row 2: Manager & Status -->
+        <!-- Branch Manager (Dynamic Dropdown from employees) -->
         <div class="form-group" style="position:relative;">
           <label>Branch Manager</label>
           <div class="as-combo-container">
-            <input type="text" id="as-input-branch-mgr" placeholder="Search manager..." 
+            <input type="text" id="as-input-branch-mgr" 
+                   data-dropdown-type="employees"
+                   placeholder="Search manager..." 
                    onfocus="showAsDrop('as-drop-branch-mgr')" 
-                   oninput="filterAsDrop('as-input-branch-mgr','as-drop-branch-mgr')">
+                   oninput="filterAsDrop('as-input-branch-mgr','as-drop-branch-mgr')"
+                   autocomplete="off">
             <div class="as-combo-results" id="as-drop-branch-mgr"></div>
           </div>
         </div>
 
+        <!-- Status (Static Dropdown) -->
         <div class="form-group">
           <label>Operating Status</label>
           <div class="as-combo-container">
             <input type="text" id="branch-status" class="form-ctrl" value="Active" 
-                   onfocus="showAsDrop('as-drop-branch-status')" readonly>
+                   onfocus="toggleStaticDrop('as-drop-branch-status')" readonly>
             <div class="as-combo-results" id="as-drop-branch-status">
               <div class="as-res-item" onclick="selectAsItem('branch-status','as-drop-branch-status','Active')">Active</div>
               <div class="as-res-item" onclick="selectAsItem('branch-status','as-drop-branch-status','Inactive')">Inactive</div>
@@ -143,7 +146,7 @@
           </div>
         </div>
 
-        <!-- row 3: Phone & Email -->
+        <!-- Phone & Email -->
         <div class="form-group">
           <label>Phone Number</label>
           <input type="text" id="branch-phone" placeholder="+251..." class="form-ctrl">
@@ -153,7 +156,7 @@
           <input type="email" id="branch-email" placeholder="branch@company.com" class="form-ctrl">
         </div>
 
-        <!-- row 4: City & Full Address -->
+        <!-- City & Address -->
         <div class="form-group">
           <label>City</label>
           <input type="text" id="branch-city" placeholder="e.g. Addis Ababa" class="form-ctrl">
@@ -163,12 +166,14 @@
           <input type="text" id="branch-address" placeholder="Sub-city, Woreda, Building..." class="form-ctrl">
         </div>
       </div>
+      <!-- CSRF Token -->
+      <input type="hidden" id="branch_csrf_token" value="<?php echo csrf_token(); ?>">
     </div>
 
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeBranchModal()">Cancel</button>
       <button class="btn btn-primary" id="btn-save-branch" onclick="saveBranch()">
-        <i data-lucide="check" size="13"></i>Create Branch
+        <i data-lucide="check" size="13"></i> Create Branch
       </button>
     </div>
   </div>
