@@ -8,34 +8,46 @@
     </div>
     <div class="modal-body" style="overflow:visible;">
       <div class="form-grid fg-2">
-        <div class="form-group" style="grid-column:span 2;"><label>Department Name *</label><input id="dept-name" placeholder="e.g. Engineering"></div>
+        <div class="form-group" style="grid-column:span 2;">
+          <label>Department Name *</label>
+          <input id="dept-name" placeholder="e.g. Engineering" class="form-ctrl">
+        </div>
         <div class="form-group" style="position:relative;grid-column:span 2;">
           <label>Head of Department</label>
           <div class="as-combo-container">
-            <input type="text" id="as-input-dept-head" placeholder="Type name to search..." onfocus="showAsDrop('as-drop-dept-head')" oninput="filterAsDrop('as-input-dept-head','as-drop-dept-head')">
+            <input type="text" id="as-input-dept-head" 
+                   data-dropdown-type="employees"
+                   placeholder="Type name to search..." 
+                   onfocus="showAsDrop('as-drop-dept-head')" 
+                   oninput="filterAsDrop('as-input-dept-head','as-drop-dept-head')"
+                   autocomplete="off">
             <div class="as-combo-results" id="as-drop-dept-head"></div>
           </div>
         </div>
-         
-        <div class="form-group" style="grid-column:span 2;"><label>Status</label><div class="as-combo-container">
-  <input type="text" id="dept-status" class="form-ctrl" value="Active" 
-         onfocus="showAsDrop('as-drop-dept-status')" readonly>
-  <div class="as-combo-results" id="as-drop-dept-status">
-    <div class="as-res-item" onclick="selectAsItem('dept-status','as-drop-dept-status','Active')">Active</div>
-    <div class="as-res-item" onclick="selectAsItem('dept-status','as-drop-dept-status','Inactive')">Inactive</div>
-  </div>
-  </div></div>
+        <div class="form-group" style="grid-column:span 2;">
+          <label>Status</label>
+          <div class="as-combo-container">
+            <input type="text" id="dept-status" class="form-ctrl" value="Active"onfocus="toggleStaticDrop('as-drop-dept-status')" readonly>
+            <div class="as-combo-results" id="as-drop-dept-status">
+              <div class="as-res-item" onclick="selectAsItem('dept-status','as-drop-dept-status','Active')">Active</div>
+              <div class="as-res-item" onclick="selectAsItem('dept-status','as-drop-dept-status','Inactive')">Inactive</div>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="closeDeptModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="saveDepartment()"><i data-lucide="check" size="13"></i>Create Department</button>
-      </div>
+      <!-- CSRF token -->
+      <input type="hidden" id="dept_csrf_token" value="<?php echo csrf_token(); ?>">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeDeptModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveDepartment()"><i data-lucide="check" size="13"></i>Create Department</button>
+    </div>
   </div>
 </div>
 
 <!-- MODAL: ADD NEW JOB POSITION -->
 <div class="modal-overlay" id="modal-add-job-position" onclick="closeJobModal(event)">
+  <input type="hidden" id="job_csrf_token" value="<?php echo csrf_token(); ?>">
   <div class="modal-box" style="max-width:500px;overflow:visible;">
     <div class="modal-header">
       <div>
@@ -52,28 +64,32 @@
           <input id="job-title" placeholder="e.g. Senior Software Engineer" class="form-ctrl" oninput="this.classList.remove('field-error')">
         </div>
         
-        <!-- Department Selection -->
+        <!-- Department Selection (Dynamic Dropdown) -->
         <div class="form-group" style="position:relative;grid-column:span 2;">
           <label>Department *</label>
           <div class="as-combo-container">
-            <input type="text" id="as-input-job-dept" placeholder="Search department..." 
+            <input type="text" id="as-input-job-dept" 
+                   data-dropdown-type="departments"
+                   placeholder="Search department..." 
                    onfocus="showAsDrop('as-drop-job-dept')" 
-                   oninput="filterAsDrop('as-input-job-dept','as-drop-job-dept'); this.classList.remove('field-error')">
+                   oninput="filterAsDrop('as-input-job-dept','as-drop-job-dept')"
+                   autocomplete="off">
             <div class="as-combo-results" id="as-drop-job-dept"></div>
           </div>
         </div>
 
-        <!-- Operating Status (Added for consistency) -->
-        <div class="form-group" style="grid-column:span 2;">
-          <label>Status</label>
-          <div class="as-combo-container">
-            <input type="text" id="job-status" class="form-ctrl" value="Active" onfocus="showAsDrop('as-drop-job-status')" readonly>
-            <div class="as-combo-results" id="as-drop-job-status">
-              <div class="as-res-item" onclick="selectAsItem('job-status','as-drop-job-status','Active')">Active</div>
-              <div class="as-res-item" onclick="selectAsItem('job-status','as-drop-job-status','Inactive')">Inactive</div>
-            </div>
+        <!-- Status (Static Dropdown) -->
+      <div class="form-group" style="grid-column:span 2;">
+        <label>Status</label>
+        <div class="as-combo-container">
+          <input type="text" id="job-status" class="form-ctrl" value="Active" 
+       onclick="toggleStaticDrop('as-drop-job-status')" style="cursor:pointer;" readonly>
+          <div class="as-combo-results" id="as-drop-job-status">
+            <div class="as-res-item" onclick="selectAsItem('job-status','as-drop-job-status','Active')">Active</div>
+            <div class="as-res-item" onclick="selectAsItem('job-status','as-drop-job-status','Inactive')">Inactive</div>
           </div>
         </div>
+      </div>
       </div>
     </div>
     <div class="modal-footer">
@@ -86,6 +102,7 @@
 </div>
 
 <div class="modal-overlay" id="modal-add-branch" onclick="closeBranchModal(event)">
+  <input type="hidden" id="branch_csrf_token" value="<?php echo csrf_token(); ?>">
   <div class="modal-box" style="max-width:550px; overflow:visible;">
     <div class="modal-header">
       <div>
