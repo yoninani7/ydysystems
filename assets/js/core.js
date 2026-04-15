@@ -580,18 +580,18 @@ function saveBranch() {
 
 function showAsDrop(dropdownId) {
     const dropContainer = document.getElementById(dropdownId);
-    const inputId = dropdownId.replace('as-drop-', 'as-input-');
-    const inputEl = document.getElementById(inputId);
-    
-    const type = inputEl?.getAttribute('data-dropdown-type');
-    if (!type) {
-        toggleStaticDrop(dropdownId);
-        return;
+    let inputId = dropdownId.replace('as-drop-', 'as-input-');
+    let inputEl = document.getElementById(inputId);
+
+    // Fallback: wizard inputs use 'o-*' naming, not 'as-input-*'
+    if (!inputEl && dropContainer) {
+        inputEl = dropContainer.closest('.as-combo-container')?.querySelector('input');
+        if (inputEl) inputId = inputEl.id;
     }
-    
-    const searchTerm = inputEl?.value || '';
-    populateAsDrop(dropdownId, type, searchTerm);
-}
+    if (!inputEl) return;
+
+    let type = inputEl?.getAttribute('data-dropdown-type');
+  }
 function enforceDropdownOnBlur(inputId) {
     const input = document.getElementById(inputId);
     if (!input) return;
@@ -609,7 +609,7 @@ function enforceDropdownOnBlur(inputId) {
     input.removeEventListener('blur', handler);
     input.addEventListener('blur', handler);
 }
-function filterAsDrop(inputId,dropId){const val=document.getElementById(inputId).value.toLowerCase(),d=document.getElementById(dropId);if(!d.innerHTML.trim())populateAsDrop(dropId);d.querySelectorAll('.as-res-item').forEach(item=>{item.style.display=item.textContent.toLowerCase().includes(val)?'block':'none';});d.classList.add('active');}
+ 
 function selectAsItem(inputId,dropId,name){document.getElementById(inputId).value=name;document.getElementById(dropId).classList.remove('active');}
 function selectMonth(name, val) {
   document.getElementById('att-m-display').value = name;
@@ -625,9 +625,7 @@ function selectAttDept(name, val) {
   document.getElementById('att-dept-display').value = name;
   document.getElementById('att-dept-select').value = val;
   document.getElementById('as-drop-att-dept').classList.remove('active');
-}
-window.addEventListener('mousedown',e=>{if(!e.target.closest('.as-combo-container'))document.querySelectorAll('.as-combo-results').forEach(d=>d.classList.remove('active'));},{passive:true});
-
+} 
 // ── ONBOARDING WIZARD ──
 let currentObStep=1;
 const totalObSteps=6;
@@ -3379,14 +3377,61 @@ function closeConfirm() {
     }
   }
 
-// Cache for dropdown data to avoid repeated calls
+ // ============================================================
+// DROPDOWN SYSTEM (Event Delegation + Simplified Rendering)
+// ============================================================
+
 // Cache for dropdown data
 const dropdownCache = {};
 
+// Global event delegation for dropdown item clicks (runs once)
+document.addEventListener('click', function(e) {
+    // Find if the click target is a dropdown item
+    const item = e.target.closest('.as-res-item');
+    if (!item) return;
+
+    const container = item.closest('.as-combo-results');
+    if (!container) return;
+
+    // Prevent the click from bubbling and triggering other handlers
+    e.stopPropagation();
+
+    // Get the associated input field ID
+   let inputId = container.id.replace('as-drop-', 'as-input-');
+    let inputEl = document.getElementById(inputId);
+
+    // Fallback for wizard inputs (o-dept, o-pos, o-branch, o-etype)
+    if (!inputEl) {
+        inputEl = container.closest('.as-combo-container')?.querySelector('input');
+        if (inputEl) inputId = inputEl.id;
+    }
+    if (!inputEl) return;
+
+    // Get the value from the data-value attribute
+    const value = item.dataset.value;
+    const displayText = item.textContent.trim();
+
+    if (value) {
+        // Perform the selection
+        selectAsItemWithValue(inputId, container.id, displayText, value);
+    }
+});
+
+// Close dropdowns when clicking outside
+document.addEventListener('mousedown', function(e) {
+    if (!e.target.closest('.as-combo-container')) {
+        document.querySelectorAll('.as-combo-results').forEach(d => d.classList.remove('active'));
+    }
+}, { passive: true });
+
+/**
+ * Populates a dropdown with data fetched from the server.
+ */
 async function populateAsDrop(dropdownId, type, searchTerm = '') {
     const dropContainer = document.getElementById(dropdownId);
     if (!dropContainer) return;
 
+    // Show loading state
     dropContainer.innerHTML = '<div class="as-res-item" style="color:var(--muted);">Loading...</div>';
     dropContainer.classList.add('active');
 
@@ -3399,9 +3444,10 @@ async function populateAsDrop(dropdownId, type, searchTerm = '') {
     try {
         const url = `api/1common/fetch_dropdown.php?type=${encodeURIComponent(type)}&search=${encodeURIComponent(searchTerm)}`;
         const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const result = await response.json();
 
-        if (result.success && result.data.length > 0) {
+        if (result.success && result.data) {
             dropdownCache[cacheKey] = result.data;
             renderDropdownItems(dropContainer, result.data);
         } else {
@@ -3412,73 +3458,30 @@ async function populateAsDrop(dropdownId, type, searchTerm = '') {
         dropContainer.innerHTML = '<div class="as-res-item" style="color:var(--danger);">Error loading data</div>';
     }
 }
-function toggleStaticDrop(dropId) {
-    const drop = document.getElementById(dropId);
-    if (!drop) return;
-    // Close any other open dropdowns
-    document.querySelectorAll('.as-combo-results').forEach(d => {
-        if (d.id !== dropId) d.classList.remove('active');
-    });
-    drop.classList.toggle('active');
-}
+
+/**
+ * Renders dropdown items from the fetched data.
+ * Only sets data-value; no inline onclick handlers.
+ */
 function renderDropdownItems(container, items) {
-    const inputId = container.id.replace('as-drop-', 'as-input-');
     container.innerHTML = '';
     items.forEach(item => {
         const div = document.createElement('div');
         div.className = 'as-res-item';
         div.textContent = item.label;
-        div.setAttribute('data-value', item.value);
-        div.setAttribute('onclick', `selectAsItemWithValue('${inputId}', '${container.id}', '${item.label.replace(/'/g, "\\'")}', '${item.value}')`);
+        div.dataset.value = item.value;   // <-- crucial for event delegation
         container.appendChild(div);
     });
 }
 
-function selectAsItemWithValue(inputId, dropId, displayText, value) {
-    const inputEl = document.getElementById(inputId);
-    if (!inputEl) return;
-    
-    inputEl.value = displayText;
-    inputEl.classList.remove('field-error');
-    
-    let hiddenId = inputId + '_id';
-    let hiddenEl = document.getElementById(hiddenId);
-    if (!hiddenEl) {
-        hiddenEl = document.createElement('input');
-        hiddenEl.type = 'hidden';
-        hiddenEl.id = hiddenId;
-        inputEl.parentNode.appendChild(hiddenEl);
-    }
-    hiddenEl.value = value;
-    
-    const dropContainer = document.getElementById(dropId);
-    if (dropContainer) dropContainer.classList.remove('active');
-}
-
-function showAsDrop(dropdownId) {
-    const dropContainer = document.getElementById(dropdownId);
-    const inputId = dropdownId.replace('as-drop-', 'as-input-');
-    const inputEl = document.getElementById(inputId);
-    
-    let type = inputEl?.getAttribute('data-dropdown-type');
-    if (!type) {
-        if (dropdownId.includes('dept')) type = 'departments';
-        else if (dropdownId.includes('branch')) type = 'branches';
-        else if (dropdownId.includes('pos') || dropdownId.includes('job')) type = 'job_positions';
-        else if (dropdownId.includes('emp') || dropdownId.includes('custodian') || dropdownId.includes('manager')) type = 'employees';
-        else if (dropdownId.includes('employment')) type = 'employment_types';
-        else type = 'employees';
-    }
-    
-    const searchTerm = inputEl?.value || '';
-    populateAsDrop(dropdownId, type, searchTerm);
-}
-
+/**
+ * Filters dropdown items based on input text.
+ */
 function filterAsDrop(inputId, dropId) {
     const searchTerm = document.getElementById(inputId).value.toLowerCase();
     const container = document.getElementById(dropId);
     if (!container) return;
-    
+
     const items = container.querySelectorAll('.as-res-item');
     let hasVisible = false;
     items.forEach(item => {
@@ -3490,20 +3493,129 @@ function filterAsDrop(inputId, dropId) {
             item.style.display = 'none';
         }
     });
-    
-    if (!hasVisible && container.innerHTML.trim() !== '') {
-        const noResult = container.querySelector('.no-result-msg');
-        if (!noResult) {
-            const msg = document.createElement('div');
-            msg.className = 'as-res-item no-result-msg';
-            msg.textContent = 'No matching results';
-            msg.style.color = 'var(--muted)';
-            container.appendChild(msg);
-        }
-    } else {
-        const noResult = container.querySelector('.no-result-msg');
-        if (noResult) noResult.remove();
+
+    // Remove any existing "no results" message
+    const existingMsg = container.querySelector('.no-result-msg');
+    if (existingMsg) existingMsg.remove();
+
+    if (!hasVisible) {
+        const msg = document.createElement('div');
+        msg.className = 'as-res-item no-result-msg';
+        msg.textContent = 'No matching results';
+        msg.style.color = 'var(--muted)';
+        container.appendChild(msg);
     }
-    
+
     container.classList.add('active');
 }
+
+/**
+ * Called when a dropdown item is selected.
+ * Updates the visible input and creates/updates a hidden input with the ID.
+ */
+window.selectAsItemWithValue = function(inputId, dropId, displayText, value) {
+    const inputEl = document.getElementById(inputId);
+    if (!inputEl) return;
+
+    // Update the visible input
+    inputEl.value = displayText;
+    inputEl.classList.remove('field-error');
+
+    // Create or update hidden field for the ID
+    let hiddenId = inputId + '_id';
+    let hiddenEl = document.getElementById(hiddenId);
+    if (!hiddenEl) {
+        hiddenEl = document.createElement('input');
+        hiddenEl.type = 'hidden';
+        hiddenEl.id = hiddenId;
+        inputEl.parentNode.appendChild(hiddenEl);
+    }
+    hiddenEl.value = value;
+
+    // Close the dropdown
+    const dropContainer = document.getElementById(dropId);
+    if (dropContainer) dropContainer.classList.remove('active');
+
+    // Trigger validation (for wizard)
+    if (typeof validateMasterRecord === 'function') validateMasterRecord();
+        // Trigger dynamic employment fields when type is chosen in the wizard
+    if (inputId === 'o-etype') {
+        const typeMap = {
+            'full time':   'full-time',
+            'full-time':   'full-time',
+            'contract':    'contract',
+            'part time':   'part-time',
+            'part-time':   'part-time',
+            'internship':  'internship',
+            'temporary':   'temporary',
+            'temp':        'temporary'
+        };
+        const normalized = typeMap[displayText.toLowerCase().trim()] || null;
+        if (typeof updateEmploymentFields === 'function') {
+            updateEmploymentFields(normalized);
+        }
+    }
+};
+
+/**
+ * Show dropdown (called on focus)
+ */
+function showAsDrop(dropdownId) {
+    const dropContainer = document.getElementById(dropdownId);
+    const inputId = dropdownId.replace('as-drop-', 'as-input-');
+    const inputEl = document.getElementById(inputId);
+
+    // Determine the data type
+    let type = inputEl?.getAttribute('data-dropdown-type');
+    if (!type) {
+        // Fallback mapping based on ID
+        if (dropdownId.includes('dept')) type = 'departments';
+        else if (dropdownId.includes('branch')) type = 'branches';
+        else if (dropdownId.includes('pos') || dropdownId.includes('job')) type = 'job_positions';
+        else if (dropdownId.includes('emp') || dropdownId.includes('custodian') || dropdownId.includes('manager')) type = 'employees';
+        else if (dropdownId.includes('employment') || dropdownId.includes('etype')) type = 'employment_types';
+        else type = 'employees';
+    }
+
+    const searchTerm = inputEl?.value || '';
+    populateAsDrop(dropdownId, type, searchTerm);
+}
+
+/**
+ * For static dropdowns (like Gender, Marital Status) that don't fetch data.
+ */
+function toggleStaticDrop(dropId) {
+    const drop = document.getElementById(dropId);
+    if (!drop) return;
+    document.querySelectorAll('.as-combo-results').forEach(d => {
+        if (d.id !== dropId) d.classList.remove('active');
+    });
+    drop.classList.toggle('active');
+}
+
+// Keep the original selectAsItem for static dropdowns (if any)
+window.selectAsItem = function(inputId, dropId, name) {
+    document.getElementById(inputId).value = name;
+    document.getElementById(dropId).classList.remove('active');
+};
+
+// Compatibility for attendance month/year/department selects
+window.selectMonth = function(name, val) {
+    document.getElementById('att-m-display').value = name;
+    document.getElementById('att-m-select').value = val;
+    document.getElementById('as-drop-month').classList.remove('active');
+};
+window.selectYear = function(val) {
+    document.getElementById('att-y-display').value = val;
+    document.getElementById('att-y-select').value = val;
+    document.getElementById('as-drop-year').classList.remove('active');
+};
+window.selectAttDept = function(name, val) {
+    document.getElementById('att-dept-display').value = name;
+    document.getElementById('att-dept-select').value = val;
+    document.getElementById('as-drop-att-dept').classList.remove('active');
+};
+ 
+ 
+ 
+ 
