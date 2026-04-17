@@ -1303,118 +1303,80 @@ function initPage(id){
     case 'dashboard':initDashboard();break;
     case 'org-chart':initOrgChart();break;
     case 'departments':
-      fetch('api/companyprofile/fetch_departments.php')
-        .then(r => r.json())
-        .then(res => {
-          if (!res.success) throw new Error(res.message);
-          // Clear the built guard so buildTable can run
-          const el = document.getElementById('tbl-departments');
-          if (el) delete el.dataset.built;
-
-          buildTable('tbl-departments', {
-            columns: [
-              { key: 'name',   label: 'Department Name' },
-              { key: 'head',   label: 'Head of Department' },
-              { key: 'emp',    label: 'Employees' },
-              { key: 'status', label: 'Status' },
-              {
+    initServerPaginatedTable('tbl-departments', 'api/companyprofile/fetch_departments.php', {
+        columns: [
+            { key: 'name',   label: 'Department Name' },
+            { key: 'head',   label: 'Head of Department' },
+            { key: 'emp',    label: 'Employees' },
+            { key: 'status', label: 'Status' },
+            {
                 key: '_',
                 label: 'Actions',
                 render: () => `
-                  <div class="flex-row">
-                    <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;">
-                      <i data-lucide="trash-2" size="10"></i>
-                    </button>
-                  </div>`
-              }
-            ],
-            rows: res.data
-          });
-        })
-        .catch(err => {
-          document.getElementById('tbl-departments').innerHTML =
-            `<p style="padding:20px;color:#dc2626;">Error loading departments: ${err.message}</p>`;
-        });
-      break;
+                    <div class="flex-row">
+                        <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;">
+                            <i data-lucide="trash-2" size="10"></i>
+                        </button>
+                    </div>`
+            }
+        ],
+        perPage: 15,
+        searchPlaceholder: 'Search department or head...'
+    });
+    break;
     case 'job-positions':
-    fetch('api/companyprofile/fetch_jobpositions.php')
-      .then(r => r.json())
-      .then(res => {
-        if (!res.success) throw new Error(res.message);
-        
-        const el = document.getElementById('tbl-job-positions');
-        if (el) delete el.dataset.built; // Clear built guard to allow re-rendering
-
-        buildTable('tbl-job-positions', {
-          columns: [
-            { key: 'title', label: 'Job Title' },
-            { key: 'dept',  label: 'Department' },
-            { key: 'count', label: 'Employees' },
+    initServerPaginatedTable('tbl-job-positions', 'api/companyprofile/fetch_jobpositions.php', {
+        columns: [
+            { key: 'title',  label: 'Job Title' },
+            { key: 'dept',   label: 'Department' },
+            { key: 'count',  label: 'Employees' },
             { key: 'status', label: 'Status' },
             {
-              key: '_',
-              label: 'Actions',
-              render: () => `
-                <div class="flex-row">
-                  <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;">
-                    <i data-lucide="trash-2" size="10"></i>
-                  </button>
-                </div>`
+                key: '_',
+                label: 'Actions',
+                render: () => `
+                    <div class="flex-row">
+                        <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;">
+                            <i data-lucide="trash-2" size="10"></i>
+                        </button>
+                    </div>`
             }
-          ],
-          rows: res.data
-        });
-      })
-      .catch(err => {
-        console.error(err);
-        document.getElementById('tbl-job-positions').innerHTML =
-          `<p style="padding:20px;color:#dc2626;">Error loading job positions: ${err.message}</p>`;
-      });
-    break;
-    case 'branch-offices':
-    fetch('api/companyprofile/fetch_branchoffices.php')
-    .then(r => r.json())
-    .then(res => {
-      if (!res.success) throw new Error(res.message);
-      
-      const el = document.getElementById('tbl-branch-offices');
-      if (el) delete el.dataset.built;
-
-      buildTable('tbl-branch-offices', {
-        columns: [
-          { key: 'name',     label: 'Branch Name' },
-          { key: 'manager',  label: 'Branch Manager' },
-          { key: 'phone',    label: 'Phone' },
-          { key: 'email',    label: 'Email' },
-          { key: 'location', label: 'Location' },
-          { key: 'emp',      label: 'Staff' },
-          { 
-            key: 'status',   
-            label: 'Status',
-            render: (v) => v === 'Active' ? statusBadge.active : statusBadge.inactive 
-          },
-          {
-            key: '_',
-            label: 'Actions',
-            render: () => `
-              <div class="flex-row">
-                <button class="btn btn-xs btn-secondary"><i data-lucide="eye" size="10"></i></button>
-                <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;">
-                  <i data-lucide="trash-2" size="10"></i>
-                </button>
-              </div>`
-          }
         ],
-        rows: res.data
-      });
-    })
-    .catch(err => {
-      console.error(err);
-      document.getElementById('tbl-branch-offices').innerHTML =
-        `<p style="padding:20px;color:#dc2626;">Error loading branches: ${err.message}</p>`;
+        perPage: 15,
+        searchPlaceholder: 'Search job title or department...'
     });
-  break;
-  case 'employee-directory':
+    break; 
+  case 'branch-offices':
+    initServerPaginatedTable('tbl-branch-offices', 'api/companyprofile/fetch_branchoffices.php', {
+        columns: [
+            { key: 'name',     label: 'Branch Name' },
+            { key: 'manager',  label: 'Branch Manager' },
+            { key: 'phone',    label: 'Phone' },
+            { key: 'email',    label: 'Email' },
+            { key: 'location', label: 'Location' },
+            { key: 'emp',      label: 'Staff' },
+            { 
+                key: 'status',   
+                label: 'Status',
+                render: (v) => v === 'Active' ? statusBadge.active : statusBadge.inactive 
+            },
+            {
+                key: '_',
+                label: 'Actions',
+                render: () => `
+                    <div class="flex-row">
+                        <button class="btn btn-xs btn-secondary"><i data-lucide="eye" size="10"></i></button>
+                        <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;">
+                            <i data-lucide="trash-2" size="10"></i>
+                        </button>
+                    </div>`
+            }
+        ],
+        perPage: 15,
+        searchPlaceholder: 'Search branch name or manager...'
+    });
+    break;
+    case 'employee-directory':
   initServerPaginatedTable('tbl-employees', 'api/employees/fetch_empprofiles.php', {
     columns: [
       {key:'id', label:'Emp ID'},
@@ -1458,6 +1420,7 @@ function initPage(id){
           </div>`
       }
     ],
+  searchPlaceholder: 'Search full name, job title, department...',
     perPage: 15
   });
   break;  
@@ -3038,7 +3001,7 @@ function initPage(id){
     case 'hr-analytics':initAnalytics();break;
   }
 }
- function initServerPaginatedTable(containerId, apiUrl, {columns, perPage = 15}) {
+function initServerPaginatedTable(containerId, apiUrl, {columns, perPage = 15, searchPlaceholder = 'Search...'}) {
   const container = document.getElementById(containerId);
   if (!container) return;
   
@@ -3052,16 +3015,53 @@ function initPage(id){
   let searchTimeout = null;
   let currentRows = [];
   
-  // Render the table UI
-  const render = () => {
-    const start = totalRecords ? (currentPage - 1) * perPage + 1 : 0;
-    const end = Math.min(currentPage * perPage, totalRecords);
+  // Build the initial structure (only once)
+  const buildBaseStructure = () => {
+    container.innerHTML = `
+      <div class="filter-bar">
+        <div class="search-container"><div class="search-inner">
+          <i data-lucide="search" class="search-lead-icon"></i>
+          <input type="text" placeholder="${searchPlaceholder}" id="${containerId}-search">
+          <button class="btn-search-ghost" id="${containerId}-clear-search" style="display:none;"><i data-lucide="x" size="14"></i></button>
+        </div></div>
+      </div>
+      <div class="table-wrap">
+        <table class="tbl">
+          <thead id="${containerId}-thead"></thead>
+          <tbody id="${containerId}-tbody"></tbody>
+        </table>
+      </div>
+      <div class="pagination">
+        <span class="pagination-info" id="${containerId}-info"></span>
+        <div class="pagination-btns" id="${containerId}-pagination"></div>
+      </div>
+    `;
+    lcIcons(container);
     
-    const colHeaders = columns.map(c => {
-      if (c.key === '_') return `<th>${c.label}</th>`;
-      return `<th>${c.label}</th>`;
-    }).join('');
+    // Build table header once
+    const thead = document.getElementById(`${containerId}-thead`);
+    thead.innerHTML = `<tr>${columns.map(c => `<th>${c.label}</th>`).join('')}</tr>`;
+  };
+  
+  buildBaseStructure();
+  
+  // Update only the dynamic parts (tbody, pagination info, clear button visibility)
+  const updateDisplay = () => {
+    const tbody = document.getElementById(`${containerId}-tbody`);
+    const infoSpan = document.getElementById(`${containerId}-info`);
+    const paginationDiv = document.getElementById(`${containerId}-pagination`);
+    const searchInput = document.getElementById(`${containerId}-search`);
+    const clearBtn = document.getElementById(`${containerId}-clear-search`);
     
+    // Update search input value and clear button visibility
+    if (searchInput) {
+      searchInput.value = searchTerm;
+    }
+    if (clearBtn) {
+      clearBtn.style.display = searchTerm ? 'block' : 'none';
+    }
+    
+    // Table body
     const bodyRows = currentRows.map(row =>
       `<tr>${columns.map(c => {
         let v = row[c.key] !== undefined ? row[c.key] : '—';
@@ -3069,6 +3069,26 @@ function initPage(id){
         return `<td>${v}</td>`;
       }).join('')}</tr>`
     ).join('');
+    if (bodyRows) {
+  tbody.innerHTML = bodyRows;
+  
+} else {
+  // Build a row with the message in the first data column, and empty cells for the rest (including actions)
+  let emptyRow = '<tr>';
+  columns.forEach((col, index) => {
+    if (index === 0) {
+      emptyRow += `<td style="text-align:left; padding:16px 20px; color:var(--muted); font-weight:500;">No records found</td>`;
+    } else {
+      emptyRow += `<td></td>`;
+    }
+  });
+  emptyRow += '</tr>';
+  tbody.innerHTML = emptyRow;
+}
+    // Pagination info
+    const start = totalRecords ? (currentPage - 1) * perPage + 1 : 0;
+    const end = Math.min(currentPage * perPage, totalRecords);
+    infoSpan.textContent = `Showing ${totalRecords ? start : 0}–${end} of ${totalRecords}`;
     
     // Pagination buttons
     let pgBtns = `<button class="pg-btn" onclick="changeServerPage('${containerId}', -1)" ${currentPage <= 1 ? 'disabled' : ''}>‹</button>`;
@@ -3080,43 +3100,8 @@ function initPage(id){
       }
     }
     pgBtns += `<button class="pg-btn" onclick="changeServerPage('${containerId}', 1)" ${currentPage >= totalPages ? 'disabled' : ''}>›</button>`;
-    
-    container.innerHTML = `
-      <div class="filter-bar">
-        <div class="search-container"><div class="search-inner">
-          <i data-lucide="search" class="search-lead-icon"></i>
-          <input type="text" placeholder="Search..." id="${containerId}-search" value="${searchTerm.replace(/"/g, '&quot;')}">
-          ${searchTerm ? `<button class="btn-search-ghost" id="${containerId}-clear-search" style="opacity:1; visibility:visible;"><i data-lucide="x" size="14"></i></button>` : ''}
-        </div></div>
-      </div>
-      <div class="table-wrap"><table class="tbl"><thead><tr>${colHeaders}</tr></thead><tbody>${bodyRows}</tbody></table></div>
-      <div class="pagination"><span class="pagination-info">Showing ${totalRecords ? start : 0}–${end} of ${totalRecords}</span><div class="pagination-btns">${pgBtns}</div></div>
-    `;
-    
-    lcIcons(container);
-    
-    // Attach search input event
-    const searchInput = document.getElementById(`${containerId}-search`);
-    if (searchInput) {
-      searchInput.addEventListener('input', (e) => {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => {
-          searchTerm = e.target.value;
-          currentPage = 1;
-          fetchData();
-        }, 300);
-      });
-    }
-    
-    // Attach clear button event
-    const clearBtn = document.getElementById(`${containerId}-clear-search`);
-    if (clearBtn) {
-      clearBtn.addEventListener('click', () => {
-        searchTerm = '';
-        currentPage = 1;
-        fetchData();
-      });
-    }
+    paginationDiv.innerHTML = pgBtns;
+    lcIcons(document.getElementById(`${containerId}-tbody`));
   };
   
   // Fetch data from API
@@ -3131,16 +3116,40 @@ function initPage(id){
         currentRows = res.data || [];
         totalRecords = res.pagination?.total || 0;
         totalPages = res.pagination?.totalPages || 1;
-        render();
+        updateDisplay();
         container.style.opacity = '1';
       })
       .catch(err => {
-        container.innerHTML = `<p style="padding:20px;color:#dc2626;">Error loading data: ${err.message}</p>`;
+        document.getElementById(`${containerId}-tbody`).innerHTML = `<tr><td colspan="${columns.length}" style="padding:20px;color:#dc2626;">Error: ${err.message}</td></tr>`;
         container.style.opacity = '1';
       });
   };
   
-  // Expose pagination control functions
+  // Attach search events (only once)
+  const searchInput = document.getElementById(`${containerId}-search`);
+  const clearBtn = document.getElementById(`${containerId}-clear-search`);
+  
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        searchTerm = e.target.value;
+        currentPage = 1;
+        fetchData();
+      }, 300);
+    });
+  }
+  
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      searchTerm = '';
+      if (searchInput) searchInput.value = '';
+      currentPage = 1;
+      fetchData();
+    });
+  }
+  
+  // Expose pagination controls
   window[`changeServerPage_${containerId}`] = (dir) => {
     const newPage = currentPage + dir;
     if (newPage >= 1 && newPage <= totalPages) {
