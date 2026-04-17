@@ -812,3 +812,193 @@ button .spin svg {
   width: 16px;
   height: 16px;
 }
+input:disabled, input[disabled] {
+    background: #f1f5f9 !important;
+    color: var(--muted); 
+    border-color: var(--border) !important;
+} 
+/* ============================================= */
+/*   ADD EMPLOYEE WIZARD – MOBILE RESPONSIVENESS */
+/* ============================================= */
+
+@media (max-width: 768px) {
+  /* Main grid: stack sidebar and content */
+  .onboard-grid {
+    grid-template-columns: 1fr !important;
+    min-height: auto;
+    border-radius: 16px;
+  }
+
+  /* Sidebar becomes horizontal scrollable steps */
+  .onboard-sidebar {
+    padding: 16px 12px !important;
+    border-right: none !important;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* Progress bar hide or simplify (optional) */
+  #master-progress-line {
+    display: none;
+  }
+
+  /* Steps navigation horizontal scroll */
+  #onboard-nav-list {
+    display: flex !important;
+    flex-direction: row !important;
+    overflow-x: auto !important;
+    gap: 8px;
+    padding-bottom: 8px;
+    margin: 0 -12px;
+    padding-left: 12px;
+    padding-right: 12px;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Individual step pill – now inline */
+  .step-pro {
+    flex-shrink: 0;
+    white-space: nowrap;
+    margin-bottom: 0;
+    padding: 8px 14px;
+    border-radius: 40px;
+    background: #f8fafc;
+    border: 1px solid var(--border);
+  }
+
+  .step-pro.active {
+    background: var(--primary-light);
+    border-color: var(--primary);
+  }
+
+  /* Hide the completion check box on mobile sidebar */
+  #onboard-nav-list > div:last-child {
+    display: none;
+  }
+
+  /* Content area padding reduction */
+  .onboard-content {
+    padding: 20px 16px !important;
+  }
+
+  /* Identity section: avatar + fields stack vertically */
+  .identity-master-wrapper {
+    flex-direction: column !important;
+    gap: 24px !important;
+    padding: 20px !important;
+    align-items: center !important;
+  }
+
+  .avatar-upload-zone {
+    width: 100%;
+  }
+
+  .avatar-frame {
+    width: 120px !important;
+    height: 120px !important;
+  }
+
+  .identity-fields-container {
+    width: 100%;
+  }
+
+  /* All form grids become single column */
+  .form-grid.fg-2,
+  .form-grid.fg-3,
+  .name-grid-row,
+  .demo-grid-row {
+    grid-template-columns: 1fr !important;
+    gap: 16px;
+  }
+
+  /* Full width for all form groups */
+  .form-group {
+    grid-column: span 1 !important;
+  }
+
+  /* Date inputs easier to tap */
+  input[type="date"] {
+    min-height: 48px;
+  }
+
+  /* Dynamic employment fields grid */
+  #dynamic-employment-fields {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Review step containers stack */
+  .review-container {
+    grid-template-columns: 1fr !important;
+  }
+
+  .review-identity-card {
+    flex-direction: column !important;
+    text-align: center !important;
+  }
+
+  /* Bottom navigation buttons spacing */
+  .onboard-content > div:last-child {
+    flex-wrap: wrap;
+    justify-content: center !important;
+  }
+
+  #ob-prev,
+  #ob-next {
+    flex: 1;
+    min-width: 120px;
+  }
+
+  #ob-step-nav-center {
+    order: 1;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin: 8px 0;
+  }
+
+  /* Dots progress for steps */
+  .dot-progress {
+    justify-content: center;
+  }
+}
+
+/* Additional tweaks for very small screens (<=480px) */
+@media (max-width: 480px) {
+  .page-title {
+    font-size: 1.1rem !important;
+  }
+
+  .btn {
+    padding: 8px 14px;
+    font-size: 0.75rem;
+  }
+
+  .avatar-frame {
+    width: 100px !important;
+    height: 100px !important;
+  }
+
+  .step-pro span {
+    display: none; /* hide step text on extra small, show only number */
+  }
+
+  .step-pro .step-idx {
+    margin: 0;
+  }
+}
+
+
+/* Highlight selected item in custom dropdown */
+.as-res-item.selected {
+    background: var(--primary-light) !important;
+    color: var(--primary) !important;
+    font-weight: 700;
+    position: relative;
+}
+.as-res-item.selected::after {
+    content: "✓";
+    position: absolute;
+    right: 12px;
+    font-size: 12px;
+    color: var(--primary);
+}

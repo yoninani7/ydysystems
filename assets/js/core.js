@@ -1,6 +1,60 @@
 // ── ICON HELPER: targeted scan when possible, full scan as fallback ──
 const lcIcons = (el) => el ? lucide.createIcons({nodes:[el]}) : lucide.createIcons();
+// ── VALIDATION HELPERS ──────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// FIELD VALIDATION RULES (mirror server‑side add_employee.php)
+// ─────────────────────────────────────────────────────────────────────────────
 
+const VALIDATORS = {
+    'o-dob': (val) => {
+        if (!val) return { valid: false, error: 'Date of Birth is required.' };
+        const dob = new Date(val);
+        if (isNaN(dob.getTime())) return { valid: false, error: 'Invalid date format.' };
+        const today = new Date();
+        let age = today.getFullYear() - dob.getFullYear();
+        const m = today.getMonth() - dob.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
+        if (age < 16) return { valid: false, error: 'Employee must be at least 16 years old.' };
+        if (age > 100) return { valid: false, error: 'Age cannot exceed 100 years.' };
+        return { valid: true };
+    }, 
+    'o-email': (val) => {
+        if (!val) return { valid: true };
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(val) ? { valid: true } : { valid: false, error: 'Invalid email address.' };
+    },
+    'o-sal': (val) => {
+        if (!val) return { valid: true };
+        const num = parseFloat(val);
+        return (!isNaN(num) && num > 0) ? { valid: true } : { valid: false, error: 'Salary must be a positive number.' };
+    }, 
+    'o-end-date': (val) => {
+        if (!val) return { valid: true };
+        const endDate = new Date(val);
+        if (isNaN(endDate.getTime())) return { valid: false, error: 'Invalid end date.' };
+        const hireField = document.getElementById('o-hire');
+        if (hireField && hireField.value) {
+            const hireDate = new Date(hireField.value);
+            if (endDate <= hireDate) return { valid: false, error: 'End date must be after start date.' };
+        }
+        return { valid: true };
+    }
+};
+
+// Helper to validate a single field by ID
+function validateField(fieldId) {
+    const field = document.getElementById(fieldId);
+    if (!field) return { valid: true };
+    const validator = VALIDATORS[fieldId];
+    if (!validator) return { valid: true };
+    const result = validator(field.value.trim());
+    if (!result.valid) {
+        field.classList.add('field-error');
+    } else {
+        field.classList.remove('field-error');
+    }
+    return result;
+}
 // ── SIDEBAR ──
 let sidebarCollapsed = false;
 const isMobile = () => window.innerWidth <= 768;
@@ -576,53 +630,91 @@ function saveBranch() {
         lcIcons(btn);
     });
 }
-// ── ASSET DROPDOWNS ──
+// ──  DROPDOWNS ──
+let activeDropdownId = null;
+const dropdownState = {}; // Tracks loaded type for each dropdown
 
 function showAsDrop(dropdownId) {
     const dropContainer = document.getElementById(dropdownId);
-    let inputId = dropdownId.replace('as-drop-', 'as-input-');
-    let inputEl = document.getElementById(inputId);
+    if (!dropContainer) return;
 
-    // Fallback for wizard inputs
-    if (!inputEl && dropContainer) {
-        inputEl = dropContainer.closest('.as-combo-container')?.querySelector('input');
-        if (inputEl) inputId = inputEl.id;
-    }
-    if (!inputEl) return;
-
-    let type = inputEl?.getAttribute('data-dropdown-type');
-    if (!type) {
-        if (dropdownId.includes('dept')) type = 'departments';
-        else if (dropdownId.includes('branch')) type = 'branches';
-        else if (dropdownId.includes('pos') || dropdownId.includes('job')) type = 'job_positions';
-        else if (dropdownId.includes('emp') || dropdownId.includes('custodian') || dropdownId.includes('manager')) type = 'employees';
-        else if (dropdownId.includes('employment') || dropdownId.includes('etype')) type = 'employment_types';
-        else type = 'employees';
+    // Determine the associated type
+    let type;
+    if (dropdownId === 'as-drop-dept') type = 'departments';
+    else if (dropdownId === 'as-drop-branch') type = 'branches';
+    else if (dropdownId === 'as-drop-etype') type = 'employment_types';
+    else if (dropdownId === 'as-drop-pos') type = 'job_positions';
+    else {
+        // Fallback for other dropdowns
+        const inputId = dropdownId.replace('as-drop-', 'as-input-');
+        const inputEl = document.getElementById(inputId) || dropContainer.closest('.as-combo-container')?.querySelector('input');
+        type = inputEl?.getAttribute('data-dropdown-type') || 'employees';
     }
 
-    // ─── INSERT THE SNIPPET HERE ──────────────────────────────────────────────
+    // Close any other open dropdown
+    if (activeDropdownId && activeDropdownId !== dropdownId) {
+        document.getElementById(activeDropdownId)?.classList.remove('active');
+    }
+
+    // Special handling for job positions (department dependent)
     if (dropdownId === 'as-drop-pos') {
-        const deptHidden = document.getElementById('o-dept_id');
-        if (!deptHidden || !deptHidden.value) {
+        const posInput = document.getElementById('o-pos');
+        const deptId = posInput?.dataset.departmentId || document.getElementById('o-dept_id')?.value;
+        if (!deptId) {
             dropContainer.innerHTML = '<div class="as-res-item" style="color:var(--warning);">Please select a department first</div>';
             dropContainer.classList.add('active');
+            activeDropdownId = dropdownId;
             return;
         }
-        reloadJobPositionsDropdown(deptHidden.value);
+        // For job positions, always reload because department may change
+        reloadJobPositionsDropdown(deptId);
+        activeDropdownId = dropdownId;
         return;
     }
-    // ─────────────────────────────────────────────────────────────────────────
 
-    const searchTerm = inputEl?.value || '';
-    populateAsDrop(dropdownId, type, searchTerm);
+    // For department, branch, employment type: if already loaded with correct type, just show
+    if (dropdownState[dropdownId] === type && dropContainer.children.length > 0) {
+        dropContainer.classList.add('active');
+        activeDropdownId = dropdownId;
+        return;
+    }
+
+    // Otherwise, load data
+    dropContainer.innerHTML = '<div class="as-res-item" style="color:var(--muted);">Loading...</div>';
+    dropContainer.classList.add('active');
+    activeDropdownId = dropdownId;
+
+    // Clear cache for this type to ensure fresh data
+    Object.keys(dropdownCache).forEach(key => {
+        if (key.startsWith(type + ':')) {
+            delete dropdownCache[key];
+        }
+    });
+
+    // Fetch data
+    const url = `api/1common/fetch_dropdown.php?type=${type}&search=`;
+    fetch(url)
+        .then(r => r.json())
+        .then(result => {
+            if (result.success && result.data) {
+                renderDropdownItems(dropContainer, result.data);
+                dropdownState[dropdownId] = type;
+            } else {
+                dropContainer.innerHTML = '<div class="as-res-item" style="color:var(--muted);">No options found</div>';
+            }
+        })
+        .catch(err => {
+            console.error('Dropdown error:', err);
+            dropContainer.innerHTML = '<div class="as-res-item" style="color:var(--danger);">Error loading data</div>';
+        });
 }
 function enforceDropdownOnBlur(inputId) {
     const input = document.getElementById(inputId);
     if (!input) return;
-    // Remove previous listener to avoid duplicates, then add new one
+    
     const handler = function() {
         const hidden = document.getElementById(this.id + '_id');
-        if (hidden && hidden.value === '' && this.value.trim() !== '') {
+        if (hidden && !hidden.value && this.value.trim() !== '') {
             this.value = '';
             showNotification("Invalid Selection", "Please select an option from the dropdown list.", "warning");
             this.classList.add('field-error');
@@ -630,6 +722,7 @@ function enforceDropdownOnBlur(inputId) {
             this.classList.remove('field-error');
         }
     };
+    
     input.removeEventListener('blur', handler);
     input.addEventListener('blur', handler);
 }
@@ -654,21 +747,84 @@ function selectAttDept(name, val) {
 let currentObStep=1;
 const totalObSteps=6;
 // 1. Blocks Next Button + Highlights Missing
-// 1. Blocks 'Next' & toggles the red highlight class
-function moveOnboarding(dir){
-  if(dir>0){
-    const cur=[...document.querySelectorAll(`#ob-step-${currentObStep} .master-req`)];
-    let ok=true; 
-    cur.forEach(i=>{ 
-      const isBad = !i.value.trim();
-      i.classList.toggle('field-error', isBad); 
-      if(isBad) ok=false;
+function moveOnboarding(dir) {
+    if (dir > 0) {
+        // Validate current step
+        const stepValid = validateStep(currentObStep);
+        if (!stepValid) return;
+    }
+    const t = currentObStep + dir;
+    if (t >= 1 && t <= totalObSteps) jumpToStep(t);
+}
+function validateStep(step) {
+    // First, check required fields (empty check)
+    const stepFields = [...document.querySelectorAll(`#ob-step-${step} .master-req`)];
+    let allValid = true;
+    
+    stepFields.forEach(field => {
+        const isEmpty = !field.value.trim();
+        field.classList.toggle('field-error', isEmpty);
+        if (isEmpty) {
+            allValid = false;
+        }
     });
-    if(!ok) return; 
-  }
-  const t=currentObStep+dir; if(t>=1&&t<=totalObSteps) jumpToStep(t);
+    
+    if (!allValid) {
+        showNotification('Missing Required Fields', 'Please fill in all required fields before proceeding.', 'warning');
+        return false;
+    }
+    
+    // Second, run business rule validations for fields present in this step
+    const fieldIdsInStep = getFieldIdsForStep(step);
+    for (const fieldId of fieldIdsInStep) {
+        const result = validateField(fieldId);
+        if (!result.valid) {
+            showNotification('Invalid Input', result.error, 'warning');
+            return false;
+        }
+    }
+    
+    // Special cross‑field validation for contract end date vs hire date
+    if (step === 3) {
+        const hireField = document.getElementById('o-hire');
+        const endField = document.getElementById('o-end-date');
+        if (hireField && endField && hireField.value && endField.value) {
+            const hireDate = new Date(hireField.value);
+            const endDate = new Date(endField.value);
+            if (endDate <= hireDate) {
+                endField.classList.add('field-error');
+                showNotification('Invalid Date Range', 'Contract end date must be after start date.', 'warning');
+                return false;
+            }
+        }
+    }
+    
+    return true;
 }
 
+// Helper: map step number to the IDs of fields that have special validation rules
+function getFieldIdsForStep(step) {
+    const stepMap = {
+        1: ['o-dob'],
+        2: ['o-email'],
+        3: [], // dynamic fields handled separately
+        4: ['o-sal', 'o-tin', 'o-acc'],
+        5: ['o-ephone']
+    };
+    let ids = stepMap[step] || [];
+    
+    // For step 3, include dynamic fields if they exist
+    if (step === 3) {
+        const hire = document.getElementById('o-hire');
+        const end = document.getElementById('o-end-date');
+        const hours = document.getElementById('o-hours');
+        if (hire) ids.push('o-hire');
+        if (end) ids.push('o-end-date');
+        if (hours) ids.push('o-hours');
+    }
+    
+    return ids;
+}
 // 2. Blocks side-nav jumps if current section is invalid
 function jumpToStep(step){
   if(step > currentObStep) {
@@ -804,44 +960,189 @@ function validateMasterRecord(){
   val.innerHTML=allOk?'<i data-lucide="check-circle" size="12"></i> Verified':`* Required fields missing`;
   val.style.color=allOk?'var(--success)':'var(--danger)';
   
-  all.forEach(i=>{ if(i.value.trim()) i.classList.remove('field-error'); });
+ // Inside validateMasterRecord, replace the line: 
+
+all.forEach(i => {
+    const hasValue = i.value.trim() !== '';
+    if (!hasValue) return; // keep error if empty
+    
+    // If field has a validator, only clear if valid
+    if (VALIDATORS[i.id]) {
+        const result = VALIDATORS[i.id](i.value);
+        if (result.valid) {
+            i.classList.remove('field-error');
+        }
+    } else {
+        i.classList.remove('field-error');
+    }
+});
   lcIcons(val);
 }document.querySelectorAll('#p-add-employee input, #p-add-employee select, #p-add-employee textarea').forEach(input=>input.addEventListener('input',validateMasterRecord));
 
+function validateAllSteps() {
+    const allReq = [...document.querySelectorAll('#p-add-employee .master-req')];
+    let valid = true;
+
+    allReq.forEach(input => {
+        if (!input.value.trim()) {
+            input.classList.add('field-error');
+            valid = false;
+        } else {
+            input.classList.remove('field-error');
+        }
+    });
+
+    return valid;
+}
+
 function saveNewEmployee() {
-  const btnTop = document.getElementById('btn-save-master');
-  const btnBottom = document.getElementById('btn-save-master-bottom');
-  const branchId = document.getElementById('o-branch_id')?.value || '';
-  const allBtns = [btnTop, btnBottom];
-
-  allBtns.forEach(btn => {
-    if (btn) {
-      btn.disabled = true;
-      // We insert the <i> tag with the data-lucide attribute
-      btn.innerHTML = `<i data-lucide="loader-2" class="spin"></i> Finalizing Account...`;
-      
-      // IMPORTANT: Tell Lucide to look at THIS specific button and turn the <i> into an SVG
-      if (typeof lucide !== 'undefined') {
-        lucide.createIcons({
-          nodes: [btn]
-        });
-      }
-    }
-  });
-
-  // Simulate API call
-  setTimeout(() => {
-    showNotification("Success", "Employee profile has been created.", "success");
-    goPage('employee-directory');
+    console.log('[DEBUG] saveNewEmployee called');
     
-    // Reset buttons after transition
-    setTimeout(() => {
-        btnTop.innerHTML = `<i data-lucide="shield-check"></i> Commit Record`;
-        btnBottom.innerHTML = `<i data-lucide="user-plus"></i> Add Employee`;
-        allBtns.forEach(b => { if(b) b.disabled = false; });
-        lucide.createIcons(); // Final refresh for all icons
-    }, 1000);
-  }, 2000);
+    // Validate all steps first
+    if (typeof validateAllSteps !== 'function') {
+        console.error('[ERROR] validateAllSteps is not defined');
+        showNotification('System Error', 'Validation function missing. Refresh page.', 'error');
+        return;
+    }
+    
+    if (!validateAllSteps()) {
+        console.warn('[WARN] Validation failed');
+        showNotification('Validation Failed', 'Please correct all errors before submitting.', 'error');
+        validateMasterRecord();
+        return;
+    }
+
+    const btnTop = document.getElementById('btn-save-master');
+    const btnBottom = document.getElementById('btn-save-master-bottom');
+    const allBtns = [btnTop, btnBottom].filter(b => b);
+
+    allBtns.forEach(btn => {
+        btn.disabled = true;
+        btn.innerHTML = `<i data-lucide="loader-2" class="spin"></i> Saving...`;
+        if (typeof lucide !== 'undefined') lucide.createIcons({ nodes: [btn] });
+    });
+
+    // Build FormData safely
+    const formData = new FormData();
+    
+    // Helper to safely get value
+    const getVal = (id) => document.getElementById(id)?.value?.trim() || '';
+    const getHiddenVal = (id) => document.getElementById(id + '_id')?.value || '';
+
+    // Personal
+    formData.append('first_name', getVal('o-fname'));
+    formData.append('middle_name', getVal('o-mname'));
+    formData.append('last_name', getVal('o-lname'));
+    formData.append('date_of_birth', getVal('o-dob'));
+    formData.append('gender', getVal('o-gender'));
+    formData.append('marital_status', getVal('o-marital'));
+    formData.append('nationality', getVal('o-nat'));
+    formData.append('place_of_birth', getVal('o-pob'));
+
+    // Contact
+    formData.append('personal_phone', getVal('o-phone'));
+    formData.append('personal_email', getVal('o-email'));
+    formData.append('address', getVal('o-addr'));
+    formData.append('city', getVal('o-city'));
+    formData.append('postal_code', getVal('o-zip'));
+
+    // Employment IDs
+    formData.append('department_id', getHiddenVal('o-dept'));
+    formData.append('branch_id', getHiddenVal('o-branch'));
+    formData.append('job_position_id', getHiddenVal('o-pos'));
+    formData.append('employment_type_id', getHiddenVal('o-etype'));
+
+    // Dynamic fields
+    const hireDate = document.getElementById('o-hire');
+    if (hireDate) formData.append('hire_date', hireDate.value);
+
+    const endDate = document.getElementById('o-end-date');
+    if (endDate) formData.append('contract_end_date', endDate.value);
+
+    const probation = document.getElementById('o-probation');
+    if (probation) formData.append('probation_period', probation.value);
+
+    const reportsTo = document.getElementById('o-reports_id');
+    if (reportsTo) formData.append('reports_to_id', reportsTo.value);
+
+    const hours = document.getElementById('o-hours');
+    if (hours) formData.append('hours_per_week', hours.value);
+
+    const project = document.getElementById('o-project');
+    if (project) formData.append('project_name', project.value.trim());
+
+    // Finance
+    formData.append('salary', getVal('o-sal'));
+    formData.append('bank_name', getVal('o-bank'));
+    formData.append('bank_account', getVal('o-acc'));
+    formData.append('tin', getVal('o-tin'));
+
+    // Emergency
+    formData.append('emergency_name', getVal('o-ename'));
+    formData.append('emergency_phone', getVal('o-ephone'));
+    formData.append('emergency_relation', getVal('o-idno'));
+
+    // CSRF token
+    const csrfInput = document.getElementById('csrf_token') || document.querySelector('input[name="csrf_token"]');
+    if (csrfInput) {
+        formData.append('csrf_token', csrfInput.value);
+    } else {
+        console.warn('[WARN] CSRF token not found');
+        formData.append('csrf_token', '');
+    }
+
+    // Avatar
+    const avatarInput = document.getElementById('avatar-upload');
+    if (avatarInput && avatarInput.files.length > 0) {
+        formData.append('avatar', avatarInput.files[0]);
+    }
+
+    console.log('[DEBUG] Submitting to api/employees/add_employee.php');
+    
+    fetch('api/employees/add_employee.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        console.log('[DEBUG] Response status:', response.status);
+        return response.json();
+    })
+    .then(result => {
+        console.log('[DEBUG] Result:', result);
+        if (result.success) {
+            showNotification('Success', result.message, 'success');
+            setTimeout(() => {
+                goPage('employee-directory');
+            }, 1500);
+        } else {
+            if (result.errors) {
+                let errorMsg = result.message || 'Validation failed.';
+                const firstError = Object.values(result.errors)[0];
+                if (firstError) errorMsg = firstError;
+                showNotification('Error', errorMsg, 'error');
+
+                Object.keys(result.errors).forEach(field => {
+                    const input = document.getElementById(field) || document.querySelector(`[name="${field}"]`);
+                    if (input) input.classList.add('field-error');
+                });
+            } else {
+                showNotification('Error', result.message || 'Failed to create employee.', 'error');
+            }
+        }
+    })
+    .catch(error => {
+        console.error('[ERROR] Fetch failed:', error);
+        showNotification('Network Error', 'Could not connect to server. Please try again.', 'error');
+    })
+    .finally(() => {
+        allBtns.forEach(btn => {
+            btn.disabled = false;
+            btn.innerHTML = btn.id === 'btn-save-master' 
+                ? `<i data-lucide="shield-check"></i> Commit Record`
+                : `<i data-lucide="user-plus"></i> Add Employee`;
+            if (typeof lucide !== 'undefined') lucide.createIcons({ nodes: [btn] });
+        });
+    });
 }
 
 function previewAvatar(input){
@@ -1029,7 +1330,7 @@ function initPage(id){
           columns: [
             { key: 'title', label: 'Job Title' },
             { key: 'dept',  label: 'Department' },
-            { key: 'count', label: 'Headcount' },
+            { key: 'count', label: 'Employees' },
             { key: 'status', label: 'Status' },
             {
               key: '_',
@@ -1156,6 +1457,27 @@ function initPage(id){
         `<p style="padding:20px;color:#dc2626;">Error loading directory: ${err.message}</p>`;
     });
   break;
+    case 'add-employee':
+    // Attach blur validation for all fields with special rules
+    const fieldsToWatch = ['o-dob', 'o-email', 'o-sal', 'o-tin', 'o-acc', 'o-ephone'];
+    fieldsToWatch.forEach(id => {
+        const field = document.getElementById(id);
+        if (field) {
+            field.addEventListener('blur', function() {
+                validateField(this.id);
+            });
+        }
+    });
+    // Also watch dynamic fields (they may appear later, so use event delegation)
+    document.getElementById('p-add-employee').addEventListener('blur', function(e) {
+        const target = e.target;
+        if (target.id === 'o-hire' || target.id === 'o-end-date' || target.id === 'o-hours') {
+            validateField(target.id);
+        }
+    }, true); // use capture to catch blur on dynamic fields
+    
+    setTimeout(() => validateMasterRecord(), 50);
+    break;
     case 'employment-types':
         fetch('api/employees/fetch_emptypes.php')
           .then(r => r.json())
@@ -3217,10 +3539,7 @@ function openEmployeeVault(name, id) {
 }
 function updateEmploymentFields(type) {
     const container = document.getElementById('dynamic-employment-fields');
-    if (!container) {
-        console.error('Dynamic fields container not found');
-        return;
-    }
+    if (!container) return;
 
     if (!type) {
         container.style.display = 'none';
@@ -3231,6 +3550,7 @@ function updateEmploymentFields(type) {
     container.style.display = 'grid';
     let html = '';
 
+    // Common probation period snippet
     const probationHtml = ` 
         <div class="form-group">
             <label>Probation Period *</label>
@@ -3248,13 +3568,29 @@ function updateEmploymentFields(type) {
         </div>
     `;
 
+    // Reporting To combo box (used in multiple cases)
+    const reportingHtml = `
+        <div class="form-group" style="grid-column: span 2;">
+            <label>Reporting To</label>
+            <div class="as-combo-container">
+                <input type="text" id="o-reports" class="form-ctrl" 
+                       data-dropdown-type="employees"
+                       placeholder="Search manager..." 
+                       onfocus="showAsDrop('as-drop-reports')" 
+                       oninput="filterAsDrop('o-reports','as-drop-reports')"
+                       autocomplete="off">
+                <div class="as-combo-results" id="as-drop-reports"></div>
+            </div>
+        </div>
+    `;
+
     switch (type) {
         case 'full-time':
             html = `
                 <div class="form-group"><label>Hiring Date *</label>
                     <input type="date" class="form-ctrl master-req" id="o-hire" onclick="this.showPicker()" style="cursor:pointer"></div>
                 ${probationHtml}
-                <div class="form-group"><label>Reporting To</label><input type="text" class="form-ctrl" id="o-reports" placeholder="Search Manager..."></div>
+                ${reportingHtml}
             `;
             break;
         case 'contract':
@@ -3264,7 +3600,7 @@ function updateEmploymentFields(type) {
                 <div class="form-group"><label>Contract End *</label>
                     <input type="date" class="form-ctrl master-req" id="o-end-date" onclick="this.showPicker()" style="cursor:pointer"></div>
                 ${probationHtml}
-                <div class="form-group" style="grid-column: span 2;"><label>Reporting To</label><input type="text" class="form-ctrl" id="o-reports" placeholder="Search Manager..."></div>
+                ${reportingHtml}
             `;
             break;
         case 'part-time':
@@ -3273,7 +3609,7 @@ function updateEmploymentFields(type) {
                     <input type="date" class="form-ctrl master-req" id="o-hire" onclick="this.showPicker()" style="cursor:pointer"></div>
                 <div class="form-group"><label>Hours Per Week *</label><input type="number" class="form-ctrl master-req" id="o-hours" placeholder="e.g. 20"></div>
                 ${probationHtml}
-                <div class="form-group" style="grid-column: span 2;"><label>Reporting To</label><input type="text" class="form-ctrl" id="o-reports" placeholder="Search Manager..."></div>
+                ${reportingHtml}
             `;
             break;
         case 'internship':
@@ -3282,7 +3618,7 @@ function updateEmploymentFields(type) {
                     <input type="date" class="form-ctrl master-req" id="o-hire" onclick="this.showPicker()" style="cursor:pointer"></div>
                 <div class="form-group"><label>Internship End *</label>
                     <input type="date" class="form-ctrl master-req" id="o-end-date" onclick="this.showPicker()" style="cursor:pointer"></div>
-                <div class="form-group"><label>Assigned Mentor</label><input type="text" class="form-ctrl" id="o-reports" placeholder="Full name of Mentor"></div>
+                ${reportingHtml.replace('Reporting To', 'Assigned Mentor')}
             `;
             break;
         case 'temporary':
@@ -3290,11 +3626,10 @@ function updateEmploymentFields(type) {
                 <div class="form-group"><label>Project Name *</label><input type="text" class="form-ctrl master-req" id="o-project" placeholder="e.g. Infrastructure Audit"></div>
                 <div class="form-group"><label>Assignment Start *</label>
                     <input type="date" class="form-ctrl master-req" id="o-hire" onclick="this.showPicker()" style="cursor:pointer"></div>
-                <div class="form-group"><label>Project Supervisor</label><input type="text" class="form-ctrl" id="o-reports" placeholder="Search Supervisor..."></div>
+                ${reportingHtml.replace('Reporting To', 'Project Supervisor')}
             `;
             break;
         default:
-            console.warn('Unknown employment type:', type);
             html = `<p style="color:var(--muted); grid-column:span 3;">No additional fields required for this employment type.</p>`;
     }
 
@@ -3306,6 +3641,9 @@ function updateEmploymentFields(type) {
         input.addEventListener('input', validateMasterRecord);
     });
     
+    // Enforce dropdown selection for reporting manager
+    enforceDropdownOnBlur('o-reports');
+
     validateMasterRecord();
 }
 function showNotification(title, message, type = 'success') {
@@ -3452,52 +3790,7 @@ document.addEventListener('mousedown', function(e) {
 /**
  * Populates a dropdown with data fetched from the server.
  */
-async function populateAsDrop(dropdownId, type, searchTerm = '') {
-    const dropContainer = document.getElementById(dropdownId);
-    if (!dropContainer) return;
-
-    // Show loading state
-    dropContainer.innerHTML = '<div class="as-res-item" style="color:var(--muted);">Loading...</div>';
-    dropContainer.classList.add('active');
-
-    const cacheKey = `${type}:${searchTerm}`;
-    if (dropdownCache[cacheKey]) {
-        renderDropdownItems(dropContainer, dropdownCache[cacheKey]);
-        return;
-    }
-
-    try {
-        const url = `api/1common/fetch_dropdown.php?type=${encodeURIComponent(type)}&search=${encodeURIComponent(searchTerm)}`;
-        const response = await fetch(url);
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const result = await response.json();
-
-        if (result.success && result.data) {
-            dropdownCache[cacheKey] = result.data;
-            renderDropdownItems(dropContainer, result.data);
-        } else {
-            dropContainer.innerHTML = '<div class="as-res-item" style="color:var(--muted);">No results found</div>';
-        }
-    } catch (err) {
-        console.error('Dropdown error:', err);
-        dropContainer.innerHTML = '<div class="as-res-item" style="color:var(--danger);">Error loading data</div>';
-    }
-}
-
-/**
- * Renders dropdown items from the fetched data.
- * Only sets data-value; no inline onclick handlers.
- */
-function renderDropdownItems(container, items) {
-    container.innerHTML = '';
-    items.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'as-res-item';
-        div.textContent = item.label;
-        div.dataset.value = item.value;   // <-- crucial for event delegation
-        container.appendChild(div);
-    });
-}
+  
 
 /**
  * Filters dropdown items based on input text.
@@ -3542,11 +3835,9 @@ window.selectAsItemWithValue = function(inputId, dropId, displayText, value) {
     const inputEl = document.getElementById(inputId);
     if (!inputEl) return;
 
-    // Update the visible input
     inputEl.value = displayText;
     inputEl.classList.remove('field-error');
 
-    // Create or update hidden field for the ID
     let hiddenId = inputId + '_id';
     let hiddenEl = document.getElementById(hiddenId);
     if (!hiddenEl) {
@@ -3557,36 +3848,33 @@ window.selectAsItemWithValue = function(inputId, dropId, displayText, value) {
     }
     hiddenEl.value = value;
 
-    // Close the dropdown
     const dropContainer = document.getElementById(dropId);
     if (dropContainer) dropContainer.classList.remove('active');
 
-    // Trigger validation
     if (typeof validateMasterRecord === 'function') validateMasterRecord();
 
-    // Handle department selection: reload job positions
-    if (inputId === 'o-dept') {
-        // Clear the job position field
+    // Handle department selection: enable and reload job positions
+        if (inputId === 'o-dept') {
         const posInput = document.getElementById('o-pos');
         if (posInput) {
             posInput.value = '';
+            posInput.placeholder = 'Loading positions...';
+            posInput.disabled = false; // temporarily enable while loading
+            posInput.dataset.departmentId = value;
             const posHidden = document.getElementById('o-pos_id');
             if (posHidden) posHidden.value = '';
         }
-        // Reload job positions dropdown with department filter
         reloadJobPositionsDropdown(value);
     }
-
-    // Handle employment type selection for dynamic fields
+    // Handle employment type for dynamic fields
     if (inputId === 'o-etype') {
-        const rawText = displayText.trim();
-        const normalizedRaw = rawText.toLowerCase().replace(/[-\s]+/g, '');
+        const rawText = displayText.trim().toLowerCase().replace(/[-\s]+/g, '');
         let normalized = null;
-        if (normalizedRaw.includes('fulltime') || normalizedRaw.includes('permanent')) normalized = 'full-time';
-        else if (normalizedRaw.includes('contract')) normalized = 'contract';
-        else if (normalizedRaw.includes('parttime')) normalized = 'part-time';
-        else if (normalizedRaw.includes('intern')) normalized = 'internship';
-        else if (normalizedRaw.includes('temp')) normalized = 'temporary';
+        if (rawText.includes('fulltime') || rawText.includes('permanent')) normalized = 'full-time';
+        else if (rawText.includes('contract')) normalized = 'contract';
+        else if (rawText.includes('parttime')) normalized = 'part-time';
+        else if (rawText.includes('intern')) normalized = 'internship';
+        else if (rawText.includes('temp')) normalized = 'temporary';
         
         if (typeof updateEmploymentFields === 'function') {
             updateEmploymentFields(normalized);
@@ -3594,30 +3882,147 @@ window.selectAsItemWithValue = function(inputId, dropId, displayText, value) {
     }
 };
 
+ // ============================================================
+// IMPROVED DROPDOWN SYSTEM (Static + Dynamic with Highlight)
+// ============================================================
+
 /**
  * Show dropdown (called on focus)
+ * Automatically detects if the dropdown already contains static items.
  */
 function showAsDrop(dropdownId) {
     const dropContainer = document.getElementById(dropdownId);
-    const inputId = dropdownId.replace('as-drop-', 'as-input-');
-    const inputEl = document.getElementById(inputId);
+    let inputId = dropdownId.replace('as-drop-', 'as-input-');
+    let inputEl = document.getElementById(inputId);
 
-    // Determine the data type
+    // Fallback for wizard inputs (o-dept, o-branch, o-pos, o-etype, etc.)
+    if (!inputEl && dropContainer) {
+        inputEl = dropContainer.closest('.as-combo-container')?.querySelector('input');
+        if (inputEl) inputId = inputEl.id;
+    }
+    if (!inputEl || !dropContainer) return;
+
+    // Close other open dropdowns
+    document.querySelectorAll('.as-combo-results').forEach(d => {
+        if (d.id !== dropdownId) d.classList.remove('active');
+    });
+
+    // Check if this dropdown already has static items (no fetch needed)
+    const existingItems = dropContainer.querySelectorAll('.as-res-item:not(.no-result-msg)');
+    if (existingItems.length > 0) {
+        // Static dropdown – just open and highlight selected
+        dropContainer.classList.add('active');
+        highlightSelectedInDropdown(dropContainer, inputEl.value);
+        return;
+    }
+
+    // Determine data type for dynamic fetching
     let type = inputEl?.getAttribute('data-dropdown-type');
     if (!type) {
-        // Fallback mapping based on ID
-        if (dropdownId.includes('dept')) type = 'departments';
-        else if (dropdownId.includes('branch')) type = 'branches';
+        if (dropdownId.includes('branch')) type = 'branches';
         else if (dropdownId.includes('pos') || dropdownId.includes('job')) type = 'job_positions';
         else if (dropdownId.includes('emp') || dropdownId.includes('custodian') || dropdownId.includes('manager')) type = 'employees';
         else if (dropdownId.includes('employment') || dropdownId.includes('etype')) type = 'employment_types';
         else type = 'employees';
     }
 
+    // Special handling for Department and Branch: always fetch fresh data
+    if (dropdownId === 'as-drop-dept' || dropdownId === 'as-drop-branch') {
+        Object.keys(dropdownCache).forEach(key => {
+            if (key.startsWith(type + ':')) delete dropdownCache[key];
+        });
+        populateAsDrop(dropdownId, type, '', inputEl.value);
+        return;
+    }
+
+    // Job Positions – department dependent (handled separately)
+    if (dropdownId === 'as-drop-pos') {
+        const posInput = document.getElementById('o-pos');
+        const deptId = posInput?.dataset.departmentId || document.getElementById('o-dept_id')?.value;
+        if (!deptId) {
+            dropContainer.innerHTML = '<div class="as-res-item" style="color:var(--warning);">Please select a department first</div>';
+            dropContainer.classList.add('active');
+            activeDropdownId = dropdownId;
+            return;
+        }
+        reloadJobPositionsDropdown(deptId);
+        activeDropdownId = dropdownId;
+        return;
+    }
+
+    // For other dynamic dropdowns (including Employment Types if table is ready)
     const searchTerm = inputEl?.value || '';
-    populateAsDrop(dropdownId, type, searchTerm);
+    populateAsDrop(dropdownId, type, searchTerm, inputEl.value);
 }
 
+/**
+ * Highlight the currently selected item in a dropdown.
+ */
+function highlightSelectedInDropdown(container, selectedText) {
+    if (!selectedText) return;
+    const items = container.querySelectorAll('.as-res-item');
+    items.forEach(item => {
+        item.classList.remove('selected');
+        if (item.textContent.trim() === selectedText) {
+            item.classList.add('selected');
+            // Scroll into view if needed
+            setTimeout(() => item.scrollIntoView({ block: 'nearest' }), 10);
+        }
+    });
+}
+
+/**
+ * Populates a dropdown with data fetched from the server.
+ */
+async function populateAsDrop(dropdownId, type, searchTerm = '', selectedValue = '') {
+    const dropContainer = document.getElementById(dropdownId);
+    if (!dropContainer) return;
+
+    dropContainer.innerHTML = '<div class="as-res-item" style="color:var(--muted);">Loading...</div>';
+    dropContainer.classList.add('active');
+
+    const cacheKey = `${type}:${searchTerm}`;
+    if (dropdownCache[cacheKey]) {
+        renderDropdownItems(dropContainer, dropdownCache[cacheKey], selectedValue);
+        return;
+    }
+
+    try {
+        const url = `api/1common/fetch_dropdown.php?type=${encodeURIComponent(type)}&search=${encodeURIComponent(searchTerm)}`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const result = await response.json();
+
+        if (result.success && result.data) {
+            dropdownCache[cacheKey] = result.data;
+            renderDropdownItems(dropContainer, result.data, selectedValue);
+        } else {
+            dropContainer.innerHTML = '<div class="as-res-item" style="color:var(--muted);">No results found</div>';
+        }
+    } catch (err) {
+        console.error('Dropdown error:', err);
+        dropContainer.innerHTML = '<div class="as-res-item" style="color:var(--danger);">Error loading data</div>';
+    }
+}
+
+/**
+ * Renders dropdown items from fetched data.
+ */
+function renderDropdownItems(container, items, selectedValue = '') {
+    container.innerHTML = '';
+    items.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'as-res-item';
+        div.textContent = item.label;
+        div.dataset.value = item.value;
+
+        if (selectedValue && item.label === selectedValue) {
+            div.classList.add('selected');
+            setTimeout(() => div.scrollIntoView({ block: 'nearest' }), 10);
+        }
+        container.appendChild(div);
+    });
+}
 /**
  * For static dropdowns (like Gender, Marital Status) that don't fetch data.
  */
@@ -3652,29 +4057,50 @@ window.selectAttDept = function(name, val) {
     document.getElementById('att-dept-select').value = val;
     document.getElementById('as-drop-att-dept').classList.remove('active');
 };
- function reloadJobPositionsDropdown(departmentId) {
+function reloadJobPositionsDropdown(departmentId) {
+    console.log('[JobPositions] Loading for department ID:', departmentId);
     const dropContainer = document.getElementById('as-drop-pos');
+    const posInput = document.getElementById('o-pos');
     if (!dropContainer) return;
 
-    // Show loading
+    // Clear cache for job_positions
+    Object.keys(dropdownCache).forEach(key => {
+        if (key.startsWith('job_positions:')) {
+            delete dropdownCache[key];
+        }
+    });
+
     dropContainer.innerHTML = '<div class="as-res-item" style="color:var(--muted);">Loading...</div>';
     dropContainer.classList.add('active');
 
-    const type = 'job_positions';
-    const url = `api/1common/fetch_dropdown.php?type=${type}&department_id=${departmentId}`;
-
+    const url = `api/1common/fetch_dropdown.php?type=job_positions&department_id=${departmentId}`;
     fetch(url)
         .then(r => r.json())
         .then(result => {
-            if (result.success && result.data) {
+            if (result.success && result.data && result.data.length > 0) {
                 renderDropdownItems(dropContainer, result.data);
+                if (posInput) {
+                    posInput.disabled = false;
+                    posInput.placeholder = 'Select Job Position...';
+                }
             } else {
-                dropContainer.innerHTML = '<div class="as-res-item" style="color:var(--muted);">No positions found</div>';
+                dropContainer.innerHTML = '<div class="as-res-item" style="color:var(--muted);">No positions found for this department</div>';
+                if (posInput) {
+                    posInput.disabled = true;
+                    posInput.placeholder = 'No job positions available';
+                    posInput.value = '';
+                    const posHidden = document.getElementById('o-pos_id');
+                    if (posHidden) posHidden.value = '';
+                }
             }
         })
         .catch(err => {
-            console.error('Error loading job positions:', err);
-            dropContainer.innerHTML = '<div class="as-res-item" style="color:var(--danger);">Error loading</div>';
+            console.error('[JobPositions] Error:', err);
+            dropContainer.innerHTML = '<div class="as-res-item" style="color:var(--danger);">Error loading data</div>';
+            if (posInput) {
+                posInput.disabled = true;
+                posInput.placeholder = 'Error loading positions';
+            }
         });
 }
  

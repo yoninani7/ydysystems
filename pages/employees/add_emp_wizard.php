@@ -1,5 +1,6 @@
 <!-- ADD NEW EMPLOYEE -->
 <div class="page" id="p-add-employee">
+    <input type="hidden" name="csrf_token" id="csrf_token" value="<?php echo csrf_token(); ?>">
     <div class="page-header" style="margin-bottom:24px;">
         <div style="display:flex;align-items:center;gap:16px;">
             <button class="sidebar-toggle" onclick="goPage('employee-directory')">
@@ -26,9 +27,7 @@
             <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:8px;">
                 <div style="font-size:.6rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;">
                     Master Record Progress
-                </div>
-                <!-- ADD THIS SPAN FOR THE ACTUAL PERCENTAGE -->
-                <div id="master-progress-percent" style="font-size:.7rem; font-weight:800; color:var(--primary);">16%</div>
+                </div> 
             </div>
             <div style="height:6px;background:#e2e8f0;border-radius:10px;overflow:hidden;">
                 <div id="master-progress-line" style="width:16%;height:100%;background:var(--primary);transition:width .5s cubic-bezier(0.4, 0, 0.2, 1);"></div>
@@ -185,21 +184,21 @@
                 <input type="text" id="o-dept" class="form-ctrl master-req" 
                     data-dropdown-type="departments"
                     placeholder="Select Department..." 
-                    onfocus="showAsDrop('as-drop-dept')" 
-                    oninput="filterAsDrop('o-dept','as-drop-dept')"
-                    autocomplete="off">
+                    onfocus="showAsDrop('as-drop-dept')"  
+                    autocomplete="off"
+                    readonly>
                 <div class="as-combo-results" id="as-drop-dept"></div>
             </div>
         </div>
         <div class="form-group">
-            <label>Branch *</label>
+            <label>Branch</label>
             <div class="as-combo-container">
-                <input type="text" id="o-branch" class="form-ctrl master-req" 
+                <input type="text" id="o-branch" class="form-ctrl" 
                     data-dropdown-type="branches"
                     placeholder="Select Branch..." 
-                    onfocus="showAsDrop('as-drop-branch')" 
-                    oninput="filterAsDrop('o-branch','as-drop-branch')"
-                    autocomplete="off">
+                    onfocus="showAsDrop('as-drop-branch')"  
+                    autocomplete="off"
+                    readonly>
                 <div class="as-combo-results" id="as-drop-branch"></div>
             </div>
         </div>
@@ -210,22 +209,23 @@
             <div class="as-combo-container">
                 <input type="text" id="o-pos" class="form-ctrl master-req" 
                     data-dropdown-type="job_positions"
-                    placeholder="Select Position..." 
+                    placeholder="Select department first..." 
                     onfocus="showAsDrop('as-drop-pos')" 
                     oninput="filterAsDrop('o-pos','as-drop-pos')"
-                    autocomplete="off">
+                    autocomplete="off"
+                    disabled>
                 <div class="as-combo-results" id="as-drop-pos"></div>
             </div>
         </div>
         <div class="form-group">
             <label>Employment Type *</label>
             <div class="as-combo-container">
-                <input type="text" id="o-etype" class="form-ctrl master-req" 
+              <input type="text" id="o-etype" class="form-ctrl master-req" 
                     data-dropdown-type="employment_types"
                     placeholder="Select Employment Type..." 
-                    onfocus="showAsDrop('as-drop-etype')" 
-                    oninput="filterAsDrop('o-etype','as-drop-etype')"
-                    autocomplete="off">
+                    onfocus="showAsDrop('as-drop-etype')"  
+                    autocomplete="off"
+                    readonly>
                 <div class="as-combo-results" id="as-drop-etype"></div>
             </div>
         </div>
