@@ -24,21 +24,14 @@ try {
     $params = [];
 
     if ($search !== '') {
-        // Use positional placeholders (?) repeated 9 times
-        $searchCondition = " WHERE (
-            e.employee_id LIKE ? OR
-            e.first_name LIKE ? OR
-            e.middle_name LIKE ? OR
-            e.last_name LIKE ? OR
-            u.username LIKE ? OR
-            e.personal_email LIKE ? OR
-            d.name LIKE ? OR
-            jp.title LIKE ? OR
-            b.name LIKE ?
-        )";
-        $searchTerm = '%' . $search . '%';
-        $params = array_fill(0, 9, $searchTerm);
-    }
+    $searchCondition = " WHERE (
+        CONCAT(e.first_name, ' ', IFNULL(e.middle_name, ''), ' ', e.last_name) LIKE ? OR
+        jp.title LIKE ? OR
+        d.name LIKE ?
+    )";
+    $searchTerm = '%' . $search . '%';
+    $params = array_fill(0, 3, $searchTerm);
+            }
 
     // Count total records
     $countSql = "SELECT COUNT(*) FROM employees e
