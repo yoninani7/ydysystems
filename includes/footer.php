@@ -239,11 +239,7 @@
       <button class="btn btn-primary" onclick="saveReassignment()"><i data-lucide="check-circle" size="14"></i>Save Changes</button>
     </div>
   </div>
-</div>
-
- 
-
-<script src="assets/js/core.js"></script>
+</div> 
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <div class="modal-overlay" id="confirm-modal">
