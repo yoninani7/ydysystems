@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
-define('IS_API', true);          
-require_once '../../config.php'; 
+define('IS_API', true);
+require_once '../../config.php';
 header('Content-Type: application/json');
 
 if (empty($_SESSION['user_id'])) {
@@ -12,8 +12,40 @@ if (empty($_SESSION['user_id'])) {
 
 try {
     $pdo = get_pdo();
-     
-    $stmt = $pdo->query("
+
+    // Pagination parameters
+    $page  = max(1, (int)($_GET['page'] ?? 1));
+    $limit = max(5, min(100, (int)($_GET['limit'] ?? 25)));
+    $offset = ($page - 1) * $limit;
+
+    // Search parameter
+    $search = trim($_GET['search'] ?? '');
+    $searchCondition = '';
+    $params = [];
+
+    if ($search !== '') {
+        $searchCondition = " WHERE (
+            CONCAT(e.first_name, ' ', COALESCE(e.middle_name, ''), ' ', e.last_name) LIKE ? OR
+            COALESCE(d.name, 'N/A') LIKE ?
+        )";
+        $searchTerm = '%' . $search . '%';
+        $params = [$searchTerm, $searchTerm];
+    }
+
+    // Count total records
+    $countSql = "
+        SELECT COUNT(*)
+        FROM probation_records pr
+        JOIN employees e ON pr.employee_id = e.id
+        LEFT JOIN departments d ON e.department_id = d.id
+        $searchCondition
+    ";
+    $stmt = $pdo->prepare($countSql);
+    $stmt->execute($params);
+    $total = (int)$stmt->fetchColumn();
+
+    // Fetch paginated data
+    $sql = "
         SELECT 
             CONCAT(e.first_name, ' ', e.last_name) AS name,
             COALESCE(d.name, 'N/A') AS dept,
@@ -23,11 +55,33 @@ try {
             pr.status
         FROM probation_records pr
         JOIN employees e ON pr.employee_id = e.id
-        LEFT JOIN departments d ON e.department_id = d.id 
+        LEFT JOIN departments d ON e.department_id = d.id
+        $searchCondition
         ORDER BY pr.end_date ASC
-    ");
+        LIMIT ? OFFSET ?
+    ";
+
+    $stmt = $pdo->prepare($sql);
     
-    echo json_encode(['success' => true, 'data' => $stmt->fetchAll()]);
+    // Combine all parameters: search terms + limit + offset
+    $allParams = $params;
+    $allParams[] = $limit;
+    $allParams[] = $offset;
+    
+    $stmt->execute($allParams);
+    $data = $stmt->fetchAll();
+
+    echo json_encode([
+        'success' => true,
+        'data'    => $data,
+        'pagination' => [
+            'page'       => $page,
+            'limit'      => $limit,
+            'total'      => $total,
+            'totalPages' => ceil($total / $limit)
+        ]
+    ]);
+
 } catch (Exception $e) {
     http_response_code(500);
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
