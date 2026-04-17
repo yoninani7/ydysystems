@@ -1488,22 +1488,14 @@ function initPage(id){
               `<p style="padding:20px;color:#dc2626;">Error loading employment types: ${err.message}</p>`;
           });
         break;
-    case 'probation-tracker':
-      fetch('api/employees/fetch_probation.php')
-        .then(r => r.json())
-        .then(res => {
-          if (!res.success) throw new Error(res.message);
-          
-          const el = document.getElementById('tbl-probation');
-          if (el) delete el.dataset.built;
-
-          buildTable('tbl-probation', {
-            columns: [
-              { key: 'name',  label: 'Employee' },
-              { key: 'dept',  label: 'Department' },
-              { key: 'start', label: 'Probation Start' },
-              { key: 'end',   label: 'Probation End' },
-              { 
+      case 'probation-tracker':
+    initServerPaginatedTable('tbl-probation', 'api/employees/fetch_probation.php', {
+        columns: [
+            { key: 'name',  label: 'Employee' },
+            { key: 'dept',  label: 'Department' },
+            { key: 'start', label: 'Probation Start' },
+            { key: 'end',   label: 'Probation End' },
+            { 
                 key: 'days',  
                 label: 'Days Left',
                 render: (v) => {
@@ -1512,8 +1504,8 @@ function initPage(id){
                     if (days <= 14) return `<span style="color:var(--warning); font-weight:bold;">${days} Days</span>`;
                     return `${days} Days`;
                 }
-              },
-              { 
+            },
+            { 
                 key: 'status', 
                 label: 'Probation Status',
                 render: (v, row) => {
@@ -1522,84 +1514,66 @@ function initPage(id){
                     if (days <= 14) return b('danger', 'Ending Soon');
                     return b('info', 'Active');
                 }
-              },
-              {
+            },
+            {
                 key: '_',
                 label: 'Actions',
                 render: () => `
-                  <div class="flex-row">
-                    <button class="btn btn-xs btn-secondary" title="Evaluate"><i data-lucide="clipboard-check" size="10"></i></button>
-                    <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;">
-                      <i data-lucide="trash-2" size="10"></i>
-                    </button>
-                  </div>`
-              }
-            ],
-            rows: res.data
-          });
-        })
-        .catch(err => {
-          console.error(err);
-          document.getElementById('tbl-probation').innerHTML =
-            `<p style="padding:20px;color:#dc2626;">Error loading probation data: ${err.message}</p>`;
-        });
-      break;
-    case 'contract-renewals':
-  fetch('api/employees/fetch_contracts.php')
-    .then(r => r.json())
-    .then(res => {
-      if (!res.success) throw new Error(res.message);
-      
-      const el = document.getElementById('tbl-contract-renewals');
-      if (el) delete el.dataset.built;
-
-      buildTable('tbl-contract-renewals', {
-        columns: [
-          { key: 'name',   label: 'Employee' },
-          { key: 'dept',   label: 'Department' },
-          { key: 'start',  label: 'Start Date' },
-          { key: 'expiry', label: 'Expiry Date' },
-          { 
-            key: 'days',   
-            label: 'Days to Expiry',
-            render: (v) => {
-              const days = parseInt(v);
-              if (days < 0) return `<span style="color:var(--danger); font-weight:bold;">Expired (${Math.abs(days)}d ago)</span>`;
-              if (days <= 15) return `<span style="color:var(--danger); font-weight:bold;">${days} Days</span>`;
-              if (days <= 30) return `<span style="color:var(--warning); font-weight:bold;">${days} Days</span>`;
-              return `${days} Days`;
+                    <div class="flex-row">
+                        <button class="btn btn-xs btn-secondary" title="Evaluate"><i data-lucide="clipboard-check" size="10"></i></button>
+                        <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;">
+                            <i data-lucide="trash-2" size="10"></i>
+                        </button>
+                    </div>`
             }
-          },
-          { 
-            key: 'status', 
-            label: 'Status',
-            render: (v, row) => {
-              const days = parseInt(row.days);
-              if (days < 0) return b('danger', 'Expired');
-              if (days <= 15) return b('danger', 'Critical');
-              if (days <= 30) return b('warning', 'Due Soon');
-              return b('success', 'Active');
-            }
-          },
-          {
-            key: '_',
-            label: 'Actions',
-            render: () => `
-              <div class="flex-row">
-                <button class="btn btn-xs btn-secondary" title="Renew Contract"><i data-lucide="refresh-cw" size="10"></i></button>
-                <button class="btn btn-xs btn-secondary"><i data-lucide="eye" size="10"></i></button>
-              </div>`
-          }
         ],
-        rows: res.data
-      });
-    })
-    .catch(err => {
-      console.error(err);
-      document.getElementById('tbl-contract-renewals').innerHTML =
-        `<p style="padding:20px;color:#dc2626;">Error loading renewals: ${err.message}</p>`;
+        perPage: 15,
+        searchPlaceholder: 'Search employee name or department...'
     });
-  break;
+    break;
+    case 'contract-renewals':
+    initServerPaginatedTable('tbl-contract-renewals', 'api/employees/fetch_contracts.php', {
+        columns: [
+            { key: 'name',   label: 'Employee' },
+            { key: 'dept',   label: 'Department' },
+            { key: 'start',  label: 'Start Date' },
+            { 
+                key: 'expiry', 
+                label: 'Contract Expiry Date',
+                render: (v) => {
+                    if (v === 'Permanent') return '<span style="color:var(--success); font-weight:600;">Permanent</span>';
+                    // Format date as DD MMM YYYY (e.g., 15 Apr 2026)
+                    const d = new Date(v);
+                    if (isNaN(d.getTime())) return v;
+                    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+                }
+            },
+            { 
+                key: 'days',   
+                label: 'Status',
+                render: (v, row) => {
+                    if (row.expiry === 'Permanent') return b('success', 'Permanent');
+                    const days = parseInt(v);
+                    if (days < 0) return b('danger', 'Expired');
+                    if (days <= 15) return b('danger', 'Critical');
+                    if (days <= 30) return b('warning', 'Due Soon');
+                    return b('success', 'Active');
+                }
+            },
+            {
+                key: '_',
+                label: 'Actions',
+                render: () => `
+                    <div class="flex-row">
+                        <button class="btn btn-xs btn-secondary" title="Renew Contract"><i data-lucide="refresh-cw" size="10"></i></button>
+                        <button class="btn btn-xs btn-secondary"><i data-lucide="eye" size="10"></i></button>
+                    </div>`
+            }
+        ],
+        perPage: 15,
+        searchPlaceholder: 'Search employee name or department...'
+    });
+    break;
     case 'retirement-planner':
   fetch('api/employees/fetch_retirement.php')
     .then(r => r.json())

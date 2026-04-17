@@ -532,13 +532,21 @@ try {
         ],
     ]);
 
-} catch (PDOException $e) {
-    $pdo->rollBack();
-
-    if ($profilePhoto && file_exists(__DIR__ . '/../../' . $profilePhoto)) {
+} 
+ catch (Throwable $e) {
+    if (isset($pdo) && $pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+    
+    // Clean up uploaded avatar if it exists
+    if (isset($profilePhoto) && $profilePhoto && file_exists(__DIR__ . '/../../' . $profilePhoto)) {
         unlink(__DIR__ . '/../../' . $profilePhoto);
     }
-
+    
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Error: ' . $e->getMessage() . ' in ' . $e->getFile() . ' on line ' . $e->getLine()
+    ]);
+    exit;
 }
