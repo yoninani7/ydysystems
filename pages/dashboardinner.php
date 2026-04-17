@@ -21,7 +21,7 @@
     </div>
   </header>
   <div class="stat-ribbon-art">
-    <div class="art-card art-headcount"><span class="art-label">Headcount</span><div class="art-main-row"><span class="art-value">1,248</span><div class="art-meta-group"><span class="art-indicator">Total</span><span class="art-subtext">Monthly Growth</span></div></div></div>
+    <div class="art-card art-headcount"><span class="art-label">Employees</span><div class="art-main-row"><span class="art-value">1,248</span><div class="art-meta-group"><span class="art-indicator">Total</span><span class="art-subtext">Employee count</span></div></div></div>
     <div class="art-card art-units"><span class="art-label">Departments</span><div class="art-main-row"><span class="art-value">07</span><div class="art-meta-group"><span class="art-indicator">Active</span><span class="art-subtext">Internal Units</span></div></div></div>
     <div class="art-card art-leave"><span class="art-label">On Leave</span><div class="art-main-row"><span class="art-value">47</span><div class="art-meta-group"><span class="art-indicator">Staff</span><span class="art-subtext"> Outbound</span></div></div></div>
     <div class="art-card art-missing"><span class="art-label">Pending leave approvals</span><div class="art-main-row"><span class="art-value">48</span><div class="art-meta-group"><span class="art-indicator">Leave</span><span class="art-subtext">Requests</span></div></div></div>
@@ -31,7 +31,7 @@
     <div class="card" style="padding:24px;border-radius:20px;background:#fff;">
       <div class="card-header" style="border:none;padding:0 0 20px 0;">
         <div>
-          <div class="card-title" style="font-size:1.15rem;color:#0f172a;font-weight:800;">Headcount Distribution</div>
+          <div class="card-title" style="font-size:1.15rem;color:#0f172a;font-weight:800;">Employee Distribution</div>
           <div class="page-sub">Departmental workload and personnel breakdown</div>
         </div>
       </div>
