@@ -8,7 +8,7 @@
             </button>
             <div>
                 <div class="page-title" style="font-size:1.4rem;letter-spacing:-0.02em;">
-                    Onboard Personnel <span style="color:var(--muted);font-weight:400;">/ Master Data</span>
+                    Onboard a new employee
                 </div>
                 <p class="page-sub">Establish formal organizational records and legal compliance identities.</p>
             </div>
