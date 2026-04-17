@@ -170,11 +170,8 @@ if ($hireDate && !isset($errors['hire_date'])) {
         $errors['hire_date'] = 'Invalid hire date format.';
     } else {
         $today = new DateTime();
-        $oneYearAgo = (clone $today)->sub(new DateInterval('P1Y'));
         $oneMonthAhead = (clone $today)->add(new DateInterval('P1M'));
-        if ($hireObj < $oneYearAgo) {
-            $errors['hire_date'] = 'Hire date cannot be more than 1 year in the past.';
-        } elseif ($hireObj > $oneMonthAhead) {
+        if ($hireObj > $oneMonthAhead) {
             $errors['hire_date'] = 'Hire date cannot be more than 1 month in the future.';
         } else {
             $data['hire_date'] = $hireDate;
@@ -303,13 +300,12 @@ if (!empty($errors)) {
 // ─────────────────────────────────────────────────────────────────────────────
 // 7. Handle Avatar Upload
 // ─────────────────────────────────────────────────────────────────────────────
-$profilePhoto = null;
-
 if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
     $file    = $_FILES['avatar'];
-    $maxSize = 5 * 1024 * 1024;
+    $maxSize = 5 * 1024 * 1024; // 5 MB
 
     if ($file['size'] > $maxSize) {
+        $pdo->rollBack();
         http_response_code(422);
         echo json_encode(['success' => false, 'message' => 'Avatar file size must be under 5 MB.', 'errors' => ['avatar' => 'File too large.']]);
         exit;
@@ -320,28 +316,116 @@ if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
     finfo_close($finfo);
 
     if (!in_array($mime, ['image/jpeg', 'image/png', 'image/webp', 'image/gif'])) {
+        $pdo->rollBack();
         http_response_code(422);
         echo json_encode(['success' => false, 'message' => 'Avatar must be JPEG, PNG, WebP, or GIF.', 'errors' => ['avatar' => 'Invalid image type.']]);
         exit;
     }
 
-    $ext       = pathinfo($file['name'], PATHINFO_EXTENSION);
-    $filename  = 'emp_' . time() . '_' . bin2hex(random_bytes(8)) . '.' . strtolower($ext);
+    // Create image resource from uploaded file
+    switch ($mime) {
+        case 'image/jpeg':
+            $sourceImage = imagecreatefromjpeg($file['tmp_name']);
+            break;
+        case 'image/png':
+            $sourceImage = imagecreatefrompng($file['tmp_name']);
+            break;
+        case 'image/webp':
+            $sourceImage = imagecreatefromwebp($file['tmp_name']);
+            break;
+        case 'image/gif':
+            $sourceImage = imagecreatefromgif($file['tmp_name']);
+            break;
+        default:
+            $sourceImage = false;
+    }
+
+    if (!$sourceImage) {
+        $pdo->rollBack();
+        http_response_code(422);
+        echo json_encode(['success' => false, 'message' => 'Unable to process image.']);
+        exit;
+    }
+
+    // Get original dimensions
+    $originalWidth  = imagesx($sourceImage);
+    $originalHeight = imagesy($sourceImage);
+
+    // Maximum dimensions for avatar (adjust as needed)
+    $maxWidth  = 800;
+    $maxHeight = 800;
+
+    // Calculate new dimensions while preserving aspect ratio
+    $newWidth  = $originalWidth;
+    $newHeight = $originalHeight;
+
+    if ($originalWidth > $maxWidth || $originalHeight > $maxHeight) {
+        $ratio = $originalWidth / $originalHeight;
+        if ($ratio > 1) {
+            $newWidth  = $maxWidth;
+            $newHeight = (int)($maxWidth / $ratio);
+        } else {
+            $newHeight = $maxHeight;
+            $newWidth  = (int)($maxHeight * $ratio);
+        }
+    }
+
+    // Create resized image
+    $resizedImage = imagecreatetruecolor($newWidth, $newHeight);
+
+    // Preserve transparency for PNG and WebP
+    if ($mime === 'image/png' || $mime === 'image/webp') {
+        imagealphablending($resizedImage, false);
+        imagesavealpha($resizedImage, true);
+        $transparent = imagecolorallocatealpha($resizedImage, 0, 0, 0, 127);
+        imagefilledrectangle($resizedImage, 0, 0, $newWidth, $newHeight, $transparent);
+    }
+
+    imagecopyresampled(
+        $resizedImage, $sourceImage,
+        0, 0, 0, 0,
+        $newWidth, $newHeight,
+        $originalWidth, $originalHeight
+    );
+
+    // Determine output format (use original format)
+    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    $filename = 'emp_' . $newEmployeeRowId . '.' . $ext;
     $uploadDir = __DIR__ . '/../../uploads/avatars/';
 
     if (!is_dir($uploadDir)) {
         mkdir($uploadDir, 0755, true);
     }
 
-    if (move_uploaded_file($file['tmp_name'], $uploadDir . $filename)) {
+    $saved = false;
+    switch ($mime) {
+        case 'image/jpeg':
+            $saved = imagejpeg($resizedImage, $uploadDir . $filename, 85);
+            break;
+        case 'image/png':
+            $saved = imagepng($resizedImage, $uploadDir . $filename, 6);
+            break;
+        case 'image/webp':
+            $saved = imagewebp($resizedImage, $uploadDir . $filename, 85);
+            break;
+        case 'image/gif':
+            $saved = imagegif($resizedImage, $uploadDir . $filename);
+            break;
+    }
+
+    // Clean up memory
+    imagedestroy($sourceImage);
+    imagedestroy($resizedImage);
+
+    if ($saved) {
         $profilePhoto = 'uploads/avatars/' . $filename;
     } else {
+        $pdo->rollBack();
         http_response_code(500);
         echo json_encode(['success' => false, 'message' => 'Failed to save avatar image.']);
         exit;
     }
 }
-
 // ─────────────────────────────────────────────────────────────────────────────
 // 8. Insert into database
 // ─────────────────────────────────────────────────────────────────────────────
@@ -417,7 +501,7 @@ try {
 
     // Generate safe Employee ID using auto-increment ID
     $year = date('Y');
-    $paddedId = str_pad((string)$newEmployeeRowId, 6, '0', STR_PAD_LEFT);
+    $paddedId = str_pad((string)$newEmployeeRowId, 4, '0', STR_PAD_LEFT);
     $employeeId = "EMP-{$year}-{$paddedId}";
 
     // Update the record with the generated employee_id
