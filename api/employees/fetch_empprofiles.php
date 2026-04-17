@@ -13,7 +13,47 @@ if (empty($_SESSION['user_id'])) {
 try {
     $pdo = get_pdo();
 
-    $stmt = $pdo->query("
+    // Pagination parameters
+    $page  = max(1, (int)($_GET['page'] ?? 1));
+    $limit = max(5, min(100, (int)($_GET['limit'] ?? 25)));
+    $offset = ($page - 1) * $limit;
+
+    // Search parameter
+    $search = trim($_GET['search'] ?? '');
+    $searchCondition = '';
+    $params = [];
+
+    if ($search !== '') {
+        // Use positional placeholders (?) repeated 9 times
+        $searchCondition = " WHERE (
+            e.employee_id LIKE ? OR
+            e.first_name LIKE ? OR
+            e.middle_name LIKE ? OR
+            e.last_name LIKE ? OR
+            u.username LIKE ? OR
+            e.personal_email LIKE ? OR
+            d.name LIKE ? OR
+            jp.title LIKE ? OR
+            b.name LIKE ?
+        )";
+        $searchTerm = '%' . $search . '%';
+        $params = array_fill(0, 9, $searchTerm);
+    }
+
+    // Count total records
+    $countSql = "SELECT COUNT(*) FROM employees e
+                 LEFT JOIN users u ON e.id = u.employee_id
+                 LEFT JOIN departments d ON e.department_id = d.id
+                 LEFT JOIN branches b ON e.branch_id = b.id
+                 LEFT JOIN job_positions jp ON e.job_position_id = jp.id
+                 LEFT JOIN employment_types et ON e.employment_type_id = et.id
+                 $searchCondition";
+    $stmt = $pdo->prepare($countSql);
+    $stmt->execute($params);
+    $total = (int)$stmt->fetchColumn();
+
+    // Fetch paginated data
+    $sql = "
         SELECT 
             e.employee_id AS id,
             e.first_name AS fname,
@@ -38,13 +78,35 @@ try {
         FROM employees e
         LEFT JOIN users u ON e.id = u.employee_id
         LEFT JOIN departments d ON e.department_id = d.id
-        LEFT JOIN branches b ON d.branch_id = b.id
+        LEFT JOIN branches b ON e.branch_id = b.id
         LEFT JOIN job_positions jp ON e.job_position_id = jp.id
         LEFT JOIN employment_types et ON e.employment_type_id = et.id
+        $searchCondition
         ORDER BY e.id DESC
-    ");
+        LIMIT ? OFFSET ?
+    ";
 
-    echo json_encode(['success' => true, 'data' => $stmt->fetchAll()]);
+    $stmt = $pdo->prepare($sql);
+    
+    // Combine all parameters: search terms (if any) + limit + offset
+    $allParams = $params;
+    $allParams[] = $limit;
+    $allParams[] = $offset;
+    
+    $stmt->execute($allParams);
+    $data = $stmt->fetchAll();
+
+    echo json_encode([
+        'success' => true,
+        'data'    => $data,
+        'pagination' => [
+            'page'       => $page,
+            'limit'      => $limit,
+            'total'      => $total,
+            'totalPages' => ceil($total / $limit)
+        ]
+    ]);
+
 } catch (Exception $e) {
     http_response_code(500);
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
