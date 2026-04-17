@@ -466,6 +466,7 @@ function saveDepartment() {
     .then(response => response.json())
     .then(result => {
         if (result.success) {
+            clearDropdownCache('departments'); 
             showNotification("Success", result.message, "success");
             closeDeptModal();
             inited.delete('departments');
@@ -551,6 +552,7 @@ function saveJobPosition() {
     .then(response => response.json())
     .then(result => {
         if (result.success) {
+            clearDropdownCache('job_positions');
             showNotification("Success", result.message, "success");
             closeJobModal();
             inited.delete('job-positions');
@@ -642,6 +644,7 @@ function saveBranch() {
     .then(response => response.json())
     .then(result => {
         if (result.success) {
+            clearDropdownCache('branches');
             showNotification("Success", result.message, "success");
             closeBranchModal();
             inited.delete('branch-offices');
@@ -1139,6 +1142,7 @@ function saveNewEmployee() {
     .then(result => {
         console.log('[DEBUG] Result:', result);
         if (result.success) {
+            clearDropdownCache('employees');    
             showNotification('Success', result.message, 'success');
             setTimeout(() => {
                 goPage('employee-directory');
@@ -1172,21 +1176,7 @@ function saveNewEmployee() {
             if (typeof lucide !== 'undefined') lucide.createIcons({ nodes: [btn] });
         });
     });
-}
-
-function previewAvatar(input){
-  if(input.files&&input.files[0]){
-    const reader=new FileReader();
-    reader.onload=e=>{
-      const preview=document.getElementById('avatar-img-output');
-      const icon=document.getElementById('placeholder-icon');
-      const box=document.getElementById('avatar-preview-box');
-      preview.src=e.target.result;preview.style.display='block';icon.style.display='none';
-      box.style.borderStyle='solid';box.style.borderColor='var(--primary)';
-    };
-    reader.readAsDataURL(input.files[0]);
-  }
-}
+} 
 
 // ── PAGE INIT ROUTER ──
 const inited=new Set();
@@ -3784,7 +3774,13 @@ function closeConfirm() {
 
 // Cache for dropdown data
 const dropdownCache = {};
-
+function clearDropdownCache(type) {
+    Object.keys(dropdownCache).forEach(key => {
+        if (key.startsWith(type + ':')) {
+            delete dropdownCache[key];
+        }
+    });
+}
 // Global event delegation for dropdown item clicks (runs once)
 document.addEventListener('click', function(e) {
     // Find if the click target is a dropdown item
