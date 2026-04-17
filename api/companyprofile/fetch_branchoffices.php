@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-define('IS_API', true);          
+define('IS_API', true);
 require_once '../../config.php';
 header('Content-Type: application/json');
 
@@ -12,7 +12,42 @@ if (empty($_SESSION['user_id'])) {
 
 try {
     $pdo = get_pdo();
-    $stmt = $pdo->query("
+
+    // Pagination parameters
+    $page  = max(1, (int)($_GET['page'] ?? 1));
+    $limit = max(5, min(100, (int)($_GET['limit'] ?? 25)));
+    $offset = ($page - 1) * $limit;
+
+    // Search parameter
+    $search = trim($_GET['search'] ?? '');
+    $searchCondition = '';
+    $params = [];
+
+    if ($search !== '') {
+        $searchCondition = " WHERE (
+            b.name LIKE ? OR
+            b.city LIKE ? OR
+            b.phone LIKE ? OR
+            b.email LIKE ? OR
+            CONCAT(e.first_name, ' ', COALESCE(e.middle_name, ''), ' ', e.last_name) LIKE ?
+        )";
+        $searchTerm = '%' . $search . '%';
+        $params = array_fill(0, 5, $searchTerm);
+    }
+
+    // Count total records
+    $countSql = "
+        SELECT COUNT(*)
+        FROM branches b
+        LEFT JOIN employees e ON b.manager_id = e.id
+        $searchCondition
+    ";
+    $stmt = $pdo->prepare($countSql);
+    $stmt->execute($params);
+    $total = (int)$stmt->fetchColumn();
+
+    // Fetch paginated data
+    $sql = "
         SELECT 
             b.name,
             CONCAT(e.first_name, ' ', COALESCE(e.middle_name, ''), ' ', e.last_name) AS manager,
@@ -23,12 +58,33 @@ try {
             b.status
         FROM branches b
         LEFT JOIN employees e ON b.manager_id = e.id
+        $searchCondition
         ORDER BY b.name ASC
-    ");
+        LIMIT ? OFFSET ?
+    ";
+
+    $stmt = $pdo->prepare($sql);
     
-    echo json_encode(['success' => true, 'data' => $stmt->fetchAll()]);
+    // Combine all parameters: search terms + limit + offset
+    $allParams = $params;
+    $allParams[] = $limit;
+    $allParams[] = $offset;
+    
+    $stmt->execute($allParams);
+    $data = $stmt->fetchAll();
+
+    echo json_encode([
+        'success' => true,
+        'data'    => $data,
+        'pagination' => [
+            'page'       => $page,
+            'limit'      => $limit,
+            'total'      => $total,
+            'totalPages' => ceil($total / $limit)
+        ]
+    ]);
+
 } catch (Exception $e) {
     http_response_code(500);
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }
-?>
