@@ -27,10 +27,10 @@ if (!csrf_verify()) {
 
 $pdo = get_pdo();
 $errors = [];
+$data = [];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 4. Required fields validation
-// NOTE: branch_id is intentionally excluded — it is optional in the form
 // ─────────────────────────────────────────────────────────────────────────────
 $required = [
     'first_name'         => 'First Name',
@@ -49,7 +49,7 @@ foreach ($required as $field => $label) {
     }
 }
 
-// Get employment type name to apply conditional rules
+// Get employment type name for conditional rules
 $empTypeId   = !empty($_POST['employment_type_id']) ? (int)$_POST['employment_type_id'] : null;
 $empTypeName = '';
 
@@ -58,7 +58,6 @@ if ($empTypeId) {
     $stmt->execute([$empTypeId]);
     $empType = $stmt->fetch();
     if ($empType) {
-        // Normalise: "Permanent / Full-Time" → "full-time", "Fixed-Term Contract" → "contract", etc.
         $raw = strtolower($empType['name']);
         if (str_contains($raw, 'full') || str_contains($raw, 'permanent')) {
             $empTypeName = 'full-time';
@@ -74,7 +73,7 @@ if ($empTypeId) {
     }
 }
 
-// Conditional required fields based on employment type
+// Conditional required fields
 if (in_array($empTypeName, ['full-time', 'part-time', 'contract', 'internship'])) {
     if (empty($_POST['hire_date'])) {
         $errors['hire_date'] = 'Hire date is required for this employment type.';
@@ -84,20 +83,21 @@ if (in_array($empTypeName, ['contract', 'internship'])) {
     if (empty($_POST['contract_end_date'])) {
         $errors['contract_end_date'] = 'End date is required for contract / internship.';
     }
-} 
+}
 if ($empTypeName === 'temporary' && empty($_POST['project_name'])) {
     $errors['project_name'] = 'Project name is required for temporary assignment.';
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 5. Format and business-rule validation
+// 5. Populate $data with all fields
 // ─────────────────────────────────────────────────────────────────────────────
-$data = [];
 
 // Personal
-$data['first_name']  = trim($_POST['first_name']  ?? '');
-$data['middle_name'] = trim($_POST['middle_name'] ?? '');
-$data['last_name']   = trim($_POST['last_name']   ?? '');
+$data['first_name']      = trim($_POST['first_name']  ?? '');
+$data['middle_name']     = trim($_POST['middle_name'] ?? '');
+$data['last_name']       = trim($_POST['last_name']   ?? '');
+$data['personal_phone']  = trim($_POST['personal_phone'] ?? '') ?: null;
+$data['personal_email']  = trim($_POST['personal_email'] ?? '') ?: null;
 
 // Date of Birth
 $dob = trim($_POST['date_of_birth'] ?? '');
@@ -123,27 +123,26 @@ if ($gender && !in_array($gender, ['Male', 'Female'])) {
     $data['gender'] = $gender;
 }
 
-// Marital Status (optional)
-$marital         = trim($_POST['marital_status'] ?? '');
-$allowedMarital  = ['Single', 'Married', 'Divorced', 'Widowed'];
+// Marital Status
+$marital = trim($_POST['marital_status'] ?? '');
+$allowedMarital = ['Single', 'Married', 'Divorced', 'Widowed'];
 $data['marital_status'] = ($marital && in_array($marital, $allowedMarital)) ? $marital : null;
 
-$data['nationality']    = trim($_POST['nationality']    ?? 'Ethiopian') ?: 'Ethiopian';
+$data['nationality']    = trim($_POST['nationality'] ?? 'Ethiopian') ?: 'Ethiopian';
 $data['place_of_birth'] = trim($_POST['place_of_birth'] ?? '') ?: null;
- 
 
-// DB column: permanent_address (JS sends key "address")
+// Contact
 $data['permanent_address'] = trim($_POST['address'] ?? '') ?: null;
-$data['city']              = trim($_POST['city']    ?? '') ?: null;
+$data['city']              = trim($_POST['city'] ?? '') ?: null;
 $data['postal_code']       = trim($_POST['postal_code'] ?? '') ?: null;
 
 // Employment IDs
-$data['department_id']      = (int)($_POST['department_id']      ?? 0);
-$data['branch_id']          = (int)($_POST['branch_id']          ?? 0) ?: null; // nullable
-$data['job_position_id']    = (int)($_POST['job_position_id']    ?? 0);
+$data['department_id']      = (int)($_POST['department_id'] ?? 0);
+$data['branch_id']          = (int)($_POST['branch_id'] ?? 0) ?: null;
+$data['job_position_id']    = (int)($_POST['job_position_id'] ?? 0);
 $data['employment_type_id'] = $empTypeId;
 
-// Verify FKs exist
+// Verify FKs
 if ($data['department_id']) {
     $stmt = $pdo->prepare("SELECT id FROM departments WHERE id = ? AND deleted_at IS NULL");
     $stmt->execute([$data['department_id']]);
@@ -154,7 +153,7 @@ if ($data['branch_id']) {
     $stmt->execute([$data['branch_id']]);
     if (!$stmt->fetch()) {
         $errors['branch_id'] = 'Selected branch does not exist.';
-        $data['branch_id']   = null;
+        $data['branch_id'] = null;
     }
 }
 if ($data['job_position_id']) {
@@ -170,8 +169,8 @@ if ($hireDate && !isset($errors['hire_date'])) {
     if (!$hireObj) {
         $errors['hire_date'] = 'Invalid hire date format.';
     } else {
-        $today       = new DateTime();
-        $oneYearAgo  = (clone $today)->sub(new DateInterval('P1Y'));
+        $today = new DateTime();
+        $oneYearAgo = (clone $today)->sub(new DateInterval('P1Y'));
         $oneMonthAhead = (clone $today)->add(new DateInterval('P1M'));
         if ($hireObj < $oneYearAgo) {
             $errors['hire_date'] = 'Hire date cannot be more than 1 year in the past.';
@@ -200,11 +199,10 @@ if ($endDate && !isset($errors['contract_end_date'])) {
     $data['contract_end_date'] = null;
 }
 
-// DB column: probation_period (VARCHAR 50) — store the human-readable string
-// JS sends the full dropdown text e.g. "60 Days (Standard)"
+// Probation period
 $data['probation_period'] = trim($_POST['probation_period'] ?? '') ?: null;
 
-// Reporting manager — DB column: reports_to_id
+// Reports to
 $reportsToRaw = trim($_POST['reports_to_id'] ?? '');
 if ($reportsToRaw !== '') {
     $data['reports_to_id'] = (int)$reportsToRaw;
@@ -212,13 +210,13 @@ if ($reportsToRaw !== '') {
     $stmt->execute([$data['reports_to_id']]);
     if (!$stmt->fetch()) {
         $errors['reports_to_id'] = 'Selected manager does not exist.';
-        $data['reports_to_id']   = null;
+        $data['reports_to_id'] = null;
     }
 } else {
     $data['reports_to_id'] = null;
 }
 
-// Hours per week (DB: INT)
+// Hours per week
 $hours = trim($_POST['hours_per_week'] ?? '');
 if ($hours !== '') {
     $hoursInt = (int)$hours;
@@ -233,7 +231,7 @@ if ($hours !== '') {
 
 $data['project_name'] = trim($_POST['project_name'] ?? '') ?: null;
 
-// Finance — DB column: gross_salary
+// Finance
 $salary = trim($_POST['salary'] ?? '');
 if ($salary !== '') {
     $salaryVal = (float)$salary;
@@ -246,18 +244,12 @@ if ($salary !== '') {
     $data['gross_salary'] = null;
 }
 
-$data['bank_name'] = trim($_POST['bank_name'] ?? '') ?: null;
-
- 
-$tin = trim($_POST['tin'] ?? '');
-if ($tin && !preg_match('/^\d{9,12}$/', $tin)) {
-    $errors['tin'] = 'TIN should be 9–12 digits.';
-} else {
-    $data['tin'] = $tin ?: null;
-}
+$data['bank_name']    = trim($_POST['bank_name'] ?? '') ?: null;
+$data['bank_account'] = trim($_POST['bank_account'] ?? '') ?: null;
+$data['tin']          = trim($_POST['tin'] ?? '') ?: null;
 
 // Emergency contact
-$data['emergency_contact_name']     = trim($_POST['emergency_name']     ?? '') ?: null;
+$data['emergency_contact_name']     = trim($_POST['emergency_name'] ?? '') ?: null;
 $data['emergency_contact_relation'] = trim($_POST['emergency_relation'] ?? '') ?: null;
 
 $emergPhone = trim($_POST['emergency_phone'] ?? '');
@@ -265,6 +257,40 @@ if ($emergPhone && !preg_match('/^[\d\s\+\-\(\)]{7,20}$/', $emergPhone)) {
     $errors['emergency_phone'] = 'Invalid emergency phone number.';
 } else {
     $data['emergency_contact_phone'] = $emergPhone ?: null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 6. Length validation (after all $data is populated)
+// ─────────────────────────────────────────────────────────────────────────────
+$lengthRules = [
+    'first_name'              => ['max' => 100, 'label' => 'First Name'],
+    'middle_name'             => ['max' => 100, 'label' => 'Father Name'],
+    'last_name'               => ['max' => 100, 'label' => 'Last Name'],
+    'gender'                  => ['max' => 10,  'label' => 'Gender'],
+    'marital_status'          => ['max' => 20,  'label' => 'Marital Status'],
+    'nationality'             => ['max' => 100, 'label' => 'Nationality'],
+    'place_of_birth'          => ['max' => 150, 'label' => 'Place of Birth'],
+    'personal_phone'          => ['max' => 50,  'label' => 'Personal Phone'],
+    'personal_email'          => ['max' => 150, 'label' => 'Personal Email'],
+    'permanent_address'       => ['max' => 65535,'label' => 'Permanent Address'],
+    'city'                    => ['max' => 100, 'label' => 'City'],
+    'postal_code'             => ['max' => 20,  'label' => 'Postal Code'],
+    'probation_period'        => ['max' => 50,  'label' => 'Probation Period'],
+    'project_name'            => ['max' => 200, 'label' => 'Project Name'],
+    'bank_name'               => ['max' => 100, 'label' => 'Bank Name'],
+    'bank_account'            => ['max' => 100, 'label' => 'Bank Account'],
+    'tin'                     => ['max' => 50,  'label' => 'TIN'],
+    'emergency_contact_name'  => ['max' => 150, 'label' => 'Emergency Contact Name'],
+    'emergency_contact_phone' => ['max' => 50,  'label' => 'Emergency Phone'],
+    'emergency_contact_relation' => ['max' => 100, 'label' => 'Emergency Relationship'],
+];
+
+foreach ($lengthRules as $field => $rule) {
+    if (isset($data[$field]) && is_string($data[$field])) {
+        if (mb_strlen($data[$field]) > $rule['max']) {
+            $errors[$field] = $rule['label'] . ' must not exceed ' . $rule['max'] . ' characters.';
+        }
+    }
 }
 
 // Return validation errors before touching files/DB
@@ -275,13 +301,13 @@ if (!empty($errors)) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 6. Handle Avatar Upload (optional) — DB column: profile_photo
+// 7. Handle Avatar Upload
 // ─────────────────────────────────────────────────────────────────────────────
 $profilePhoto = null;
 
 if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
     $file    = $_FILES['avatar'];
-    $maxSize = 5 * 1024 * 1024; // 5 MB
+    $maxSize = 5 * 1024 * 1024;
 
     if ($file['size'] > $maxSize) {
         http_response_code(422);
@@ -317,38 +343,26 @@ if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 7. Generate Employee ID  e.g. EMP-2025-0001
-// ─────────────────────────────────────────────────────────────────────────────
-$year  = date('Y');
-$stmt  = $pdo->prepare("SELECT MAX(employee_id) FROM employees WHERE employee_id LIKE ?");
-$stmt->execute(["EMP-$year-%"]);
-$maxId = $stmt->fetchColumn();
-$num   = $maxId ? ((int)substr($maxId, -4) + 1) : 1;
-$employeeId = sprintf("EMP-%s-%04d", $year, $num);
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 8. Insert — column names match the schema exactly
+// 8. Insert into database
 // ─────────────────────────────────────────────────────────────────────────────
 try {
     $pdo->beginTransaction();
 
     $sql = "
         INSERT INTO employees (
-            employee_id,
             first_name,       middle_name,      last_name,
-            date_of_birth,    gender,            marital_status,
+            date_of_birth,    gender,           marital_status,
             nationality,      place_of_birth,
             personal_phone,   personal_email,
-            permanent_address, city,             postal_code,
-            department_id,    branch_id,         job_position_id,   employment_type_id,
-            hire_date,        contract_end_date, probation_period,  reports_to_id,
+            permanent_address, city,            postal_code,
+            department_id,    branch_id,        job_position_id,   employment_type_id,
+            hire_date,        contract_end_date, probation_period, reports_to_id,
             hours_per_week,   project_name,
-            gross_salary,     bank_name,         bank_account,      tin,
+            gross_salary,     bank_name,        bank_account,      tin,
             emergency_contact_name, emergency_contact_phone, emergency_contact_relation,
             profile_photo,
-            status,           created_at,        updated_at
+            status,           created_at,       updated_at
         ) VALUES (
-            :employee_id,
             :first_name,      :middle_name,      :last_name,
             :date_of_birth,   :gender,           :marital_status,
             :nationality,     :place_of_birth,
@@ -366,7 +380,6 @@ try {
 
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
-        ':employee_id'                => $employeeId,
         ':first_name'                 => $data['first_name'],
         ':middle_name'                => $data['middle_name'],
         ':last_name'                  => $data['last_name'],
@@ -402,6 +415,15 @@ try {
 
     $newEmployeeRowId = $pdo->lastInsertId();
 
+    // Generate safe Employee ID using auto-increment ID
+    $year = date('Y');
+    $paddedId = str_pad((string)$newEmployeeRowId, 6, '0', STR_PAD_LEFT);
+    $employeeId = "EMP-{$year}-{$paddedId}";
+
+    // Update the record with the generated employee_id
+    $updateStmt = $pdo->prepare("UPDATE employees SET employee_id = ? WHERE id = ?");
+    $updateStmt->execute([$employeeId, $newEmployeeRowId]);
+
     // Audit log
     $auditStmt = $pdo->prepare("
         INSERT INTO audit_logs (user_id, user_name, action, module, record_ref, ip_address, logged_at)
@@ -429,7 +451,6 @@ try {
 } catch (PDOException $e) {
     $pdo->rollBack();
 
-    // Clean up avatar if the DB insert failed
     if ($profilePhoto && file_exists(__DIR__ . '/../../' . $profilePhoto)) {
         unlink(__DIR__ . '/../../' . $profilePhoto);
     }

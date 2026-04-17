@@ -96,7 +96,7 @@ CREATE TABLE job_positions (
 
 CREATE TABLE employees (
     id                        INT          PRIMARY KEY AUTO_INCREMENT,
-    employee_id               VARCHAR(20)  UNIQUE NOT NULL,
+    employee_id               VARCHAR(50) NULL,
     first_name                VARCHAR(100),
     middle_name               VARCHAR(100),
     last_name                 VARCHAR(100),

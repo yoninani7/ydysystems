@@ -92,7 +92,29 @@ function closeMobileSidebar() {
   sidebar.classList.remove('mobile-open');
   overlay.classList.remove('visible');
 }
+function syncSidebarWithPage(pageId) {
+  // 🔁 Map pages without sidebar links to their parent page
+  const pageParentMap = {
+    'add-employee': 'employee-directory',
+    'employee-vault': 'document-vault'
+    // Add more mappings here if needed in the future
+  };
 
+  const targetPage = pageParentMap[pageId] || pageId;
+
+  const activeLink = document.querySelector(`.sub-link[onclick*="'${targetPage}'"], .dash-link[onclick*="'${targetPage}'"]`);
+  if (!activeLink) return;
+
+  document.querySelectorAll('.sub-link, .dash-link').forEach(l => l.classList.remove('active'));
+  activeLink.classList.add('active');
+
+  const submenu = activeLink.closest('.submenu');
+  if (submenu) {
+    submenu.classList.add('open');
+    const trigger = submenu.closest('.nav-group')?.querySelector('.nav-trigger');
+    if (trigger) trigger.classList.add('open');
+  }
+}
 window.addEventListener('resize', () => {
   if (!isMobile()) {
     sidebar.classList.remove('mobile-open');
@@ -168,32 +190,38 @@ function goPage(id, el) {
   const contentArea = document.getElementById('content-area');
   contentArea.style.opacity = '0.4';
 
-fetch('dashboard.php?page=' + encodeURIComponent(id) + '&ajax=1')
+  // 🔁 CLEAR ALL CACHES SO THE PAGE REFRESHES COMPLETELY
+  inited.delete(id);
+  inited.delete('dashboard-main-chart');
+  inited.delete('analytics');
+
+  fetch('dashboard.php?page=' + encodeURIComponent(id) + '&ajax=1')
     .then(r => r.text())
     .then(html => {
       contentArea.innerHTML = html;
       contentArea.style.opacity = '1';
       lcIcons(contentArea);
+      syncSidebarWithPage(id);
+      // 🔁 REMOVE "data-built" FROM ALL ELEMENTS INSIDE THE NEW CONTENT
+      contentArea.querySelectorAll('[data-built]').forEach(el => {
+        delete el.dataset.built;
+      });
 
       // Update page title
-      const titleEl = document.getElementById('page-title'); 
-      if (titleEl) { 
-        let rawText = el ? el.textContent.trim() : id.replace(/-/g, ' '); 
-        const capitalizedText = rawText.charAt(0).toUpperCase() + rawText.slice(1); 
+      const titleEl = document.getElementById('page-title');
+      if (titleEl) {
+        let rawText = el ? el.textContent.trim() : id.replace(/-/g, ' ');
+        const capitalizedText = rawText.charAt(0).toUpperCase() + rawText.slice(1);
         titleEl.textContent = capitalizedText;
       }
-      // ── Re-execute any <script> tags injected via innerHTML ──
+
+      // Re‑execute any <script> tags injected via innerHTML
       contentArea.querySelectorAll('script').forEach(oldScript => {
         const newScript = document.createElement('script');
         [...oldScript.attributes].forEach(attr => newScript.setAttribute(attr.name, attr.value));
         newScript.textContent = oldScript.textContent;
         oldScript.parentNode.replaceChild(newScript, oldScript);
       });
-
-      // Clear the init guard so the page re-initializes with the fresh DOM
-      inited.delete(id);
-      inited.delete('dashboard-main-chart');
-      inited.delete('analytics');
 
       if (typeof initPage === 'function') initPage(id);
     })
@@ -235,6 +263,7 @@ window.addEventListener('DOMContentLoaded', () => {
   if (typeof initPage === 'function') {
     initPage(currentPage);
   }
+  setTimeout(() => syncSidebarWithPage(currentPage), 20);
 });
 
 // ── PAGINATED TABLE BUILDER ──
@@ -1475,7 +1504,16 @@ function initPage(id){
             validateField(target.id);
         }
     }, true); // use capture to catch blur on dynamic fields
-    
+    ['o-dob', 'o-hire', 'o-end-date'].forEach(id => {
+    const field = document.getElementById(id);
+    if (field) {
+        field.removeAttribute('readonly');
+        field.addEventListener('keydown', (e) => {
+            // Allow all keyboard input; do not prevent default
+            e.stopPropagation(); // prevent any parent handlers from blocking
+        });
+    }
+});
     setTimeout(() => validateMasterRecord(), 50);
     break;
     case 'employment-types':
@@ -3607,7 +3645,7 @@ function updateEmploymentFields(type) {
             html = `
                 <div class="form-group"><label>Hiring Date *</label>
                     <input type="date" class="form-ctrl master-req" id="o-hire" onclick="this.showPicker()" style="cursor:pointer"></div>
-                <div class="form-group"><label>Hours Per Week *</label><input type="number" class="form-ctrl master-req" id="o-hours" placeholder="e.g. 20"></div>
+                <div class="form-group"><label>Hours Per Week</label><input type="number" class="form-ctrl" id="o-hours" placeholder="e.g. 20"></div>
                 ${probationHtml}
                 ${reportingHtml}
             `;
@@ -3623,7 +3661,7 @@ function updateEmploymentFields(type) {
             break;
         case 'temporary':
             html = `
-                <div class="form-group"><label>Project Name *</label><input type="text" class="form-ctrl master-req" id="o-project" placeholder="e.g. Infrastructure Audit"></div>
+                <div class="form-group"><label>Project Name *</label><input type="text" class="form-ctrl master-req" id="o-project" placeholder="e.g. Infrastructure Audit" maxlength="200"></div>
                 <div class="form-group"><label>Assignment Start *</label>
                     <input type="date" class="form-ctrl master-req" id="o-hire" onclick="this.showPicker()" style="cursor:pointer"></div>
                 ${reportingHtml.replace('Reporting To', 'Project Supervisor')}

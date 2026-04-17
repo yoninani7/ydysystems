@@ -87,15 +87,15 @@
                         <div class="name-grid-row">
                             <div class="form-group">
                                 <label>First Name *</label>
-                                <input type="text" class="form-ctrl master-req" id="o-fname" placeholder="Ex: Abebe">
+                                <input type="text" class="form-ctrl master-req" id="o-fname" placeholder="Ex: Abebe" maxlength="100" >
                             </div>
                             <div class="form-group">
                                 <label>Middle / Father Name *</label>
-                                <input type="text" class="form-ctrl master-req" id="o-mname" placeholder="Ex: Bikila">
+                                <input type="text" class="form-ctrl master-req" id="o-mname" placeholder="Ex: Bikila" maxlength="100" >
                             </div>
                             <div class="form-group">
                                 <label>Last Name *</label>
-                                <input type="text" class="form-ctrl master-req" id="o-lname" placeholder="Ex: Gebre">
+                                <input type="text" class="form-ctrl master-req" id="o-lname" placeholder="Ex: Gebre" maxlength="100" >
                             </div>
                         </div>
                         <div class="identity-divider"></div>
@@ -134,7 +134,7 @@
                             </div>
                             <div class="form-group" style="grid-column:span 2;">
                                 <label>Place of Birth (Region)</label>
-                                <input type="text" class="form-ctrl" id="o-pob" placeholder="Enter region">
+                                <input type="text" class="form-ctrl" id="o-pob" placeholder="Enter region" maxlength="150">
                             </div>
                         </div>
                     </div>
@@ -147,11 +147,11 @@
                 <div class="form-grid fg-2">
                     <div class="form-group">
                         <label>Personal Phone</label>
-                        <input type="tel" class="form-ctrl" id="o-phone">
+                        <input type="tel" class="form-ctrl" id="o-phone" maxlength="50">
                     </div>
                     <div class="form-group">
                         <label>Personal Email </label>
-                        <input type="email" class="form-ctrl" id="o-email">
+                        <input type="email" class="form-ctrl" id="o-email" maxlength="150">
                     </div>
                     <div class="form-group" style="grid-column:span 2;">
                         <label>Permanent Address</label>
@@ -159,11 +159,11 @@
                     </div>
                     <div class="form-group">
                         <label>City </label>
-                        <input type="text" class="form-ctrl" id="o-city" >
+                        <input type="text" class="form-ctrl" id="o-city" maxlength="100" >
                     </div>
                     <div class="form-group">
                         <label>Postal Code</label>
-                        <input type="text" class="form-ctrl" id="o-zip" value="1000">
+                        <input type="text" class="form-ctrl" id="o-zip" value="1000" maxlength="20">
                     </div>
                 </div>
             </section>
@@ -236,7 +236,6 @@
     <!-- Content injected via JS -->
 </div>
 </section>
-
             <section id="ob-step-4" class="form-section-content">
                 <div class="input-group-label">Financial & Treasury</div>
                 <p class="input-group-sub">Payroll disbursement and statutory tax records.</p>
@@ -247,12 +246,12 @@
                     </div>
                     <div class="form-group">
                         <label>Tax ID (TIN)</label>
-                        <input type="text" class="form-ctrl" id="o-tin">
+                        <input type="text" class="form-ctrl" id="o-tin" maxlength="50">
                     </div>
                     <div class="form-group">
                         <label>Bank Name </label>
                         <div class="as-combo-container">
-                           <input type="text" id="o-bank" class="form-ctrl" placeholder="Select Bank..." onfocus="toggleStaticDrop('as-drop-bank')" readonly>
+                           <input type="text" id="o-bank" class="form-ctrl" placeholder="Select Bank..." onfocus="toggleStaticDrop('as-drop-bank')" maxlength="100" readonly>
                             <div class="as-combo-results" id="as-drop-bank">
                                 <div class="as-res-item" onclick="selectAsItem('o-bank','as-drop-bank','CBE')">CBE</div>
                                 <div class="as-res-item" onclick="selectAsItem('o-bank','as-drop-bank','Awash')">Awash</div>
@@ -262,7 +261,7 @@
                     </div>
                     <div class="form-group">
                         <label>Account Number</label>
-                        <input type="text" class="form-ctrl" id="o-acc">
+                        <input type="text" class="form-ctrl" id="o-acc" maxlength="100" >
                     </div>
                 </div>
             </section>
@@ -273,15 +272,15 @@
                 <div class="form-grid fg-2">
                     <div class="form-group">
                         <label>Emergency Contact</label>
-                        <input type="text" class="form-ctrl " id="o-ename">
+                        <input type="text" class="form-ctrl " id="o-ename" maxlength="150">
                     </div>
                     <div class="form-group">
                         <label>Emergency Phone</label>
-                        <input type="tel" class="form-ctrl " id="o-ephone">
+                        <input type="tel" class="form-ctrl " id="o-ephone" maxlength="50" >
                     </div>
                     <div class="form-group" style="grid-column: span 2;">
                         <label>Emergency Relation to employee </label>
-                        <input type="text" class="form-ctrl" id="o-idno">
+                        <input type="text" class="form-ctrl" id="o-idno" maxlength="100">
                     </div>
                 </div>
             </section>
