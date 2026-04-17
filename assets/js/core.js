@@ -1414,69 +1414,54 @@ function initPage(id){
         `<p style="padding:20px;color:#dc2626;">Error loading branches: ${err.message}</p>`;
     });
   break;
-    case 'employee-directory':
-      fetch('api/employees/fetch_empprofiles.php')
-    .then(r => r.json())
-    .then(res => {
-      if (!res.success) throw new Error(res.message);
-      
-      const el = document.getElementById('tbl-employees');
-      if (el) delete el.dataset.built;
-
-      buildTable('tbl-employees', {
-        columns: [
-          {key:'id', label:'Emp ID'},
-          {key:'fname', label:'First Name'},
-          {key:'mname', label:'Middle Name'},
-          {key:'lname', label:'Last Name'},
-          {key:'uname', label:'Username'},
-          {key:'gender', label:'Gender'},
-          {key:'dob', label:'Date of Birth'},
-          {key:'hire', label:'Hired Date'},
-          {
-            key:'status', 
-            label:'Status',
-            render: (v) => {
-              const s = v.toLowerCase();
-              if (s === 'active') return statusBadge.active;
-              if (s === 'inactive' || s === 'terminated') return statusBadge.inactive;
-              return b('warning', v); // Fallback for 'On Leave', etc.
-            }
-          },
-          {key:'marital', label:'Marital Status'},
-          {key:'phone', label:'Phone'},
-          {key:'email', label:'Email'},
-          {key:'dept', label:'Department'},
-          {key:'position', label:'Job Position'},
-          {key:'branch', label:'Branch name'},
-          {key:'type', label:'Emp Type'},
-          {key:'bankname', label:'Bank name'},
-          {key:'bankacc', label:'Bank Account'},
-          {key:'tin', label:'Tin number'},
-          {key:'created', label:'Created At'},
-          {
-            key: '_',
-            label: 'Actions',
-            render: () => `
-              <div class="flex-row">
-                <button class="btn btn-xs btn-secondary"><i data-lucide="eye" size="10"></i></button>
-                <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;">
-                  <i data-lucide="trash-2" size="10"></i>
-                </button>
-              </div>`
-          }
-        ],
-        rows: res.data,
-        perPage: 15 // Increased because directory is usually long
-      });
-    })
-    .catch(err => {
-      console.error(err);
-      document.getElementById('tbl-employees').innerHTML =
-        `<p style="padding:20px;color:#dc2626;">Error loading directory: ${err.message}</p>`;
-    });
-  break;
-    case 'add-employee':
+  case 'employee-directory':
+  initServerPaginatedTable('tbl-employees', 'api/employees/fetch_empprofiles.php', {
+    columns: [
+      {key:'id', label:'Emp ID'},
+      {key:'fname', label:'First Name'},
+      {key:'mname', label:'Middle Name'},
+      {key:'lname', label:'Last Name'},
+      {key:'uname', label:'Username'},
+      {key:'gender', label:'Gender'},
+      {key:'dob', label:'Date of Birth'},
+      {key:'hire', label:'Hired Date'},
+      {
+        key:'status', 
+        label:'Status',
+        render: (v) => {
+          const s = v.toLowerCase();
+          if (s === 'active') return statusBadge.active;
+          if (s === 'inactive' || s === 'terminated') return statusBadge.inactive;
+          return b('warning', v);
+        }
+      },
+      {key:'marital', label:'Marital Status'},
+      {key:'phone', label:'Phone'},
+      {key:'email', label:'Email'},
+      {key:'dept', label:'Department'},
+      {key:'position', label:'Job Position'},
+      {key:'branch', label:'Branch name'},
+      {key:'type', label:'Emp Type'},
+      {key:'bankname', label:'Bank name'},
+      {key:'bankacc', label:'Bank Account'},
+      {key:'tin', label:'Tin number'},
+      {key:'created', label:'Created At'},
+      {
+        key: '_',
+        label: 'Actions',
+        render: () => `
+          <div class="flex-row">
+            <button class="btn btn-xs btn-secondary"><i data-lucide="eye" size="10"></i></button>
+            <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;">
+              <i data-lucide="trash-2" size="10"></i>
+            </button>
+          </div>`
+      }
+    ],
+    perPage: 15
+  });
+  break;  
+  case 'add-employee':
     // Attach blur validation for all fields with special rules
     const fieldsToWatch = ['o-dob', 'o-email', 'o-sal', 'o-tin', 'o-acc', 'o-ephone'];
     fieldsToWatch.forEach(id => {
@@ -3053,7 +3038,138 @@ function initPage(id){
     case 'hr-analytics':initAnalytics();break;
   }
 }
+ function initServerPaginatedTable(containerId, apiUrl, {columns, perPage = 15}) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  
+  delete container.dataset.built;
+  
+  // State
+  let currentPage = 1;
+  let totalPages = 1;
+  let totalRecords = 0;
+  let searchTerm = '';
+  let searchTimeout = null;
+  let currentRows = [];
+  
+  // Render the table UI
+  const render = () => {
+    const start = totalRecords ? (currentPage - 1) * perPage + 1 : 0;
+    const end = Math.min(currentPage * perPage, totalRecords);
+    
+    const colHeaders = columns.map(c => {
+      if (c.key === '_') return `<th>${c.label}</th>`;
+      return `<th>${c.label}</th>`;
+    }).join('');
+    
+    const bodyRows = currentRows.map(row =>
+      `<tr>${columns.map(c => {
+        let v = row[c.key] !== undefined ? row[c.key] : '—';
+        if (c.render) v = c.render(v, row);
+        return `<td>${v}</td>`;
+      }).join('')}</tr>`
+    ).join('');
+    
+    // Pagination buttons
+    let pgBtns = `<button class="pg-btn" onclick="changeServerPage('${containerId}', -1)" ${currentPage <= 1 ? 'disabled' : ''}>‹</button>`;
+    for (let i = 1; i <= totalPages; i++) {
+      if (totalPages <= 7 || i === 1 || i === totalPages || Math.abs(i - currentPage) <= 1) {
+        pgBtns += `<button class="pg-btn ${i === currentPage ? 'active' : ''}" onclick="goToServerPage('${containerId}', ${i})">${i}</button>`;
+      } else if (Math.abs(i - currentPage) === 2) {
+        pgBtns += `<button class="pg-btn" disabled>…</button>`;
+      }
+    }
+    pgBtns += `<button class="pg-btn" onclick="changeServerPage('${containerId}', 1)" ${currentPage >= totalPages ? 'disabled' : ''}>›</button>`;
+    
+    container.innerHTML = `
+      <div class="filter-bar">
+        <div class="search-container"><div class="search-inner">
+          <i data-lucide="search" class="search-lead-icon"></i>
+          <input type="text" placeholder="Search..." id="${containerId}-search" value="${searchTerm.replace(/"/g, '&quot;')}">
+          ${searchTerm ? `<button class="btn-search-ghost" id="${containerId}-clear-search" style="opacity:1; visibility:visible;"><i data-lucide="x" size="14"></i></button>` : ''}
+        </div></div>
+      </div>
+      <div class="table-wrap"><table class="tbl"><thead><tr>${colHeaders}</tr></thead><tbody>${bodyRows}</tbody></table></div>
+      <div class="pagination"><span class="pagination-info">Showing ${totalRecords ? start : 0}–${end} of ${totalRecords}</span><div class="pagination-btns">${pgBtns}</div></div>
+    `;
+    
+    lcIcons(container);
+    
+    // Attach search input event
+    const searchInput = document.getElementById(`${containerId}-search`);
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+          searchTerm = e.target.value;
+          currentPage = 1;
+          fetchData();
+        }, 300);
+      });
+    }
+    
+    // Attach clear button event
+    const clearBtn = document.getElementById(`${containerId}-clear-search`);
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        searchTerm = '';
+        currentPage = 1;
+        fetchData();
+      });
+    }
+  };
+  
+  // Fetch data from API
+  const fetchData = () => {
+    container.style.opacity = '0.5';
+    const url = `${apiUrl}?page=${currentPage}&limit=${perPage}&search=${encodeURIComponent(searchTerm)}`;
+    
+    fetch(url)
+      .then(r => r.json())
+      .then(res => {
+        if (!res.success) throw new Error(res.message);
+        currentRows = res.data || [];
+        totalRecords = res.pagination?.total || 0;
+        totalPages = res.pagination?.totalPages || 1;
+        render();
+        container.style.opacity = '1';
+      })
+      .catch(err => {
+        container.innerHTML = `<p style="padding:20px;color:#dc2626;">Error loading data: ${err.message}</p>`;
+        container.style.opacity = '1';
+      });
+  };
+  
+  // Expose pagination control functions
+  window[`changeServerPage_${containerId}`] = (dir) => {
+    const newPage = currentPage + dir;
+    if (newPage >= 1 && newPage <= totalPages) {
+      currentPage = newPage;
+      fetchData();
+    }
+  };
+  
+  window[`goToServerPage_${containerId}`] = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      currentPage = page;
+      fetchData();
+    }
+  };
+  
+  // Initial fetch
+  fetchData();
+}
 
+// Global pagination helpers
+function changeServerPage(containerId, dir) {
+  const fn = window[`changeServerPage_${containerId}`];
+  if (fn) fn(dir);
+}
+
+function goToServerPage(containerId, page) {
+  const fn = window[`goToServerPage_${containerId}`];
+  if (fn) fn(page);
+}
 window.addEventListener('DOMContentLoaded', () => {
   lcIcons();
   // Set page title based on current page parameter
