@@ -291,11 +291,22 @@ function initOrgChart(){applyOCZoom();initOrgChartDrag();  renderOrgChartDepartm
 function initOrgChartDrag(){
   const slider=document.getElementById('oc-blueprint-area');
   if(!slider||slider.dataset.drag)return; slider.dataset.drag='1';
-  let down=false,sx,sy,sl,st;
+  let down=false,sx,sy,sl,st,ticking=false;
   slider.addEventListener('mousedown',e=>{down=true;sx=e.pageX-slider.offsetLeft;sy=e.pageY-slider.offsetTop;sl=slider.scrollLeft;st=slider.scrollTop;});
   slider.addEventListener('mouseleave',()=>down=false);
   slider.addEventListener('mouseup',()=>down=false);
-  slider.addEventListener('mousemove',e=>{if(!down)return;e.preventDefault();slider.scrollLeft=sl-(e.pageX-slider.offsetLeft-sx)*2;slider.scrollTop=st-(e.pageY-slider.offsetTop-sy)*2;});
+  slider.addEventListener('mousemove',e=>{
+    if(!down)return;
+    e.preventDefault();
+    if(!ticking){
+      window.requestAnimationFrame(()=>{
+        slider.scrollLeft=sl-(e.pageX-slider.offsetLeft-sx)*2;
+        slider.scrollTop=st-(e.pageY-slider.offsetTop-sy)*2;
+        ticking=false;
+      });
+      ticking=true;
+    }
+  }, {passive: false});
 }
  
 // ── VAULT MATRIX ──
@@ -992,9 +1003,7 @@ function validateMasterRecord(){
   val.innerHTML=allOk?'<i data-lucide="check-circle" size="12"></i> Verified':`* Required fields missing`;
   val.style.color=allOk?'var(--success)':'var(--danger)';
   
- // Inside validateMasterRecord, replace the line: 
-
-all.forEach(i => {
+  all.forEach(i => {
     const hasValue = i.value.trim() !== '';
     if (!hasValue) return; // keep error if empty
     
@@ -1007,9 +1016,20 @@ all.forEach(i => {
     } else {
         i.classList.remove('field-error');
     }
-});
+  });
   lcIcons(val);
-}document.querySelectorAll('#p-add-employee input, #p-add-employee select, #p-add-employee textarea').forEach(input=>input.addEventListener('input',validateMasterRecord));
+}
+
+// Optimization: Debounced event delegation instead of attaching hundreds of individual listeners
+let debounceTimer;
+document.addEventListener('input', (e) => {
+    if (e.target.closest('#p-add-employee') && ['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            validateMasterRecord();
+        }, 150); // 150ms debounce
+    }
+});
 
 function validateAllSteps() {
     const allReq = [...document.querySelectorAll('#p-add-employee .master-req')];
