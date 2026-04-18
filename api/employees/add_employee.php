@@ -215,7 +215,7 @@ try {
         }
     }
 
-    $data['probation_period'] = trim($_POST['probation_period'] ?? '') ?: null;
+    $data['probation_period'] = (isset($_POST['probation_days']) && $_POST['probation_days'] !== '') ? $_POST['probation_days'] : (trim($_POST['probation_period'] ?? '') ?: null);
 
     $reportsToRaw = trim($_POST['reports_to_id'] ?? '');
     if ($reportsToRaw !== '') {
@@ -507,6 +507,26 @@ try {
             $data['reports_to_id'],
             $data['hire_date'],
             $data['contract_end_date']
+        ]);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // 10b. Record Probation (If applicable)
+    // ─────────────────────────────────────────────────────────────────────────────
+    $probationDays = isset($_POST['probation_days']) ? (int)$_POST['probation_days'] : 0;
+    if ($probationDays > 0 && !empty($data['hire_date'])) {
+        $startDate = $data['hire_date'];
+        $endDate = date('Y-m-d', strtotime($startDate . " + $probationDays days"));
+        
+        $probStmt = $pdo->prepare("
+            INSERT INTO probation_records (employee_id, employee_code, start_date, end_date, status)
+            VALUES (?, ?, ?, ?, 'Active')
+        ");
+        $probStmt->execute([
+            $newEmployeeRowId,
+            $employeeId,
+            $startDate,
+            $endDate
         ]);
     }
 

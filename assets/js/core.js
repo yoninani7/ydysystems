@@ -884,6 +884,7 @@ function renderSummary() {
   if (dynamicContainer) {
     const inputs = dynamicContainer.querySelectorAll('input');
     inputs.forEach(input => {
+      if (input.type === 'hidden') return;
       // Find the label text for this input
       const labelText = input.closest('.form-group')?.querySelector('label')?.textContent.replace('*', '').trim() || 'Detail';
       const val = input.value.trim() || '—';
@@ -1030,6 +1031,9 @@ function saveNewEmployee() {
 
     const probation = document.getElementById('o-probation');
     if (probation) formData.append('probation_period', probation.value);
+    
+    const probationDays = document.getElementById('o-probation_val');
+    if (probationDays) formData.append('probation_days', probationDays.value);
 
     const reportsTo = document.getElementById('o-reports_id');
     if (reportsTo) formData.append('reports_to_id', reportsTo.value);
@@ -2704,21 +2708,16 @@ function updateEmploymentFields(type) {
     container.style.display = 'grid';
     let html = '';
 
-    // Common probation period snippet
+    // Simple Probation Period snippet
     const probationHtml = ` 
         <div class="form-group">
-            <label>Probation Period *</label>
-            <div class="as-combo-container">
-                <input type="text" id="o-probation" class="form-ctrl master-req" 
-                       placeholder="Select Period..." value="60 Days (Standard)"
-                       onfocus="showAsDrop('as-drop-probation')" readonly>
-                <div class="as-combo-results" id="as-drop-probation">
-                    <div class="as-res-item" onclick="selectAsItem('o-probation','as-drop-probation','90 Days')">90 Days</div>
-                    <div class="as-res-item" onclick="selectAsItem('o-probation','as-drop-probation','60 Days (Standard)')">60 Days (Standard)</div>
-                    <div class="as-res-item" onclick="selectAsItem('o-probation','as-drop-probation','45 Days')">45 Days</div>
-                    <div class="as-res-item" onclick="selectAsItem('o-probation','as-drop-probation','No Probation')">No Probation</div>
-                </div>
-            </div> 
+            <label>Probation Duration (Days) *</label>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <input type="number" id="o-probation_val" class="form-ctrl master-req" 
+                       placeholder="e.g. 90" value="45" style="width: 100px;">
+                <span style="font-size: 0.75rem; color: var(--muted);">Total days from hire date</span>
+                <input type="hidden" id="o-probation" value="">
+            </div>
         </div>
     `;
 
@@ -2742,7 +2741,7 @@ function updateEmploymentFields(type) {
         case 'full-time':
             html = `
                 <div class="form-group"><label>Hiring Date *</label>
-                    <input type="date" class="form-ctrl master-req" id="o-hire" onclick="this.showPicker()" style="cursor:pointer"></div>
+                    <input type="date" class="form-ctrl master-req" id="o-hire"></div>
                 ${probationHtml}
                 ${reportingHtml}
             `;
@@ -2750,9 +2749,9 @@ function updateEmploymentFields(type) {
         case 'contract':
             html = `
                 <div class="form-group"><label>Contract Start *</label>
-                    <input type="date" class="form-ctrl master-req" id="o-hire" onclick="this.showPicker()" style="cursor:pointer"></div>
+                    <input type="date" class="form-ctrl master-req" id="o-hire"></div>
                 <div class="form-group"><label>Contract End *</label>
-                    <input type="date" class="form-ctrl master-req" id="o-end-date" onclick="this.showPicker()" style="cursor:pointer"></div>
+                    <input type="date" class="form-ctrl master-req" id="o-end-date"></div>
                 ${probationHtml}
                 ${reportingHtml}
             `;
@@ -2760,7 +2759,7 @@ function updateEmploymentFields(type) {
         case 'part-time':
             html = `
                 <div class="form-group"><label>Hiring Date *</label>
-                    <input type="date" class="form-ctrl master-req" id="o-hire" onclick="this.showPicker()" style="cursor:pointer"></div>
+                    <input type="date" class="form-ctrl master-req" id="o-hire"></div>
                 <div class="form-group"><label>Hours Per Week</label><input type="number" class="form-ctrl" id="o-hours" placeholder="e.g. 20"></div>
                 ${probationHtml}
                 ${reportingHtml}
@@ -2769,9 +2768,9 @@ function updateEmploymentFields(type) {
         case 'internship':
             html = `
                 <div class="form-group"><label>Internship Start *</label>
-                    <input type="date" class="form-ctrl master-req" id="o-hire" onclick="this.showPicker()" style="cursor:pointer"></div>
+                    <input type="date" class="form-ctrl master-req" id="o-hire"></div>
                 <div class="form-group"><label>Internship End *</label>
-                    <input type="date" class="form-ctrl master-req" id="o-end-date" onclick="this.showPicker()" style="cursor:pointer"></div>
+                    <input type="date" class="form-ctrl master-req" id="o-end-date"></div>
                 <div class="form-group" style="grid-column: span 1;"><label>Academic Institution</label>
                     <input type="text" class="form-ctrl" id="o-institution" placeholder="Ex: Addis Ababa University" maxlength="200"></div>
                 ${reportingHtml.replace('Reporting To', 'Assigned Mentor')}
@@ -2781,7 +2780,7 @@ function updateEmploymentFields(type) {
             html = `
                 <div class="form-group"><label>Project Name *</label><input type="text" class="form-ctrl master-req" id="o-project" placeholder="e.g. Infrastructure Audit" maxlength="200"></div>
                 <div class="form-group"><label>Assignment Start *</label>
-                    <input type="date" class="form-ctrl master-req" id="o-hire" onclick="this.showPicker()" style="cursor:pointer"></div>
+                    <input type="date" class="form-ctrl master-req" id="o-hire"></div>
                 ${reportingHtml.replace('Reporting To', 'Project Supervisor')}
             `;
             break;

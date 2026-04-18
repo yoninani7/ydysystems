@@ -106,7 +106,7 @@
                         <div class="demo-grid-row">
                             <div class="form-group">
                                 <label>Date of Birth *</label>
-                                <input type="date" class="form-ctrl master-req" id="o-dob" onclick="this.showPicker()" style="cursor:pointer">
+                                <input type="date" class="form-ctrl master-req" id="o-dob">
                             </div>
                             <div class="form-group">
                                 <label>Gender *</label>
