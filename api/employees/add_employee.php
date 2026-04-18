@@ -475,7 +475,7 @@ try {
     $updateStmt->execute([$employeeId, $profilePhoto, $newEmployeeRowId]);
 
     // ─────────────────────────────────────────────────────────────────────────────
-    // 10. Record Contract (If applicable)
+    // 10. Record Contract & Internship (If applicable)
     // ─────────────────────────────────────────────────────────────────────────────
     if ($empTypeName === 'contract' || $empTypeName === 'internship') {
         $contractStmt = $pdo->prepare("
@@ -488,6 +488,25 @@ try {
             $data['hire_date'],
             $data['contract_end_date'],
             "Initial " . ucfirst($empTypeName) . " contract created during onboarding."
+        ]);
+    }
+
+    if ($empTypeName === 'internship') {
+        // Build full name for the intern table
+        $fullName = trim($data['first_name'] . ' ' . ($data['middle_name'] ?? '') . ' ' . $data['last_name']);
+        
+        $internStmt = $pdo->prepare("
+            INSERT INTO internships (intern_code, full_name, institution, department_id, mentor_id, start_date, end_date, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'Active')
+        ");
+        $internStmt->execute([
+            $employeeId, 
+            $fullName,
+            $data['institution'] ?? null,
+            $data['department_id'],
+            $data['reports_to_id'],
+            $data['hire_date'],
+            $data['contract_end_date']
         ]);
     }
 

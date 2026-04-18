@@ -1040,6 +1040,9 @@ function saveNewEmployee() {
     const project = document.getElementById('o-project');
     if (project) formData.append('project_name', project.value.trim());
 
+    const institution = document.getElementById('o-institution');
+    if (institution) formData.append('institution', institution.value.trim());
+
     // Finance
     formData.append('salary', getVal('o-sal'));
     formData.append('bank_name', getVal('o-bank'));
@@ -2769,6 +2772,8 @@ function updateEmploymentFields(type) {
                     <input type="date" class="form-ctrl master-req" id="o-hire" onclick="this.showPicker()" style="cursor:pointer"></div>
                 <div class="form-group"><label>Internship End *</label>
                     <input type="date" class="form-ctrl master-req" id="o-end-date" onclick="this.showPicker()" style="cursor:pointer"></div>
+                <div class="form-group" style="grid-column: span 1;"><label>Academic Institution</label>
+                    <input type="text" class="form-ctrl" id="o-institution" placeholder="Ex: Addis Ababa University" maxlength="200"></div>
                 ${reportingHtml.replace('Reporting To', 'Assigned Mentor')}
             `;
             break;
@@ -2878,10 +2883,15 @@ function closeConfirm() {
         const preview = document.getElementById('avatar-img-output');
         const icon = document.getElementById('placeholder-icon');
         const box = document.getElementById('avatar-preview-box');
+        const removeBtn = document.getElementById('avatar-remove-btn');
         
         preview.src = e.target.result;
         preview.style.display = 'block';
         icon.style.display = 'none';
+        if (removeBtn) {
+            removeBtn.style.display = 'flex';
+            lcIcons(removeBtn);
+        }
         
         // Visual feedback that the image is accepted
         box.style.borderStyle = 'solid';
@@ -2889,6 +2899,31 @@ function closeConfirm() {
       };
       reader.readAsDataURL(file);
     }
+  }
+
+  function cancelAvatar(e) {
+      if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+      }
+      const input = document.getElementById('avatar-upload');
+      const preview = document.getElementById('avatar-img-output');
+      const icon = document.getElementById('placeholder-icon');
+      const box = document.getElementById('avatar-preview-box');
+      const removeBtn = document.getElementById('avatar-remove-btn');
+
+      if (input) input.value = "";
+      if (preview) {
+          preview.src = "";
+          preview.style.display = 'none';
+      }
+      if (icon) icon.style.display = 'block';
+      if (removeBtn) removeBtn.style.display = 'none';
+      
+      if (box) {
+          box.style.borderStyle = 'dashed';
+          box.style.borderColor = '#cbd5e1';
+      }
   }
 
  // ============================================================
