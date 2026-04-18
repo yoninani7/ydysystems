@@ -67,6 +67,7 @@ try {
             e.bank_name AS bankname,
             e.bank_account AS bankacc,
             e.tin,
+            e.profile_photo AS photo,
             e.created_at AS created
         FROM employees e
         LEFT JOIN users u ON e.id = u.employee_id

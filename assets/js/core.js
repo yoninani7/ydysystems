@@ -1091,8 +1091,17 @@ function saveNewEmployee() {
                 if (firstError) errorMsg = firstError;
                 showNotification('Error', errorMsg, 'error');
 
+                const fieldMap = {
+                    'first_name': 'o-fname', 'middle_name': 'o-mname', 'last_name': 'o-lname',
+                    'date_of_birth': 'o-dob', 'gender': 'o-gender', 'department_id': 'o-dept',
+                    'branch_id': 'o-branch', 'job_position_id': 'o-pos', 'employment_type_id': 'o-etype',
+                    'hire_date': 'o-hire', 'contract_end_date': 'o-end-date', 'salary': 'o-sal',
+                    'emergency_phone': 'o-ephone', 'emergency_name': 'o-ename', 'emergency_relation': 'o-idno'
+                };
+
                 Object.keys(result.errors).forEach(field => {
-                    const input = document.getElementById(field) || document.querySelector(`[name="${field}"]`);
+                    const id = fieldMap[field] || field;
+                    const input = document.getElementById(id) || document.querySelector(`[name="${field}"]`);
                     if (input) input.classList.add('field-error');
                 });
             } else {
@@ -1358,6 +1367,8 @@ function initPage(id){
   });
   break;  
   case 'add-employee':
+    currentObStep = 1; // Reset to first step
+    jumpToStep(1);    // Ensure UI is synced
     // Attach blur validation for all fields with special rules
     const fieldsToWatch = ['o-dob', 'o-email', 'o-sal', 'o-tin', 'o-acc', 'o-ephone'];
     fieldsToWatch.forEach(id => {
@@ -1369,22 +1380,24 @@ function initPage(id){
         }
     });
     // Also watch dynamic fields (they may appear later, so use event delegation)
-    document.getElementById('p-add-employee').addEventListener('blur', function(e) {
-        const target = e.target;
-        if (target.id === 'o-hire' || target.id === 'o-end-date' || target.id === 'o-hours') {
-            validateField(target.id);
-        }
-    }, true); // use capture to catch blur on dynamic fields
-    ['o-dob', 'o-hire', 'o-end-date'].forEach(id => {
-    const field = document.getElementById(id);
-    if (field) {
-        field.removeAttribute('readonly');
-        field.addEventListener('keydown', (e) => {
-            // Allow all keyboard input; do not prevent default
-            e.stopPropagation(); // prevent any parent handlers from blocking
-        });
+    const pAddEmp = document.getElementById('p-add-employee');
+    if (pAddEmp) {
+        pAddEmp.addEventListener('blur', function(e) {
+            const target = e.target;
+            if (target.id === 'o-hire' || target.id === 'o-end-date' || target.id === 'o-hours') {
+                validateField(target.id);
+            }
+        }, true);
     }
-});
+    ['o-dob', 'o-hire', 'o-end-date'].forEach(id => {
+        const field = document.getElementById(id);
+        if (field) {
+            field.removeAttribute('readonly');
+            field.addEventListener('keydown', (e) => {
+                e.stopPropagation();
+            });
+        }
+    });
     setTimeout(() => validateMasterRecord(), 50);
     break;
     case 'employment-types':
@@ -3181,8 +3194,15 @@ function toggleStaticDrop(dropId) {
 
 // Keep the original selectAsItem for static dropdowns (if any)
 window.selectAsItem = function(inputId, dropId, name) {
-    document.getElementById(inputId).value = name;
-    document.getElementById(dropId).classList.remove('active');
+    const el = document.getElementById(inputId);
+    if (el) {
+        el.value = name;
+        el.classList.remove('field-error');
+    }
+    const drop = document.getElementById(dropId);
+    if (drop) drop.classList.remove('active');
+    
+    if (typeof validateMasterRecord === 'function') validateMasterRecord();
 };
 
 // Compatibility for attendance month/year/department selects
