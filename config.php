@@ -6,10 +6,37 @@
 
 declare(strict_types=1);
 
-// 1. SECURITY: Hide errors from public & setup safety net
-ini_set('display_errors', '0');
-ini_set('display_startup_errors', '0');
-error_reporting(E_ALL);
+// ── Load Environment Variables (.env) ────────────────────────────────────────
+function load_env(string $path): void {
+    if (!file_exists($path)) return;
+    $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        if (strpos(trim($line), '#') === 0) continue; // Skip comments
+        $parts = explode('=', $line, 2);
+        if (count($parts) === 2) {
+            $name = trim($parts[0]);
+            $value = trim($parts[1]);
+            if (!array_key_exists($name, $_ENV)) {
+                putenv(sprintf('%s=%s', $name, $value));
+                $_ENV[$name] = $value;
+            }
+        }
+    }
+}
+load_env(__DIR__ . '/.env');
+
+$envMode = $_ENV['ENVIRONMENT'] ?? 'production';
+
+// 1. SECURITY: Error reporting based on environment
+if ($envMode === 'development') {
+    ini_set('display_errors', '1');
+    ini_set('display_startup_errors', '1');
+    error_reporting(E_ALL);
+} else {
+    ini_set('display_errors', '0');
+    ini_set('display_startup_errors', '0');
+    error_reporting(E_ALL); // Log all errors but do not display them
+}
 
 set_exception_handler(function ($e) {
     error_log(sprintf("Uncaught Exception: %s in %s:%d", $e->getMessage(), $e->getFile(), $e->getLine()));
@@ -19,11 +46,11 @@ set_exception_handler(function ($e) {
 });
 
 // ── Environment ──────────────────────────────────────────────────────────────
-define('DB_HOST', 'localhost');
-define('DB_PORT', '3306');
-define('DB_NAME', 'ydy_hrm');
-define('DB_USER', 'root');
-define('DB_PASS', '');
+define('DB_HOST', $_ENV['DB_HOST'] ?? 'localhost');
+define('DB_PORT', $_ENV['DB_PORT'] ?? '3306');
+define('DB_NAME', $_ENV['DB_NAME'] ?? 'ydy_hrm');
+define('DB_USER', $_ENV['DB_USER'] ?? 'root');
+define('DB_PASS', $_ENV['DB_PASS'] ?? '');
 define('DB_CHARSET', 'utf8mb4');
 
 define('LOGIN_REDIRECT', '../dashboard.php');
