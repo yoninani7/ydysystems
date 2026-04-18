@@ -64,11 +64,25 @@ try {
     $stmt->execute($allParams);
     
     $employees = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $data = [];
+    foreach ($employees as $emp) {
+        $uploaded = explode(',', (string)($emp['uploaded_ids'] ?? ''));
+        $row = [
+            'empId'    => $emp['empId'],
+            'name'     => $emp['name'],
+            'progress' => (float)$emp['progress']
+        ];
+        // Create a boolean flag for each document type
+        foreach ($docTypes as $dt) {
+            $row['doc_' . $dt['id']] = in_array((string)$dt['id'], $uploaded);
+        }
+        $data[] = $row;
+    }
 
     echo json_encode([
         'success' => true, 
         'docTypes' => $docTypes, 
-        'employees' => $employees,
+        'data' => $data,
         'pagination' => [
             'page'       => $page,
             'limit'      => $limit,

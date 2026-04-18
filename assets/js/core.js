@@ -310,33 +310,40 @@ function initOrgChartDrag(){
 }
  
 // ── VAULT MATRIX ──
-const companyRequiredDocs=[{id:'id_card',short:'ID',name:'National ID/Passport'},{id:'contract',short:'CTR',name:'Employment Contract'},{id:'nda',short:'NDA',name:'Non-Disclosure Agreement'},{id:'tax',short:'TAX',name:'Tax Filing (TIN)'},{id:'edu',short:'EDU',name:'Degree/Certificates'},{id:'photo',short:'IMG',name:'Profile Photo'}];
-function initVaultMatrix(){
-  const container=document.getElementById('vault-matrix-container');
-  if(!container||container.dataset.built)return;
-  container.dataset.built='1';
-  const cols=[{key:'emp',label:'Employee'}];
-  companyRequiredDocs.forEach(doc=>cols.push({key:doc.id,label:doc.short,render:val=>val==='filled'?`<div class="vault-slot filled" title="Uploaded"><i data-lucide="check" size="10"></i></div>`:`<div class="vault-slot expired" title="Expired"><i data-lucide="alert-circle" size="10"></i></div>`}));
-  cols.push({key:'progress',label:'Fulfillment',render:v=>`<span style="font-size:.7rem;font-weight:800;color:var(--primary);">${v}%</span>`});
-  // Inside initVaultMatrix function:
-  cols.push({
-  key: '_',
-  label: 'Actions',
-  render: (v, row) => {
-    // This extracts the clean name and ID from the HTML string
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = row.emp;
-    const cleanName = tempDiv.querySelector('b').innerText;
-    const cleanId = tempDiv.querySelector('small').innerText;
-    
-    return `<button class="btn btn-xs btn-secondary" onclick="openEmployeeVault('${cleanName}', '${cleanId}')">Open Folder</button>`;
-  }
-});
-  const rows=gen(25,i=>{const row={emp:`<b>${names[i%names.length]}</b><br><small style="color:var(--muted)">E-${1000+i}</small>`,progress:randInt(40,100)};companyRequiredDocs.forEach(doc=>{row[doc.id]=Math.random()>0.4?'filled':'expired';});return row;});
-  const wrapper=document.createElement('div');
-  wrapper.id='tbl-vault-matrix-final';
-  container.appendChild(wrapper);
-  buildTable('tbl-vault-matrix-final',{columns:cols,rows,perPage:12});
+function initVaultMatrix() {
+  const container = document.getElementById('vault-matrix-container');
+  if (!container || container.dataset.built) return;
+  
+  // First, fetch the requirements to build columns dynamically
+  fetch('api/employees/fetch_vault_matrix.php?limit=1')
+    .then(r => r.json())
+    .then(res => {
+        if (!res.success) throw new Error(res.message);
+        
+        const cols = [{key:'name', label:'Employee'}];
+        res.docTypes.forEach(doc => {
+            cols.push({
+                key: 'doc_' + doc.id,
+                label: doc.code,
+                render: (val) => val ? `<div class="vault-slot filled" title="Uploaded"><i data-lucide="check" size="10"></i></div>` : `<div class="vault-slot expired" title="Missing"><i data-lucide="alert-circle" size="10"></i></div>`
+            });
+        });
+        cols.push({key:'progress', label:'Fulfillment', render:v=>`<span style="font-size:.7rem;font-weight:800;color:var(--primary);">${v}%</span>`});
+        cols.push({
+            key: '_',
+            label: 'Actions',
+            render: (v, row) => `<button class="btn btn-xs btn-secondary" onclick="openEmployeeVault('${row.name}', '${row.empId}')">Open Folder</button>`
+        });
+
+        initServerPaginatedTable('vault-matrix-container', 'api/employees/fetch_vault_matrix.php', {
+            columns: cols,
+            perPage: 15,
+            searchPlaceholder: 'Search employees...'
+        });
+    })
+    .catch(err => {
+        container.innerHTML = `<div style="padding:40px; text-align:center; color:var(--danger);">Error: ${err.message}</div>`;
+    });
 }
 
 // ── DASHBOARD CHART  ── 
@@ -677,80 +684,6 @@ function saveBranch() {
 let activeDropdownId = null;
 const dropdownState = {}; // Tracks loaded type for each dropdown
 
-function showAsDrop(dropdownId) {
-    const dropContainer = document.getElementById(dropdownId);
-    if (!dropContainer) return;
-
-    // Determine the associated type
-    let type;
-    if (dropdownId === 'as-drop-dept') type = 'departments';
-    else if (dropdownId === 'as-drop-branch') type = 'branches';
-    else if (dropdownId === 'as-drop-etype') type = 'employment_types';
-    else if (dropdownId === 'as-drop-pos') type = 'job_positions';
-    else {
-        // Fallback for other dropdowns
-        const inputId = dropdownId.replace('as-drop-', 'as-input-');
-        const inputEl = document.getElementById(inputId) || dropContainer.closest('.as-combo-container')?.querySelector('input');
-        type = inputEl?.getAttribute('data-dropdown-type') || 'employees';
-    }
-
-    // Close any other open dropdown
-    if (activeDropdownId && activeDropdownId !== dropdownId) {
-        document.getElementById(activeDropdownId)?.classList.remove('active');
-    }
-
-    // Special handling for job positions (department dependent)
-    if (dropdownId === 'as-drop-pos') {
-        const posInput = document.getElementById('o-pos');
-        const deptId = posInput?.dataset.departmentId || document.getElementById('o-dept_id')?.value;
-        if (!deptId) {
-            dropContainer.innerHTML = '<div class="as-res-item" style="color:var(--warning);">Please select a department first</div>';
-            dropContainer.classList.add('active');
-            activeDropdownId = dropdownId;
-            return;
-        }
-        // For job positions, always reload because department may change
-        reloadJobPositionsDropdown(deptId);
-        activeDropdownId = dropdownId;
-        return;
-    }
-
-    // For department, branch, employment type: if already loaded with correct type, just show
-    if (dropdownState[dropdownId] === type && dropContainer.children.length > 0) {
-        dropContainer.classList.add('active');
-        activeDropdownId = dropdownId;
-        return;
-    }
-
-    // Otherwise, load data
-    dropContainer.innerHTML = '<div class="as-res-item" style="color:var(--muted);">Loading...</div>';
-    dropContainer.classList.add('active');
-    activeDropdownId = dropdownId;
-
-    // Clear cache for this type to ensure fresh data
-    Object.keys(dropdownCache).forEach(key => {
-        if (key.startsWith(type + ':')) {
-            delete dropdownCache[key];
-        }
-    });
-
-    // Fetch data
-    const url = `api/1common/fetch_dropdown.php?type=${type}&search=`;
-    fetch(url)
-        .then(r => r.json())
-        .then(result => {
-            if (result.success && result.data) {
-                renderDropdownItems(dropContainer, result.data);
-                dropdownState[dropdownId] = type;
-            } else {
-                dropContainer.innerHTML = '<div class="as-res-item" style="color:var(--muted);">No options found</div>';
-            }
-        })
-        .catch(err => {
-            console.error('Dropdown error:', err);
-            dropContainer.innerHTML = '<div class="as-res-item" style="color:var(--danger);">Error loading data</div>';
-        });
-}
 function enforceDropdownOnBlur(inputId) {
     const input = document.getElementById(inputId);
     if (!input) return;
@@ -770,22 +703,6 @@ function enforceDropdownOnBlur(inputId) {
     input.addEventListener('blur', handler);
 }
  
-function selectAsItem(inputId,dropId,name){document.getElementById(inputId).value=name;document.getElementById(dropId).classList.remove('active');}
-function selectMonth(name, val) {
-  document.getElementById('att-m-display').value = name;
-  document.getElementById('att-m-select').value = val;
-  document.getElementById('as-drop-month').classList.remove('active');
-}
-function selectYear(val) {
-  document.getElementById('att-y-display').value = val;
-  document.getElementById('att-y-select').value = val;
-  document.getElementById('as-drop-year').classList.remove('active');
-}
-function selectAttDept(name, val) {
-  document.getElementById('att-dept-display').value = name;
-  document.getElementById('att-dept-select').value = val;
-  document.getElementById('as-drop-att-dept').classList.remove('active');
-} 
 // ── ONBOARDING WIZARD ──
 let currentObStep=1;
 const totalObSteps=6;
@@ -1310,20 +1227,7 @@ function renderOrgChartDepartments() {
     if (typeof lcIcons === 'function') lcIcons(container);
   }, 50);
 }
-function fetchAndBuildTable(tableId, url, options, onSuccess) {
-  fetch(url).then(r => r.json()).then(res => {
-    if (!res.success) throw new Error(res.message);
-    const el = document.getElementById(tableId);
-    if (el) delete el.dataset.built;
-    if (onSuccess) onSuccess(res);
-    options.rows = res.data;
-    buildTable(tableId, options);
-  }).catch(err => {
-    console.error(err);
-    const el = document.getElementById(tableId);
-    if (el) el.innerHTML = `<p style="padding:20px;color:#dc2626;">Error loading data: ${err.message}</p>`;
-  });
-}
+
 
 function initPage(id){
   if(inited.has(id))return;
@@ -1484,13 +1388,15 @@ function initPage(id){
     setTimeout(() => validateMasterRecord(), 50);
     break;
     case 'employment-types':
-        fetchAndBuildTable('tbl-employment-types', 'api/employees/fetch_emptypes.php', {
+        initServerPaginatedTable('tbl-employment-types', 'api/employees/fetch_emptypes.php', {
           columns: [
             { key: 'name', label: 'Type Name' },
             { key: 'desc', label: 'Description' },
             { key: 'count', label: 'Employees' },
             { key: '_', label: 'Actions', render: () => `<div class="flex-row"><button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;"><i data-lucide="trash-2" size="10"></i></button></div>` }
-          ]
+          ],
+          perPage: 15,
+          searchPlaceholder: 'Search employment types...'
         });
         break;
       case 'probation-tracker':
@@ -1580,120 +1486,116 @@ function initPage(id){
     });
     break;
     case 'retirement-planner':
-      fetchAndBuildTable('tbl-retirement', 'api/employees/fetch_retirement.php', {
+      initServerPaginatedTable('tbl-retirement', 'api/employees/fetch_retirement.php', {
         columns: [
           { key: 'name', label: 'Employee' }, { key: 'dept', label: 'Department' }, { key: 'age', label: 'Age' },
           { key: 'tenure', label: 'Service Period' }, { key: 'date', label: 'Retirement Date' },
           { key: 'days', label: 'Status', render: (v) => { const d = parseInt(v); return d < 0 ? b('neutral','Retired') : d <= 90 ? b('danger',`Upcoming (${d}D)`) : d <= 365 ? b('warning','Within Year') : b('info','Active'); } },
           { key: 'pension', label: 'Pension Status', render: () => b('warning', 'In Progress') },
           { key: '_', label: 'Actions', render: () => `<div class="flex-row"><button class="btn btn-xs btn-secondary" title="Succession Plan"><i data-lucide="user-plus" size="10"></i></button><button class="btn btn-xs btn-primary" title="Clearance"><i data-lucide="clipboard-check" size="10"></i></button></div>` }
-        ], perPage: 10
-      }, res => {
-        const countEl = document.getElementById('count-upcoming-ret');
-        if (countEl) countEl.textContent = res.data.filter(emp => emp.days <= 90 && emp.days >= 0).length;
+        ], 
+        perPage: 15,
+        searchPlaceholder: 'Search retirement forecast...'
       });
       break;
     case 'former-employees':
-      fetchAndBuildTable('tbl-former-employees', 'api/employees/fetch_former_employees.php', {
+      initServerPaginatedTable('tbl-former-employees', 'api/employees/fetch_former_employees.php', {
         columns: [
           { key: 'name', label: 'Employee' }, { key: 'dept', label: 'Last Department' }, { key: 'role', label: 'Last Role' }, { key: 'exitDate', label: 'Exit Date' },
           { key: 'type', label: 'Reason', render: (v) => v === 'Terminated' ? b('danger', v) : b('neutral', v) }, { key: 'duration', label: 'Duration' },
           { key: 'rehire', label: 'Rehire possibility', render: (v) => v === 'No' ? b('danger', 'No') : b('success', 'Yes') },
           { key: '_', label: 'Actions', render: () => `<div class="flex-row"><button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;"><i data-lucide="trash-2" size="10"></i></button></div>` }
-        ]
+        ],
+        perPage: 15,
+        searchPlaceholder: 'Search former employees...'
       });
       break;
     case 'asset-tracking':
-      fetchAndBuildTable('tbl-assets', 'api/employees/fetch_assets.php', {
+      initServerPaginatedTable('tbl-assets', 'api/employees/fetch_assets.php', {
         columns: [
           { key: 'id', label: 'Item Code' }, { key: 'name', label: 'Asset Name' }, { key: 'cat', label: 'Category' }, { key: 'serial', label: 'Serial number' },
           { key: 'val', label: 'Asset Value', render: (v) => v ? 'ETB ' + parseFloat(v).toLocaleString() : '—' },
           { key: 'user_prev', label: 'Previous custodian' }, { key: 'user', label: 'Current custodian' }, { key: 'loc', label: 'Location' }, { key: 'war', label: 'Warranty' },
           { key: '_', label: 'Actions', render: (v, row) => `<div style="display: flex; gap: 8px; justify-content: center;"><button class="btn btn-xs btn-secondary" title="View Details"><i data-lucide="eye" size="10"></i></button><button class="btn btn-xs btn-secondary" onclick="openReassignModal('${row.name}','${row.user}')" title="Reassign"><i data-lucide="shuffle" size="10"></i></button></div>` }
-        ]
+        ],
+        perPage: 15,
+        searchPlaceholder: 'Search assets...'
       });
       break;
     case 'document-vault':initVaultMatrix();break;
     case 'job-vacancies':
-      fetch('api/talent/fetch_vacancies.php')
-        .then(r => r.json())
-        .then(res => {
-          if (!res.success) throw new Error(res.message);
-          
-          const el = document.getElementById('tbl-vacancies');
-          if (el) delete el.dataset.built;
-
-          buildTable('tbl-vacancies', {
-            columns: [
-              { key: 'title', label: 'Position' },
-              { key: 'dept',  label: 'Department' },
-              { key: 'branch', label: 'Branch' },
-              { key: 'type',   label: 'Type' },
-              { key: 'posted', label: 'Posted' },
-              { key: 'deadline', label: 'Deadline' },
-              { 
-                key: 'status', 
-                label: 'Status',
-                render: (v) => {
-                  const s = v.toLowerCase();
-                  if (s === 'open') return b('success', 'Open');
-                  if (s === 'closed') return b('danger', 'Closed');
-                  if (s === 'filled') return b('neutral', 'Filled');
-                  if (s === 'on hold') return b('warning', 'On Hold');
-                  return b('info', v);
-                }
-              },
-              {
-                key: '_',
-                label: 'Actions',
-                render: () => `
-                  <div class="flex-row">
-                    <button class="btn btn-xs btn-secondary" title="View Details"><i data-lucide="eye" size="10"></i></button>
-                    <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;">
-                      <i data-lucide="trash-2" size="10"></i>
-                    </button>
-                  </div>`
-              }
-            ],
-            rows: res.data
-          });
-        })
-        .catch(err => {
-          console.error(err);
-          document.getElementById('tbl-vacancies').innerHTML =
-            `<p style="padding:20px;color:#dc2626;">Error loading vacancies: ${err.message}</p>`;
-        });
+      initServerPaginatedTable('tbl-vacancies', 'api/talent/fetch_vacancies.php', {
+        columns: [
+          { key: 'title', label: 'Position' },
+          { key: 'dept',  label: 'Department' },
+          { key: 'branch', label: 'Branch' },
+          { key: 'type',   label: 'Type' },
+          { key: 'posted', label: 'Posted' },
+          { key: 'deadline', label: 'Deadline' },
+          { 
+            key: 'status', 
+            label: 'Status',
+            render: (v) => {
+              const s = v.toLowerCase();
+              if (s === 'open') return b('success', 'Open');
+              if (s === 'closed') return b('danger', 'Closed');
+              if (s === 'filled') return b('neutral', 'Filled');
+              if (s === 'on hold') return b('warning', 'On Hold');
+              return b('info', v);
+            }
+          },
+          {
+            key: '_',
+            label: 'Actions',
+            render: () => `
+              <div class="flex-row">
+                <button class="btn btn-xs btn-secondary" title="View Details"><i data-lucide="eye" size="10"></i></button>
+                <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;">
+                  <i data-lucide="trash-2" size="10"></i>
+                </button>
+              </div>`
+          }
+        ],
+        perPage: 15,
+        searchPlaceholder: 'Search positions, departments...'
+      });
       break;
     case 'candidates':
-      fetchAndBuildTable('tbl-candidates', 'api/talent/fetch_candidates.php', {
+      initServerPaginatedTable('tbl-candidates', 'api/talent/fetch_candidates.php', {
         columns: [
           { key: 'name', label: 'Candidate' }, { key: 'position', label: 'Applied For' }, { key: 'applied', label: 'Applied Date' },
           { key: 'stage', label: 'Stage', render: (v) => { const s = v.toLowerCase(); return s === 'hired' ? b('success', 'Hired') : s === 'rejected' ? b('danger', 'Rejected') : s === 'interview' ? b('warning', 'Interview') : s === 'offer' ? b('primary', 'Offer Made') : s === 'screening' ? b('info', 'Screening') : b('neutral', v); } },
           { key: '_', label: 'Actions', render: () => `<div class="flex-row"><button class="btn btn-xs btn-secondary" title="Download CV"><i data-lucide="download" size="10"></i></button></div>` }
-        ]
+        ],
+        perPage: 15,
+        searchPlaceholder: 'Search candidates...'
       });
       break;
     case 'interview-tracker':
-      fetchAndBuildTable('tbl-interviews', 'api/talent/fetch_interviews.php', {
+      initServerPaginatedTable('tbl-interviews', 'api/talent/fetch_interviews.php', {
         columns: [
           { key: 'candidate', label: 'Candidate' }, { key: 'position', label: 'Position' }, { key: 'interviewer', label: 'Interviewer' }, { key: 'date', label: 'Date' }, { key: 'time', label: 'Time' }, { key: 'mode', label: 'Mode' },
           { key: 'result', label: 'Result', render: (v) => { const s = v.toLowerCase(); return s === 'passed' ? b('success', 'Passed') : s === 'failed' ? b('danger', 'Failed') : s === 'scheduled' ? b('info', 'Scheduled') : s === 'on hold' ? b('warning', 'On Hold') : s === 'no show' ? b('neutral', 'No Show') : b('primary', v); } },
           { key: '_', label: 'Actions', render: () => `<div class="flex-row"><button class="btn btn-xs btn-secondary" title="Edit Interview"><i data-lucide="edit-3" size="10"></i></button></div>` }
-        ]
+        ],
+        perPage: 15,
+        searchPlaceholder: 'Search interviews...'
       });
       break;
     case 'internship':
-      fetchAndBuildTable('tbl-internship', 'api/talent/fetch_internships.php', {
+      initServerPaginatedTable('tbl-internship', 'api/talent/fetch_internships.php', {
         columns: [
           {key:'id_code', label:'Intern ID'}, {key:'name', label:'Full Name'}, {key:'uni', label:'Institution'}, {key:'dept', label:'Assigned Dept'}, {key:'mentor', label:'Mentor'}, {key:'start', label:'Start Date'}, {key:'end', label:'End Date'},
           { key:'eval', label:'Evaluation', render: (v) => (!v || v === '0.00') ? '<span style="color:var(--muted)">Pending</span>' : b('primary', parseFloat(v).toFixed(0) + '%') },
           { key:'status', label:'Status', render: (v) => v === 'Active' ? b('success', 'Active') : v === 'Completed' ? b('neutral', 'Completed') : v === 'Terminated' ? b('danger', 'Terminated') : b('info', v) },
           { key: '_', label: 'Actions', render: () => `<div class="flex-row"><button class="btn btn-xs btn-secondary" title="Evaluation Form"><i data-lucide="clipboard-check" size="10"></i></button><button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;"><i data-lucide="trash-2" size="10"></i></button></div>` }
-        ]
+        ],
+        perPage: 15,
+        searchPlaceholder: 'Search interns...'
       });
       break;
     case 'daily-attendance':
-      fetchAndBuildTable('tbl-attendance', 'api/attendance/fetch_daily.php', {
+      initServerPaginatedTable('tbl-attendance', 'api/attendance/fetch_daily.php', {
         columns: [
           { key: 'name', label: 'Employee' }, { key: 'dept', label: 'Dept' }, { key: 'shift', label: 'Shift' },
           { key: 'checkin', label: 'Check In', render: (v) => v ? v.substring(0, 5) : '—' },
@@ -1701,77 +1603,68 @@ function initPage(id){
           { key: 'hours', label: 'Hours' }, { key: 'ot', label: 'OT' },
           { key: 'status', label: 'Status', render: (v, row) => { if (row.is_late == 1) return b('warning', 'Late'); if (v === 'P') return b('success', 'Present'); if (v === 'A') return b('danger', 'Absent'); if (v === 'L') return b('info', 'On Leave'); if (v === 'H') return b('neutral', 'Half Day'); if (v === 'O') return b('neutral', 'Off'); return b('neutral', v); } },
           { key: '_', label: 'Actions', render: () => `<div class="flex-row"><button class="btn btn-xs btn-secondary" title="View Logs"><i data-lucide="eye" size="10"></i></button><button class="btn btn-xs btn-secondary" title="Edit Entry"><i data-lucide="edit-2" size="10"></i></button></div>` }
-        ]
+        ],
+        perPage: 15,
+        searchPlaceholder: 'Search attendance...'
       });
       break;
     case 'overtime-requests':
-      fetch('api/benefits/fetch_overtime.php')
-        .then(r => r.json())
-        .then(res => {
-          if (!res.success) throw new Error(res.message);
-          
-          const el = document.getElementById('tbl-overtime');
-          if (el) delete el.dataset.built;
-
-          buildTable('tbl-overtime', {
-            columns: [
-              { key: 'emp', label: 'Employee' },
-              { key: 'dept', label: 'Dept' },
-              { key: 'date', label: 'Date' },
-              { 
-                key: 'hours', 
-                label: 'OT Hours',
-                render: (v) => `<b>${v} hrs</b>`
-              },
-              { 
-                key: 'reason', 
-                label: 'Reason',
-                render: (v) => `<span title="${v}" style="display:block; max-width:150px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${v}</span>`
-              },
-              { key: 'submitted', label: 'Submitted' },
-              { 
-                key: 'status', 
-                label: 'Status',
-                render: (v) => {
-                  if (v === 'Approved') return b('success', 'Approved');
-                  if (v === 'Rejected') return b('danger', 'Rejected');
-                  if (v === 'Pending') return b('warning', 'Pending');
-                  return b('neutral', v);
+      initServerPaginatedTable('tbl-overtime', 'api/benefits/fetch_overtime.php', {
+        columns: [
+          { key: 'emp', label: 'Employee' },
+          { key: 'dept', label: 'Dept' },
+          { key: 'date', label: 'Date' },
+          { 
+            key: 'hours', 
+            label: 'OT Hours',
+            render: (v) => `<b>${v} hrs</b>`
+          },
+          { 
+            key: 'reason', 
+            label: 'Reason',
+            render: (v) => `<span title="${v}" style="display:block; max-width:150px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${v}</span>`
+          },
+          { key: 'submitted', label: 'Submitted' },
+          { 
+            key: 'status', 
+            label: 'Status',
+            render: (v) => {
+              if (v === 'Approved') return b('success', 'Approved');
+              if (v === 'Rejected') return b('danger', 'Rejected');
+              if (v === 'Pending') return b('warning', 'Pending');
+              return b('neutral', v);
+            }
+          },
+          {
+            key: '_',
+            label: 'Actions',
+            render: (v, row) => `
+              <div class="flex-row">
+                ${row.status === 'Pending' ? 
+                  `<button class="btn btn-xs btn-primary" title="Approve/Reject"><i data-lucide="check-circle" size="10"></i> Process</button>` : 
+                  `<button class="btn btn-xs btn-secondary" title="View Detail"><i data-lucide="eye" size="10"></i></button>`
                 }
-              },
-              {
-                key: '_',
-                label: 'Actions',
-                render: (v, row) => `
-                  <div class="flex-row">
-                    ${row.status === 'Pending' ? 
-                      `<button class="btn btn-xs btn-primary" title="Approve/Reject"><i data-lucide="check-circle" size="10"></i> Process</button>` : 
-                      `<button class="btn btn-xs btn-secondary" title="View Detail"><i data-lucide="eye" size="10"></i></button>`
-                    }
-                  </div>`
-              }
-            ],
-            rows: res.data
-          });
-        })
-        .catch(err => {
-          console.error(err);
-          document.getElementById('tbl-overtime').innerHTML =
-            `<p style="padding:20px;color:#dc2626;">Error loading overtime: ${err.message}</p>`;
-        });
+              </div>`
+          }
+        ],
+        perPage: 15,
+        searchPlaceholder: 'Search overtime requests...'
+      });
       break;
     case 'attendance-reports':
-      fetchAndBuildTable('tbl-attendance-reports', 'api/attendance/fetch_reports.php', {
+      initServerPaginatedTable('tbl-attendance-reports', 'api/attendance/fetch_reports.php', {
         columns: [
           { key: 'dept', label: 'Department' }, { key: 'total', label: 'Total Emp' }, { key: 'absent', label: 'Absent Days' },
           { key: 'leave_days', label: 'Leave Days' }, { key: 'late', label: 'Late Arrivals' },
-          { key: 'ot', label: 'Total OT Hrs', render: (v) => parseFloat(v).toFixed(1) },
+          { key: 'ot', label: 'Total OT Hrs', render: (v) => v ? parseFloat(v).toFixed(1) : '0.0' },
           { key: 'rate', label: 'Attendance Rate', render: (v) => { const val = parseFloat(v); let color = 'var(--success)'; if (val < 90) color = 'var(--warning)'; if (val < 75) color = 'var(--danger)'; return `<b style="color:${color}">${val}%</b>`; } }
-        ]
+        ],
+        perPage: 15,
+        searchPlaceholder: 'Search reports by department...'
       });
       break;
     case 'leave-types':
-      fetchAndBuildTable('tbl-leave-types', 'api/leave/fetch_leave_types.php', {
+      initServerPaginatedTable('tbl-leave-types', 'api/leave/fetch_leave_types.php', {
         columns: [
           { key: 'name', label: 'Leave Type' },
           { key: 'days', label: 'Days/Year', render: (v) => v ? v : '—' },
@@ -1779,11 +1672,13 @@ function initPage(id){
           { key: 'paid', label: 'Paid Status', render: (v) => v === 'Yes' ? b('success', 'Paid') : (v === 'No' ? b('danger', 'Unpaid') : b('warning', v)) },
           { key: 'approval', label: 'Needs Approval', render: (v) => v == 1 ? 'Yes' : 'No' },
           { key: '_', label: 'Actions', render: () => `<div class="flex-row"><button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;"><i data-lucide="trash-2" size="10"></i></button></div>` }
-        ]
+        ],
+        perPage: 15,
+        searchPlaceholder: 'Search leave types...'
       });
       break; 
     case 'leave-requests':
-      fetchAndBuildTable('tbl-leave-requests', 'api/leave/fetch_leaverequests.php', {
+      initServerPaginatedTable('tbl-leave-requests', 'api/leave/fetch_leaverequests.php', {
         columns: [
           { key: 'emp', label: 'Employee' }, { key: 'dept', label: 'Department' }, { key: 'type', label: 'Leave Type' },
           { key: 'approver', label: 'Approver', render: (v) => v ? v : '<span style="color:var(--muted)">—</span>' },
@@ -1791,11 +1686,13 @@ function initPage(id){
           { key: 'reason', label: 'Reason', render: (v) => `<span title="${v}" style="display:block; max-width:120px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${v}</span>` },
           { key: 'status', label: 'Status', render: (v) => { if (v === 'Approved') return b('success', 'Approved'); if (v === 'Rejected') return b('danger', 'Rejected'); if (v === 'Pending') return b('warning', 'Pending'); return b('neutral', v); } },
           { key: '_', label: 'Actions', render: (v, row) => `<div class="flex-row">${row.status === 'Pending' ? `<button class="btn btn-xs btn-primary" title="Process Request"><i data-lucide="check-square" size="10"></i> Review</button>` : `<button class="btn btn-xs btn-secondary" title="View Details"><i data-lucide="eye" size="10"></i></button>`}</div>` }
-        ]
+        ],
+        perPage: 15,
+        searchPlaceholder: 'Search leave requests...'
       });
       break;
     case 'leave-entitlement':
-      fetchAndBuildTable('tbl-leave-entitlement', 'api/leave/fetch_entitlement.php', {
+      initServerPaginatedTable('tbl-leave-entitlement', 'api/leave/fetch_entitlement.php', {
         columns: [
           { key: 'id', label: 'Emp ID' }, { key: 'name', label: 'Employee' }, { key: 'dept', label: 'Department' },
           { key: 'al_total', label: 'AL Total' }, { key: 'al_used', label: 'AL Used' },
@@ -1803,208 +1700,178 @@ function initPage(id){
           { key: 'sl_used', label: 'SL Used' }, { key: 'sl_bal', label: 'SL Balance' },
           { key: 'carry', label: 'Carried Over', render: (v) => v > 0 ? b('info', v + ' Days') : '0' },
           { key: '_', label: 'Actions', render: () => `<button class="btn btn-xs btn-secondary" title="Update Entitlement"><i data-lucide="edit-3" size="10"></i></button>` }
-        ]
+        ],
+        perPage: 15,
+        searchPlaceholder: 'Search entitlement...'
       });
       break;
     case 'medical-claims':
-      fetchAndBuildTable('tbl-medical', 'api/benefits/fetch_medical_claims.php', {
+      initServerPaginatedTable('tbl-medical', 'api/benefits/fetch_medical_claims.php', {
         columns: [
           { key: 'id', label: 'Claim ID' }, { key: 'emp', label: 'Employee' }, { key: 'dept', label: 'Department' }, { key: 'category', label: 'Category' },
-          { key: 'amount', label: 'Amount', render: (v) => 'ETB ' + parseFloat(v).toLocaleString(undefined, {minimumFractionDigits: 2}) },
+          { key: 'amount', label: 'Amount', render: (v) => v ? 'ETB ' + parseFloat(v).toLocaleString(undefined, {minimumFractionDigits: 2}) : '0.00' },
           { key: 'submitted', label: 'Submitted' }, { key: 'receipt', label: 'Receipt', render: (v) => v == 1 ? b('success', 'Attached') : b('neutral', 'None') },
           { key: 'status', label: 'Status', render: (v) => { if (v === 'Approved') return b('success', 'Approved'); if (v === 'Rejected') return b('danger', 'Rejected'); if (v === 'Pending') return b('warning', 'Pending'); return b('neutral', v); } },
           { key: '_', label: 'Actions', render: (v, row) => `<div class="flex-row"><button class="btn btn-xs btn-secondary" title="View Receipt"><i data-lucide="file-text" size="10"></i></button>${row.status === 'Pending' ? `<button class="btn btn-xs btn-primary" title="Process"><i data-lucide="check-circle" size="10"></i></button>` : ''}</div>` }
-        ]
+        ],
+        perPage: 15,
+        searchPlaceholder: 'Search medical claims...'
       });
       break;
     case 'training-needs':
-      fetchAndBuildTable('tbl-training-needs', 'api/training/fetch_training_needs.php', {
+      initServerPaginatedTable('tbl-training-needs', 'api/training/fetch_training_needs.php', {
         columns: [
           { key: 'dept', label: 'Department' }, { key: 'skill', label: 'Skill Gap' },
           { key: 'priority', label: 'Priority', render: (v) => { if (v === 'High') return b('danger', 'High'); if (v === 'Medium') return b('warning', 'Medium'); return b('neutral', 'Low'); } },
           { key: 'emp_count', label: 'Affected', render: (v) => `<b>${v} Employees</b>` }, { key: 'proposed', label: 'Proposed Training' },
           { key: 'status', label: 'Status', render: (v) => { if (v === 'Approved') return b('success', 'Approved'); if (v === 'Ongoing') return b('primary', 'Ongoing'); if (v === 'Pending') return b('warning', 'Pending'); return b('neutral', v); } },
           { key: '_', label: 'Actions', render: () => `<div class="flex-row"><button class="btn btn-xs btn-secondary" title="View Details"><i data-lucide="eye" size="10"></i></button><button class="btn btn-xs btn-primary" title="Schedule Training"><i data-lucide="calendar-plus" size="10"></i></button></div>` }
-        ]
+        ],
+        perPage: 15,
+        searchPlaceholder: 'Search training needs...'
       });
       break;
     case 'training-schedule':
-      fetch('api/training/fetch_training_schedule.php')
-        .then(r => r.json())
-        .then(res => {
-          if (!res.success) throw new Error(res.message);
-          
-          const el = document.getElementById('tbl-training-schedule');
-          if (el) delete el.dataset.built;
-
-          buildTable('tbl-training-schedule', {
-            columns: [
-              { key: 'course', label: 'Course' },
-              { key: 'dept', label: 'Department' },
-              { key: 'trainer', label: 'Trainer' },
-              { key: 'date', label: 'Date' },
-              { 
-                key: 'time', 
-                label: 'Time',
-                render: (v) => v ? v.substring(0, 5) : '—'
-              },
-              { key: 'venue', label: 'Venue' },
-              { 
-                key: 'seats', 
-                label: 'Enrolled/Seats',
-                render: (v, row) => {
-                    const pct = (row.enrolled_seats / row.total_seats) * 100;
-                    let color = pct >= 100 ? 'var(--danger)' : 'var(--primary)';
-                    return `<span style="font-weight:700; color:${color}">${row.enrolled_seats}</span> / ${row.total_seats}`;
-                }
-              },
-              { 
-                key: 'status', 
-                label: 'Status',
-                render: (v) => {
-                    if (v === 'Confirmed') return b('success', 'Confirmed');
-                    if (v === 'Open') return b('warning', 'Open');
-                    if (v === 'Cancelled') return b('danger', 'Cancelled');
-                    return b('neutral', v);
-                }
-              },
-              {
-                key: '_',
-                label: 'Actions',
-                render: () => `
-                  <div class="flex-row">
-                    <button class="btn btn-xs btn-secondary" title="View Roster"><i data-lucide="users" size="10"></i></button>
-                    <button class="btn btn-xs btn-primary" title="Edit Session"><i data-lucide="edit-3" size="10"></i></button>
-                  </div>`
-              }
-            ],
-            rows: res.data
-          });
-        })
-        .catch(err => {
-          console.error(err);
-          document.getElementById('tbl-training-schedule').innerHTML =
-            `<p style="padding:20px;color:#dc2626;">Error loading schedule: ${err.message}</p>`;
-        });
+      initServerPaginatedTable('tbl-training-schedule', 'api/training/fetch_training_schedule.php', {
+        columns: [
+          { key: 'course', label: 'Course' },
+          { key: 'dept', label: 'Department' },
+          { key: 'trainer', label: 'Trainer' },
+          { key: 'date', label: 'Date' },
+          { 
+            key: 'time', 
+            label: 'Time',
+            render: (v) => v ? v.substring(0, 5) : '—'
+          },
+          { key: 'venue', label: 'Venue' },
+          { 
+            key: 'seats', 
+            label: 'Enrolled/Seats',
+            render: (v, row) => {
+                const total = row.total_seats || 0;
+                const enrolled = row.enrolled_seats || 0;
+                const pct = total > 0 ? (enrolled / total) * 100 : 0;
+                let color = pct >= 100 ? 'var(--danger)' : 'var(--primary)';
+                return `<span style="font-weight:700; color:${color}">${enrolled}</span> / ${total}`;
+            }
+          },
+          { 
+            key: 'status', 
+            label: 'Status',
+            render: (v) => {
+                if (v === 'Confirmed') return b('success', 'Confirmed');
+                if (v === 'Open') return b('warning', 'Open');
+                if (v === 'Cancelled') return b('danger', 'Cancelled');
+                return b('neutral', v);
+            }
+          },
+          {
+            key: '_',
+            label: 'Actions',
+            render: () => `
+              <div class="flex-row">
+                <button class="btn btn-xs btn-secondary" title="View Roster"><i data-lucide="users" size="10"></i></button>
+                <button class="btn btn-xs btn-primary" title="Edit Session"><i data-lucide="edit-3" size="10"></i></button>
+              </div>`
+          }
+        ],
+        perPage: 15,
+        searchPlaceholder: 'Search schedule...'
+      });
       break;
     case 'performance-reviews':
-      fetch('api/performance/fetch_reviews.php')
-        .then(r => r.json())
-        .then(res => {
-          if (!res.success) throw new Error(res.message);
-          
-          const el = document.getElementById('tbl-reviews');
-          if (el) delete el.dataset.built;
-
-          buildTable('tbl-reviews', {
-            columns: [
-              { key: 'emp', label: 'Employee' },
-              { key: 'dept', label: 'Department' },
-              { key: 'reviewer', label: 'Reviewer' },
-              { key: 'period', label: 'Period' },
-              { 
-                key: 'score', 
-                label: 'Overall Score',
-                render: (v) => v ? `<b>${parseFloat(v).toFixed(1)}</b> / 10` : '—'
-              },
-              { 
-                key: 'rank', 
-                label: 'Rating',
-                render: (v) => {
-                  if (v === 'Exceptional') return b('success', v);
-                  if (v === 'Exceeds') return b('primary', 'Exceeds');
-                  if (v === 'Meets') return b('neutral', 'Meets');
-                  if (v === 'Below') return b('danger', 'Below Expectation');
-                  return b('neutral', v);
-                }
-              },
-              { 
-                key: 'status', 
-                label: 'Status',
-                render: (v) => {
-                  if (v === 'Submitted') return b('success', 'Submitted');
-                  if (v === 'Pending') return b('warning', 'Pending');
-                  if (v === 'Acknowledged') return b('info', 'Acknowledged');
-                  return b('neutral', v);
-                }
-              },
-              {
-                key: '_',
-                label: 'Actions',
-                render: () => `
-                  <div class="flex-row">
-                    <button class="btn btn-xs btn-secondary" title="View Review"><i data-lucide="eye" size="10"></i></button>
-                    <button class="btn btn-xs btn-primary" title="Print PDF"><i data-lucide="printer" size="10"></i></button>
-                  </div>`
-              }
-            ],
-            rows: res.data
-          });
-        })
-        .catch(err => {
-          console.error(err);
-          document.getElementById('tbl-reviews').innerHTML =
-            `<p style="padding:20px;color:#dc2626;">Error loading reviews: ${err.message}</p>`;
-        });
+      initServerPaginatedTable('tbl-reviews', 'api/performance/fetch_reviews.php', {
+        columns: [
+          { key: 'emp', label: 'Employee' },
+          { key: 'dept', label: 'Department' },
+          { key: 'reviewer', label: 'Reviewer' },
+          { key: 'period', label: 'Period' },
+          { 
+            key: 'score', 
+            label: 'Overall Score',
+            render: (v) => v ? `<b>${parseFloat(v).toFixed(1)}</b> / 10` : '—'
+          },
+          { 
+            key: 'rank', 
+            label: 'Rating',
+            render: (v) => {
+              if (v === 'Exceptional') return b('success', v);
+              if (v === 'Exceeds') return b('primary', 'Exceeds');
+              if (v === 'Meets') return b('neutral', 'Meets');
+              if (v === 'Below') return b('danger', 'Below Expectation');
+              return b('neutral', v);
+            }
+          },
+          { 
+            key: 'status', 
+            label: 'Status',
+            render: (v) => {
+              if (v === 'Submitted') return b('success', 'Submitted');
+              if (v === 'Pending') return b('warning', 'Pending');
+              if (v === 'Acknowledged') return b('info', 'Acknowledged');
+              return b('neutral', v);
+            }
+          },
+          {
+            key: '_',
+            label: 'Actions',
+            render: () => `
+              <div class="flex-row">
+                <button class="btn btn-xs btn-secondary" title="View Review"><i data-lucide="eye" size="10"></i></button>
+                <button class="btn btn-xs btn-primary" title="Print PDF"><i data-lucide="printer" size="10"></i></button>
+              </div>`
+          }
+        ],
+        perPage: 15,
+        searchPlaceholder: 'Search reviews...'
+      });
       break;
     case '360-feedback':
-      fetch('api/performance/fetch_360.php')
-        .then(r => r.json())
-        .then(res => {
-          if (!res.success) throw new Error(res.message);
-          
-          const el = document.getElementById('tbl-360');
-          if (el) delete el.dataset.built;
-
-          buildTable('tbl-360', {
-            columns: [
-              { key: 'subject', label: 'Subject' },
-              { key: 'dept', label: 'Department' },
-              { key: 'total', label: 'Total Respondents' },
-              { 
-                key: 'complete', 
-                label: 'Completed',
-                render: (v, row) => {
-                    const pct = Math.round((v / row.total) * 100);
-                    return `<b>${v}</b> <small style="color:var(--muted)">(${pct}%)</small>`;
-                }
-              },
-              { 
-                key: 'avg', 
-                label: 'Avg Score',
-                render: (v) => v ? `<b>${parseFloat(v).toFixed(1)}</b> / 10` : '<span style="color:var(--muted)">TBD</span>'
-              },
-              { 
-                key: 'status', 
-                label: 'Status',
-                render: (v) => {
-                  if (v === 'Closed') return b('success', 'Closed');
-                  if (v === 'Open') return b('primary', 'Open');
-                  if (v === 'In Progress') return b('warning', 'In Progress');
-                  return b('neutral', v);
-                }
-              },
-              {
-                key: '_',
-                label: 'Actions',
-                render: () => `
-                  <div class="flex-row">
-                    <button class="btn btn-xs btn-secondary" title="View Individual Feedback"><i data-lucide="users" size="10"></i></button>
-                    <button class="btn btn-xs btn-primary" title="Generate Report"><i data-lucide="file-bar-chart" size="10"></i></button>
-                  </div>`
-              }
-            ],
-            rows: res.data
-          });
-        })
-        .catch(err => {
-          console.error(err);
-          document.getElementById('tbl-360').innerHTML =
-            `<p style="padding:20px;color:#dc2626;">Error loading feedback data: ${err.message}</p>`;
-        });
+      initServerPaginatedTable('tbl-360', 'api/performance/fetch_360.php', {
+        columns: [
+          { key: 'subject', label: 'Subject' },
+          { key: 'dept', label: 'Department' },
+          { key: 'total', label: 'Total Respondents' },
+          { 
+            key: 'complete', 
+            label: 'Completed',
+            render: (v, row) => {
+                const total = row.total || 1;
+                const pct = Math.round((v / total) * 100);
+                return `<b>${v}</b> <small style="color:var(--muted)">(${pct}%)</small>`;
+            }
+          },
+          { 
+            key: 'avg', 
+            label: 'Avg Score',
+            render: (v) => v ? `<b>${parseFloat(v).toFixed(1)}</b> / 10` : '<span style="color:var(--muted)">TBD</span>'
+          },
+          { 
+            key: 'status', 
+            label: 'Status',
+            render: (v) => {
+              if (v === 'Closed') return b('success', 'Closed');
+              if (v === 'Open') return b('primary', 'Open');
+              if (v === 'In Progress') return b('warning', 'In Progress');
+              return b('neutral', v);
+            }
+          },
+          {
+            key: '_',
+            label: 'Actions',
+            render: () => `
+              <div class="flex-row">
+                <button class="btn btn-xs btn-secondary" title="View Individual Feedback"><i data-lucide="users" size="10"></i></button>
+                <button class="btn btn-xs btn-primary" title="Generate Report"><i data-lucide="file-bar-chart" size="10"></i></button>
+              </div>`
+          }
+        ],
+        perPage: 15,
+        searchPlaceholder: 'Search feedback subjects...'
+      });
       break;
     case 'Promote/Demote':
-     fetchAndBuildTable('tbl-Promote/Demote', 'api/movement/fetch_promotions.php', {
+      initServerPaginatedTable('tbl-Promote/Demote', 'api/movement/fetch_promotions.php', {
         columns: [
           { key: 'emp', label: 'Employee' },
           { key: 'type', label: 'Type', render: (v) => v === 'Promotion' ? b('success', v) : b('warning', v) },
@@ -2014,44 +1881,52 @@ function initPage(id){
           { key: 'eff_date', label: 'Effective' },
           { key: 'status', label: 'Status', render: (v) => { if (v === 'Approved') return statusBadge.approved; if (v === 'Pending') return statusBadge.pending; if (v === 'Rejected') return statusBadge.rejected; return b('info', v); } },
           { key: '_', label: 'Actions', render: () => `<div class="flex-row"><button class="btn btn-xs btn-secondary"><i data-lucide="eye" size="10"></i></button><button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;"><i data-lucide="trash-2" size="10"></i></button></div>` }
-        ]
-     });
-     break;
+        ],
+        perPage: 15,
+        searchPlaceholder: 'Search promotions...'
+      });
+      break;
     case 'transfers':
-     fetchAndBuildTable('tbl-transfers-dept', 'api/movement/fetch_transfers.php', {
+      initServerPaginatedTable('tbl-transfers-dept', 'api/movement/fetch_transfers.php', {
         columns: [
           { key: 'emp', label: 'Employee' }, { key: 'from_dept', label: 'From Department' }, { key: 'to_dept', label: 'To Department' },
           { key: 'from_branch', label: 'From Branch' }, { key: 'to_branch', label: 'To Branch' }, { key: 'req_date', label: 'Requested' }, { key: 'eff_date', label: 'Effective' },
           { key: 'status', label: 'Status', render: (v) => { if (v === 'Approved') return statusBadge.approved; if (v === 'Pending') return statusBadge.pending; if (v === 'Rejected') return statusBadge.rejected; return b('info', v); } },
           { key: '_', label: 'Actions', render: () => `<div class="flex-row"><button class="btn btn-xs btn-secondary" title="View Details"><i data-lucide="eye" size="10"></i></button><button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;"><i data-lucide="trash-2" size="10"></i></button></div>` }
-        ]
-     });
-     break;
-    case 'attendance': initAttendanceGrid(); break;
+        ],
+        perPage: 15,
+        searchPlaceholder: 'Search transfers...'
+      });
+      break;
+    case 'attendance': buildMatrix(); break;
     case 'disciplinary-actions':
-      fetchAndBuildTable('tbl-disciplinary', 'api/compliance/fetch_disciplinary.php', {
+      initServerPaginatedTable('tbl-disciplinary', 'api/compliance/fetch_disciplinary.php', {
         columns: [
           { key: 'emp', label: 'Employee' }, { key: 'dept', label: 'Department' },
           { key: 'type', label: 'Action Type', render: (v) => { if (v === 'Verbal Warning') return b('neutral', v); if (v === 'Written Warning') return b('warning', v); if (v === 'Final Warning') return b('danger', v); if (v === 'Suspension') return b('danger', 'Suspended'); if (v === 'Demotion') return b('primary', v); return b('neutral', v); } },
           { key: 'incident', label: 'Incident Date' }, { key: 'issued', label: 'Issued Date' },
           { key: 'issuer_name', label: 'Issued By', render: (v) => v ? v : '<span style="color:var(--muted)">System</span>' },
           { key: '_', label: 'Actions', render: () => `<div class="flex-row"><button class="btn btn-xs btn-secondary" title="View Details"><i data-lucide="eye" size="10"></i></button><button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;"><i data-lucide="trash-2" size="10"></i></button></div>` }
-        ]
+        ],
+        perPage: 15,
+        searchPlaceholder: 'Search disciplinary records...'
       });
       break;
     case 'resignations':
-      fetchAndBuildTable('tbl-resignations', 'api/compliance/fetch_resignations.php', {
+      initServerPaginatedTable('tbl-resignations', 'api/compliance/fetch_resignations.php', {
         columns: [
           { key: 'emp', label: 'Employee' }, { key: 'dept', label: 'Department' }, { key: 'type', label: 'Reason' }, { key: 'filed', label: 'Filed' },
           { key: 'assigned', label: 'Assigned To', render: (v) => v ? v : '<span style="color:var(--muted)">Unassigned</span>' },
           { key: 'priority', label: 'Priority', render: (v) => { if (v === 'High') return b('danger', 'High'); if (v === 'Medium') return b('warning', 'Medium'); return b('neutral', v); } },
           { key: 'status', label: 'Status', render: (v) => { if (v === 'Resolved') return b('success', 'Resolved'); if (v === 'Pending') return b('warning', 'Pending'); if (v === 'Under Review') return b('info', 'Under Review'); return b('neutral', v); } },
           { key: '_', label: 'Actions', render: () => `<div class="flex-row"><button class="btn btn-xs btn-primary" title="Process Separation"><i data-lucide="user-minus" size="10"></i></button></div>` }
-        ]
+        ],
+        perPage: 15,
+        searchPlaceholder: 'Search resignations...'
       });
       break;
     case 'termination':
-      fetchAndBuildTable('tbl-termination', 'api/compliance/fetch_separations.php', {
+      initServerPaginatedTable('tbl-termination', 'api/compliance/fetch_separations.php', {
         columns: [
           { key: 'emp', label: 'Employee' }, { key: 'dept', label: 'Department' }, { key: 'type', label: 'Separation Type' },
           { key: 'notice', label: 'Notice Date' }, { key: 'last_day', label: 'Last Working Day' },
@@ -2059,24 +1934,28 @@ function initPage(id){
           { key: 'settlement', label: 'Final Settlement', render: (v) => v ? 'ETB ' + parseFloat(v).toLocaleString(undefined, {minimumFractionDigits: 2}) : b('neutral', 'TBD') },
           { key: 'status', label: 'Status', render: (v) => v === 'Complete' ? b('success', 'Complete') : b('warning', 'In Progress') },
           { key: '_', label: 'Actions', render: () => `<div class="flex-row"><button class="btn btn-xs btn-secondary" title="View Dossier"><i data-lucide="folder" size="10"></i></button><button class="btn btn-xs btn-primary" title="Print Certificate"><i data-lucide="printer" size="10"></i></button></div>` }
-        ]
+        ],
+        perPage: 15,
+        searchPlaceholder: 'Search terminations...'
       });
       break;
     case 'roles-permissions': initRoles(); break;
     case 'exit-clearance':
       const chk = v => v == 1 ? b('success', '✓') : '<span style="color:var(--muted)">—</span>';
-      fetchAndBuildTable('tbl-clearance', 'api/compliance/fetch_clearance.php', {
+      initServerPaginatedTable('tbl-clearance', 'api/compliance/fetch_clearance.php', {
         columns: [
           { key: 'emp', label: 'Employee' }, { key: 'dept', label: 'Department' },
           { key: 'it', label: 'IT', render: chk }, { key: 'finance', label: 'Finance', render: chk },
           { key: 'hr', label: 'HR', render: chk }, { key: 'admin', label: 'Admin', render: chk }, { key: 'assets', label: 'Assets', render: chk },
           { key: 'overall', label: 'Overall', render: (v) => { if (v === 'Cleared') return b('success', 'Cleared'); if (v === 'In Progress') return b('info', 'In Progress'); return b('warning', 'Pending'); } },
           { key: '_', label: 'Actions', render: () => `<div class="flex-row"><button class="btn btn-xs btn-primary" title="Update Status"><i data-lucide="check-square" size="10"></i> Sign-off</button></div>` }
-        ]
+        ],
+        perPage: 15,
+        searchPlaceholder: 'Search clearance status...'
       });
       break;
     case 'user-management':
-      fetchAndBuildTable('tbl-users', 'api/system/fetch_users.php', {
+      initServerPaginatedTable('tbl-users', 'api/system/fetch_users.php', {
         columns: [
           { key: 'id', label: 'User ID', render: (v) => `<span style="font-family:'JetBrains Mono'; font-size:10px;">USR-${String(v).padStart(3,'0')}</span>` },
           { key: 'name', label: 'Full Name' }, { key: 'email', label: 'Email Address' },
@@ -2084,11 +1963,13 @@ function initPage(id){
           { key: 'last_login', label: 'Last Login', render: (v) => v ? v : '<span style="color:var(--muted)">Never</span>' },
           { key: 'status', label: 'Status', render: (v) => v === 'Active' ? statusBadge.active : statusBadge.inactive },
           { key: '_', label: 'Actions', render: () => `<div class="flex-row"><button class="btn btn-xs btn-secondary" title="Edit Permissions"><i data-lucide="shield-check" size="10"></i></button><button class="btn btn-xs btn-secondary" title="Reset Password"><i data-lucide="key" size="10"></i></button></div>` }
-        ]
+        ],
+        perPage: 15,
+        searchPlaceholder: 'Search users...'
       });
       break;
     case 'audit-logs':
-      fetchAndBuildTable('tbl-audit', 'api/system/fetch_audit.php', {
+      initServerPaginatedTable('tbl-audit', 'api/system/fetch_audit.php', {
         columns: [
           { key: 'user', label: 'User', render: (v) => `<span style="font-weight:700;">${v}</span>` },
           { key: 'action', label: 'Action', render: (v) => { if (v === 'DELETE') return b('danger', v); if (v === 'UPDATE') return b('warning', v); if (v === 'CREATE') return b('success', v); if (v === 'LOGIN') return b('primary', v); return b('neutral', v); } },
@@ -2098,7 +1979,8 @@ function initPage(id){
           { key: 'ts', label: 'Timestamp', render: (v) => { const d = new Date(v); return d.toLocaleString('en-GB', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }); } },
           { key: '_', label: 'Details', render: () => `<button class="btn btn-xs btn-secondary">View Changes</button>` }
         ],
-        perPage: 15
+        perPage: 15,
+        searchPlaceholder: 'Search audit logs...'
       });
       break;
     case 'hr-analytics':initAnalytics();break;
