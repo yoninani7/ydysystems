@@ -477,7 +477,7 @@ try {
     // ─────────────────────────────────────────────────────────────────────────────
     // 10. Record Contract & Internship (If applicable)
     // ─────────────────────────────────────────────────────────────────────────────
-    if ($empTypeName === 'contract' || $empTypeName === 'internship') {
+    if ($empTypeName === 'contract') {
         $contractStmt = $pdo->prepare("
             INSERT INTO employee_contracts (employee_id, employment_type_id, start_date, end_date, status, notes)
             VALUES (?, ?, ?, ?, 'Active', ?)
