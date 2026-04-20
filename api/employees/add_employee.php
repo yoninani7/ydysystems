@@ -231,6 +231,7 @@ try {
     }
 
     $data['project_name'] = trim($_POST['project_name'] ?? '') ?: null;
+    $data['institution'] = trim($_POST['institution'] ?? '') ?: null;
 
     // Finance
     $salary = trim($_POST['salary'] ?? '');
@@ -372,7 +373,14 @@ try {
     $newEmployeeRowId = $pdo->lastInsertId();
 
     // ─────────────────────────────────────────────────────────────────────────────
-    // 8. Handle Avatar Upload (Now we have the ID)
+    // 8. Generate Official Employee ID
+    // ─────────────────────────────────────────────────────────────────────────────
+    $year = date('Y');
+    $paddedId = str_pad((string)$newEmployeeRowId, 4, '0', STR_PAD_LEFT);
+    $employeeId = "EMP-{$year}-{$paddedId}";
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // 9. Handle Avatar Upload (Now we have the official ID)
     // ─────────────────────────────────────────────────────────────────────────────
     if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
         $file    = $_FILES['avatar'];
@@ -394,7 +402,8 @@ try {
         // 8a. Process Avatar (Resizing requires GD library)
         // ─────────────────────────────────────────────────────────────────────
         $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-        $filename = 'emp_' . $newEmployeeRowId . '_' . time() . '.' . $ext;
+        // Use formal employeeId for the filename
+        $filename = $employeeId . '_' . time() . '.' . $ext;
         $uploadDir = __DIR__ . '/../../uploads/avatars/';
         if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
 
@@ -464,13 +473,6 @@ try {
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────────
-    // 9. Finalize Record (Employee ID + Photo Path)
-    // ─────────────────────────────────────────────────────────────────────────────
-    $year = date('Y');
-    $paddedId = str_pad((string)$newEmployeeRowId, 4, '0', STR_PAD_LEFT);
-    $employeeId = "EMP-{$year}-{$paddedId}";
-
     $updateStmt = $pdo->prepare("UPDATE employees SET employee_id = ?, profile_photo = ? WHERE id = ?");
     $updateStmt->execute([$employeeId, $profilePhoto, $newEmployeeRowId]);
 
@@ -510,24 +512,28 @@ try {
         ]);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────────────────────────────
     // 10b. Record Probation (If applicable)
     // ─────────────────────────────────────────────────────────────────────────────
-    $probationDays = isset($_POST['probation_days']) ? (int)$_POST['probation_days'] : 0;
-    if ($probationDays > 0 && !empty($data['hire_date'])) {
+    $probationPeriodString = trim($_POST['probation_period'] ?? '');
+    // Check both probation_days (numeric) and probation_period (string)
+    if (isset($_POST['probation_days']) && $_POST['probation_days'] !== '') {
+        $probationDays = (int)$_POST['probation_days'];
+    } elseif ($probationPeriodString !== '' && !str_contains(strtolower($probationPeriodString), 'no probation')) {
+        if (preg_match('/(\d+)\s*Days?/i', $probationPeriodString, $matches)) {
+            $probationDays = (int)$matches[1];
+        }
+    }
+    
+    if ($probationDays !== null && !empty($data['hire_date'])) {
         $startDate = $data['hire_date'];
         $endDate = date('Y-m-d', strtotime($startDate . " + $probationDays days"));
         
         $probStmt = $pdo->prepare("
-            INSERT INTO probation_records (employee_id, employee_code, start_date, end_date, status)
-            VALUES (?, ?, ?, ?, 'Active')
+            INSERT INTO probation_records (employee_id, start_date, end_date, status)
+            VALUES (?, ?, ?, 'Active')
         ");
-        $probStmt->execute([
-            $newEmployeeRowId,
-            $employeeId,
-            $startDate,
-            $endDate
-        ]);
+        $probStmt->execute([$newEmployeeRowId, $startDate, $endDate]);
     }
 
     // Audit log
@@ -564,10 +570,10 @@ try {
         unlink(__DIR__ . '/../../' . $profilePhoto);
     }
     
-    http_response_code(500);
+    http_response_code(500); 
     echo json_encode([
         'success' => false,
-        'message' => 'Error: ' . $e->getMessage() . ' in ' . $e->getFile() . ' on line ' . $e->getLine()
+        'message' => 'An unexpected error occurred. Please try again or contact your administrator.'
     ]);
     exit;
 }

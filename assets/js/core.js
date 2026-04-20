@@ -2799,6 +2799,18 @@ function updateEmploymentFields(type) {
     // Enforce dropdown selection for reporting manager
     enforceDropdownOnBlur('o-reports');
 
+    // Sync probation values if present
+    const pVal = document.getElementById('o-probation_val');
+    const pHidden = document.getElementById('o-probation');
+    if (pVal && pHidden) {
+        pVal.addEventListener('input', () => {
+            pHidden.value = pVal.value ? pVal.value + " Days" : "";
+            validateMasterRecord();
+        });
+        // Set initial hidden value
+        pHidden.value = pVal.value ? pVal.value + " Days" : "";
+    }
+
     validateMasterRecord();
 }
 function showNotification(title, message, type = 'success') {
@@ -2889,7 +2901,6 @@ function closeConfirm() {
         icon.style.display = 'none';
         if (removeBtn) {
             removeBtn.style.display = 'flex';
-            lcIcons(removeBtn);
         }
         
         // Visual feedback that the image is accepted

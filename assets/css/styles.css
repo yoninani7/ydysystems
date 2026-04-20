@@ -536,6 +536,25 @@ input[type="radio"]{accent-color:var(--primary);width:18px;height:18px;cursor:po
 .identity-master-wrapper{display:flex;gap:40px;align-items:flex-start;background:#fcfdfe;padding:30px;border-radius:18px;border:1px solid #eef2f6}
 .avatar-upload-zone{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:12px}
 .avatar-frame{width:130px;height:130px;border-radius:24px;background:#fff;border:2px dashed #cbd5e1;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;transition:all .3s ease;box-shadow:var(--shadow)}
+#avatar-remove-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--danger);
+    color: #fff;
+    border: none;
+    display: none; /* Shown via JS */
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.4);
+    transition: transform 0.2s;
+}
+#avatar-remove-btn:hover { transform: scale(1.1); background: #b91c1c; }
 .avatar-frame:hover{border-color:var(--primary);background:var(--primary-light)}
 .identity-fields-container{flex:1;display:flex;flex-direction:column;gap:24px}
 .name-grid-row{display:grid;grid-template-columns:1.2fr 1fr 1.2fr;gap:12px}

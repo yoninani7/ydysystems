@@ -73,17 +73,16 @@
                         <div class="avatar-frame" id="avatar-preview-box">
                             <i data-lucide="user" size="40" style="color:#cbd5e1;" id="placeholder-icon"></i>
                             <img id="avatar-img-output" src="" style="width:100%;height:100%;object-fit:cover;display:none;">
+                            <!-- Remove button sits INSIDE the frame now -->
+                            <button type="button" id="avatar-remove-btn" onclick="cancelAvatar(event)" title="Remove Photo">
+                                <i data-lucide="x" size="14"></i>
+                            </button>
                         </div>
                         <div class="btn btn-secondary btn-xs" style="border-radius:20px; padding:5px 15px;">
                             <i data-lucide="camera" size="12"></i> Upload Photo
                         </div>
                         <span style="font-size: 10px; color: var(--muted); margin-top: -5px;">Max size: 5MB</span>
                     </label>
-                    <!-- Remove button sits OUTSIDE the label so it doesn't trigger the file picker -->
-                    <button type="button" id="avatar-remove-btn" onclick="cancelAvatar(event)"
-                            style="display:none; align-items:center; justify-content:center; gap:5px; margin:6px auto 0; padding:5px 14px; border-radius:20px; background:var(--primary); color:#fff; border:none; cursor:pointer; font-size:.72rem; font-weight:700; font-family:inherit; box-shadow:0 2px 8px rgba(21,178,1,0.3); transition:background .2s;">
-                        <i data-lucide="x" size="12"></i> Remove Photo
-                    </button>
                     <input type="file" id="avatar-upload" hidden accept="image/*" onchange="previewAvatar(this)">
                 </div>
 
