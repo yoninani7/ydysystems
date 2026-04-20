@@ -60,6 +60,7 @@ $data = [
     'emergency_contact_name'     => null,
     'emergency_contact_phone'    => null,
     'emergency_contact_relation' => null,
+    'institution'                => null,
 ];
 
 try {
@@ -398,17 +399,22 @@ try {
             throw new Exception("Avatar must be JPEG, PNG, WebP, or GIF.");
         }
 
-        // ─────────────────────────────────────────────────────────────────────
-        // 8a. Process Avatar (Resizing requires GD library)
-        // ─────────────────────────────────────────────────────────────────────
         $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-        // Use formal employeeId for the filename
         $filename = $employeeId . '_' . time() . '.' . $ext;
         $uploadDir = __DIR__ . '/../../uploads/avatars/';
-        if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
 
-        if (extension_loaded('gd')) {
-            // Create image resource from uploaded file
+        // Check if GD is available for resizing
+        if (!extension_loaded('gd')) {
+            // Fallback: move file as-is without resizing
+            if (!move_uploaded_file($file['tmp_name'], $uploadDir . $filename)) {
+                throw new Exception("Failed to save avatar file.");
+            }
+            $profilePhoto = 'uploads/avatars/' . $filename;
+        } else {
+            // GD is enabled – process and resize
             switch ($mime) {
                 case 'image/jpeg': $sourceImage = imagecreatefromjpeg($file['tmp_name']); break;
                 case 'image/png':  $sourceImage = imagecreatefrompng($file['tmp_name']);  break;
@@ -463,13 +469,6 @@ try {
             } else {
                 throw new Exception("Failed to save resized avatar.");
             }
-        } else {
-            // Fallback: GD is not enabled, just move the file as-is
-            if (move_uploaded_file($file['tmp_name'], $uploadDir . $filename)) {
-                $profilePhoto = 'uploads/avatars/' . $filename;
-            } else {
-                throw new Exception("GD library missing and fallback upload failed.");
-            }
         }
     }
 
@@ -494,7 +493,6 @@ try {
     }
 
     if ($empTypeName === 'internship') {
-        // Build full name for the intern table
         $fullName = trim($data['first_name'] . ' ' . ($data['middle_name'] ?? '') . ' ' . $data['last_name']);
         
         $internStmt = $pdo->prepare("
@@ -512,11 +510,11 @@ try {
         ]);
     }
 
-        // ─────────────────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────────────
     // 10b. Record Probation (If applicable)
     // ─────────────────────────────────────────────────────────────────────────────
+    $probationDays = null;
     $probationPeriodString = trim($_POST['probation_period'] ?? '');
-    // Check both probation_days (numeric) and probation_period (string)
     if (isset($_POST['probation_days']) && $_POST['probation_days'] !== '') {
         $probationDays = (int)$_POST['probation_days'];
     } elseif ($probationPeriodString !== '' && !str_contains(strtolower($probationPeriodString), 'no probation')) {
@@ -573,7 +571,7 @@ try {
     http_response_code(500); 
     echo json_encode([
         'success' => false,
-        'message' => 'An unexpected error occurred. Please try again or contact your administrator.'
+        'message' => 'Server error: ' . $e->getMessage()
     ]);
     exit;
 }

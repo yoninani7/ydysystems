@@ -1075,15 +1075,21 @@ function saveNewEmployee() {
 
     console.log('[DEBUG] Submitting to api/employees/add_employee.php');
     
-    fetch('api/employees/add_employee.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => {
-        console.log('[DEBUG] Response status:', response.status);
-        return response.json();
-    })
-    .then(result => {
+        fetch('api/employees/add_employee.php', {
+          method: 'POST',
+          body: formData
+      })
+      .then(response => {
+          if (!response.ok) {
+              // Try to get text for debugging
+              return response.text().then(text => {
+                  console.error('Server Error Response:', text);
+                  throw new Error(`HTTP ${response.status}: ${text.substring(0, 100)}`);
+              });
+          }
+          return response.json();
+      })
+      .then(result => {
         console.log('[DEBUG] Result:', result);
         if (result.success) {
             clearDropdownCache('employees');    
@@ -1133,6 +1139,7 @@ function saveNewEmployee() {
 
 // ── PAGE INIT ROUTER ──
 const inited=new Set();
+let pendingEmployeeVaultData = null;
 // Department data removed for brevity
  
 function renderOrgChartDepartments() {
@@ -1543,6 +1550,62 @@ function initPage(id){
       });
       break;
     case 'document-vault':initVaultMatrix();break;
+    case 'employee-vault':
+    if (pendingEmployeeVaultData) {
+        const { name, id } = pendingEmployeeVaultData;
+        document.getElementById('v-emp-name').textContent = name;
+        document.getElementById('v-emp-id').textContent = id + " • Personnel Archive";
+        
+        const listContainer = document.getElementById('vault-docs-list');
+        listContainer.innerHTML = '';
+        let uploadCount = 0;
+
+        VAULT_SCHEMA.forEach(doc => {
+            const isUploaded = Math.random() > 0.4; // Replace with real API call later
+            if (isUploaded) uploadCount++;
+
+            const row = document.createElement('div');
+            row.className = 'doc-row';
+            row.innerHTML = `
+                <div class="doc-icon-box ${isUploaded ? 'uploaded' : 'missing'}">
+                    <i data-lucide="${isUploaded ? 'file-check' : 'file-question-mark'}" size="18"></i>
+                </div>
+                <div class="doc-meta">
+                    <div class="doc-name">${doc.name}</div>
+                    <div class="doc-cat">${doc.cat}</div>
+                </div>
+                <div class="doc-status">
+                    ${isUploaded ? 
+                        '<span class="badge badge-success" style="font-size:10px">Verified</span>' : 
+                        '<span class="badge badge-neutral" style="font-size:10px; opacity:0.7;">Pending</span>'}
+                </div>
+                <div class="doc-actions">
+                    ${isUploaded ? `
+                        <button class="btn btn-secondary btn-xs" title="View" onclick="showNotification('Vault','Opening file...','info')">
+                            <i data-lucide="eye" size="14"></i> View
+                        </button>
+                        <button class="btn btn-secondary btn-xs" title="Update" style="min-width:34px;">
+                            <i data-lucide="refresh-cw" size="14"></i>
+                        </button>
+                    ` : `
+                        <button class="btn btn-primary btn-xs btn-upload-pro" onclick="showNotification('Vault','Ready for upload','info')">
+                            <i data-lucide="plus" size="14"></i> Add Document
+                        </button>
+                    `}
+                </div>
+            `;
+            listContainer.appendChild(row);
+        });
+
+        const total = VAULT_SCHEMA.length;
+        document.getElementById('v-count-upload').textContent = uploadCount;
+        document.getElementById('v-count-missing').textContent = total - uploadCount;
+        document.getElementById('v-compliance-percent').textContent = Math.round((uploadCount/total)*100) + "%";
+        
+        lcIcons(listContainer);
+        pendingEmployeeVaultData = null;
+    }
+    break;
     case 'job-vacancies':
       initServerPaginatedTable('tbl-vacancies', 'api/talent/fetch_vacancies.php', {
         columns: [
@@ -2630,71 +2693,12 @@ const VAULT_SCHEMA = [
   { id: 'tin', name: 'TIN Certification Document', cat: 'Tax' },
   { id: 'medical', name: 'Health & Fitness Clearance', cat: 'Compliance' }
 ];
-
-// 2. Modified open function (Update your initVaultMatrix button to call this)
+ 
 function openEmployeeVault(name, id) {
+    pendingEmployeeVaultData = { name, id };
     goPage('employee-vault');
-    document.getElementById('v-emp-name').textContent = name;
-    document.getElementById('v-emp-id').textContent = id + " • Personnel Archive";
-    
-    const listContainer = document.getElementById('vault-docs-list');
-    listContainer.innerHTML = '';
-
-    let uploadCount = 0;
-
-    VAULT_SCHEMA.forEach(doc => {
-        const isUploaded = Math.random() > 0.4; // Mocking data
-        if(isUploaded) uploadCount++;
-
-        const row = document.createElement('div');
-        row.className = 'doc-row';
-        
-        row.innerHTML = `
-            <!-- COLUMN 1: ICON -->
-            <div class="doc-icon-box ${isUploaded ? 'uploaded' : 'missing'}">
-                <i data-lucide="${isUploaded ? 'file-check' : 'file-question-mark'}" size="18"></i>
-            </div>
-
-            <!-- COLUMN 2: TITLE & CATEGORY -->
-            <div class="doc-meta">
-                <div class="doc-name">${doc.name}</div>
-                <div class="doc-cat">${doc.cat}</div>
-            </div>
-
-            <!-- COLUMN 3: STATUS BADGE -->
-            <div class="doc-status">
-                ${isUploaded ? 
-                    '<span class="badge badge-success" style="font-size:10px">Verified</span>' : 
-                    '<span class="badge badge-neutral" style="font-size:10px; opacity:0.7;">Pending</span>'}
-            </div>
-
-            <!-- COLUMN 4: ACTIONS -->
-            <div class="doc-actions">
-                ${isUploaded ? `
-                    <button class="btn btn-secondary btn-xs" title="View" onclick="showNotification('Vault','Opening file...','info')">
-                        <i data-lucide="eye" size="14"></i> View
-                    </button>
-                    <button class="btn btn-secondary btn-xs" title="Update" style="min-width:34px;">
-                        <i data-lucide="refresh-cw" size="14"></i>
-                    </button>
-                ` : `
-                    <button class="btn btn-primary btn-xs btn-upload-pro" onclick="showNotification('Vault','Ready for upload','info')">
-                        <i data-lucide="plus" size="14"></i> Add Document
-                    </button>
-                `}
-            </div>
-        `;
-        listContainer.appendChild(row);
-    });
-
-    // Update Stats in side-card
-    const total = VAULT_SCHEMA.length;
-    document.getElementById('v-count-upload').textContent = uploadCount;
-    document.getElementById('v-count-missing').textContent = total - uploadCount;
-    document.getElementById('v-compliance-percent').textContent = Math.round((uploadCount/total)*100) + "%";
-
-    lcIcons(listContainer);
 }
+
 function updateEmploymentFields(type) {
     const container = document.getElementById('dynamic-employment-fields');
     if (!container) return;

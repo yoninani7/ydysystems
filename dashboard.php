@@ -17,6 +17,7 @@ $allowed_pages = [
     'former-employees'    => 'pages/employees/former_employees.php',
     'retirement-planner'  => 'pages/employees/retirement_planner.php',
     'document-vault'      => 'pages/employees/attachment_vault.php',
+    'employee-vault'     => 'pages/employees/attachment_emp_vault.php',
     'asset-tracking'      => 'pages/employees/asset_tracking.php',
     'job-vacancies'       => 'pages/talent_acquisition/job_vacancies.php',
     'candidates'          => 'pages/talent_acquisition/applicant_list.php',
