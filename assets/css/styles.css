@@ -1028,154 +1028,171 @@ input:disabled, input[disabled] {
     font-size: 12px;
     color: var(--primary);
 }
-/* ── BENTO EMPLOYMENT CATEGORIES ── */
-#p-employment-types {
-  height: calc(100vh - var(--header-h) - 96px);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+/* ── HIGH-END ENTERPRISE MASTER LEDGER ── */
+#p-employment-types { 
+    margin: 0 auto;
 }
 
-.etype-grid {
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  grid-template-rows: 1fr 1fr;
-  gap: 14px;
-  flex: 1;
-  min-height: 0;
+.etype-ledger {
+    display: flex;
+    
+    padding: 20px 0 60px;
+    flex-direction: column;
+    gap: 20px; /* Generous professional vertical spacing */
 }
 
-/* Row 1: col spans that fill the 12-column row */
-.etype-card:nth-child(1) { grid-column: span 5; grid-row: 1; }
-.etype-card:nth-child(2) { grid-column: span 4; grid-row: 1; }
-.etype-card:nth-child(3) { grid-column: span 3; grid-row: 1; }
-
-/* Row 2: Remaining cards fill the second row */
-.etype-card:nth-child(4) { grid-column: span 4; grid-row: 2; }
-.etype-card:nth-child(5) { grid-column: span 4; grid-row: 2; }
-.etype-card:nth-child(6) { grid-column: span 4; grid-row: 2; }
-
-/* Overflow cards (7+): auto-placed after the 2 fixed rows */
-.etype-card:nth-child(n+7) { grid-column: span 4; }
-
-.etype-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 24px 28px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  transition: all 0.35s cubic-bezier(0.23, 1, 0.32, 1);
-  position: relative;
-  overflow: hidden;
-  min-height: 0;
+.etype-master-row {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    height: 84px; /* Fixed height for consistency */
+    display: grid;
+    /* Grid: Icon | Identity | Workforce Share | Stats | Action */
+    grid-template-columns: 80px 1.5fr 1.2fr 120px 60px;
+    align-items: center;
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    position: relative;
+    cursor: pointer;
 }
 
-.etype-card:hover {
-  border-color: var(--primary);
-  box-shadow: 0 12px 32px rgba(21, 178, 1, 0.08);
-  transform: translateY(-2px);
+.etype-master-row:hover {
+    transform: translateX(6px);
+    border-color: var(--primary);
+    box-shadow: 0 15px 30px -10px rgba(0, 0, 0, 0.08);
 }
 
-.etype-card-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+/* Subtle Dynamic Indicator */
+.etype-master-row::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 25%;
+    bottom: 25%;
+    width: 4px;
+    background: var(--accent-color, var(--primary));
+    border-radius: 0 4px 4px 0;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.etype-master-row:hover::before { opacity: 1; }
+
+/* 1. Icon Section */
+.etype-visual {
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .etype-icon-box {
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, var(--primary-light) 0%, #fff 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--primary);
-  border: 1px solid rgba(21, 178, 1, 0.12);
-  flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: #f8fafc;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
 }
 
-.etype-info {
-  flex: 1;
-  margin-top: 16px;
+.etype-master-row:hover .etype-icon-box {
+    background: color-mix(in srgb, var(--accent-color, var(--primary)) 10%, #fff);
+    color: var(--accent-color, var(--primary));
+    transform: scale(1.1);
 }
 
-.etype-name {
-  font-size: 1rem;
-  font-weight: 800;
-  color: var(--text);
-  letter-spacing: -0.02em;
-  margin-bottom: 6px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+/* 2. Identity Section */
+.etype-identity {
+    display: flex;
+    flex-direction: column;
+    padding-right: 20px;
 }
 
-.etype-desc {
-  font-size: 0.78rem;
-  color: var(--muted);
-  line-height: 1.55;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+.etype-label {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: -0.01em;
 }
 
-.etype-meta {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  margin-top: 20px;
-  padding-top: 14px;
-  border-top: 1px solid var(--border);
+.etype-sub {
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-weight: 500;
+    margin-top: 2px;
 }
 
-.etype-count-wrap {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+/* 3. Distribution Section (Visual Bar) */
+.etype-distribution {
+    padding: 0 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
 
-.etype-count-label {
-  font-size: 9px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--muted);
+.dist-label {
+    font-size: 9px;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--muted);
+    letter-spacing: 0.05em;
 }
 
-.etype-count-val {
-  font-size: 1.6rem;
-  font-weight: 200;
-  color: var(--text);
-  line-height: 1;
-  letter-spacing: -0.03em;
+.dist-track {
+    height: 6px;
+    background: #f1f5f9;
+    border-radius: 10px;
+    overflow: hidden;
+    width: 100%;
 }
 
-.etype-tag {
-  background: var(--primary-light);
-  color: var(--primary);
-  padding: 4px 12px;
-  border-radius: 100px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+.dist-fill {
+    height: 100%;
+    background: var(--accent-color, var(--primary));
+    border-radius: 10px;
+    width: 0%; /* Animated via JS */
+    transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-@media (max-width: 1200px) {
-  .etype-card:nth-child(1) { grid-column: span 6; }
-  .etype-card:nth-child(2) { grid-column: span 6; }
-  .etype-card:nth-child(3) { grid-column: span 6; }
-  .etype-card:nth-child(4) { grid-column: span 6; }
-  .etype-card:nth-child(5) { grid-column: span 6; }
-  .etype-card:nth-child(6) { grid-column: span 12; }
+/* 4. Stats Section */
+.etype-data {
+    text-align: right;
 }
 
-@media (max-width: 768px) {
-  #p-employment-types { height: auto; overflow: visible; }
-  .etype-grid { grid-template-rows: auto; gap: 12px; }
-  .etype-card:nth-child(n) { grid-column: span 12 !important; grid-row: auto !important; }
-}
+.data-val {
+    font-size: 1.4rem;
+    font-weight: 200; /* Sophisticated thin weight */
+    color: var(--text);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    letter-spacing: -0.02em;
+}
+
+.data-unit {
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-left: 4px;
+}
+
+/* 5. Action Section */
+.etype-action {
+    display: flex;
+    justify-content: center;
+    opacity: 0.2;
+    transition: opacity 0.3s;
+}
+
+.etype-master-row:hover .etype-action { opacity: 1; }
+
+/* Category Accents */
+.cat-perm { --accent-color: #15b201; }
+.cat-cont { --accent-color: #3b82f6; }
+.cat-intn { --accent-color: #a855f7; }
+.cat-temp { --accent-color: #f59e0b; }
+
+@media (max-width: 900px) {
+    .etype-master-row { grid-template-columns: 60px 1fr 100px 50px; }
+    .etype-distribution { display: none; }
+}

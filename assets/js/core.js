@@ -2086,70 +2086,74 @@ function initEmploymentTypesCards() {
   const container = document.getElementById('tbl-employment-types');
   if (!container) return;
   
-  // Clear any existing content
-  container.innerHTML = '<div class="etype-grid" id="etype-grid"></div>';
-  const grid = document.getElementById('etype-grid');
+  container.innerHTML = '<div class="etype-ledger" id="etype-ledger-stack"></div>';
+  const stack = document.getElementById('etype-ledger-stack');
   
-  // Show loading state
-  grid.innerHTML = '<div style="grid-column: 1/-1; padding: 80px 20px; text-align: center; color: var(--muted);"><i data-lucide="loader-2" class="spin" size="32"></i><div style="margin-top:12px; font-weight:600; font-size:0.85rem;">Cataloging Employment Categories...</div></div>';
-  lcIcons(grid);
+  // High-end Loader
+  stack.innerHTML = '<div style="padding:100px; text-align:center;"><i data-lucide="loader-2" class="spin" style="color:var(--primary); opacity:0.3;"></i></div>';
+  lcIcons(stack);
 
-  fetch('api/employees/fetch_emptypes.php?limit=100') 
+  fetch('api/employees/fetch_emptypes.php') 
     .then(r => r.json())
     .then(res => {
       if (!res.success) throw new Error(res.message);
+      stack.innerHTML = '';
       
-      if (!res.data || res.data.length === 0) {
-        grid.innerHTML = `
-          <div style="grid-column: 1/-1; padding: 80px 20px; text-align: center;">
-            <div style="width:64px; height:64px; background:var(--primary-light); color:var(--primary); border-radius:16px; display:flex; align-items:center; justify-content:center; margin:0 auto 20px;">
-              <i data-lucide="briefcase" size="32"></i>
-            </div>
-            <div style="font-weight:800; color:var(--text); font-size:1.1rem;">No Categories Defined</div>
-            <div style="color:var(--muted); font-size:0.85rem; margin-top:8px;">No employment types have been configured in the system yet.</div>
-          </div>
-        `;
-        lcIcons(grid);
-        return;
-      }
+      // 1. Calculate Total Count for the Distribution Bars
+      const totalCount = res.data.reduce((sum, item) => sum + parseInt(item.count), 0) || 1;
 
-      grid.innerHTML = '';
       res.data.forEach(item => {
-        let icon = 'briefcase';
         const name = (item.name || '').toLowerCase();
-        if (name.includes('permanent')) icon = 'shield-check';
-        else if (name.includes('contract')) icon = 'file-text';
-        else if (name.includes('temporary')) icon = 'clock';
-        else if (name.includes('part')) icon = 'pie-chart';
-        else if (name.includes('intern')) icon = 'graduation-cap';
-        else if (name.includes('probation')) icon = 'timer';
+        let icon = 'briefcase';
+        let colorClass = 'cat-perm';
+        
+        // Semantic Logic
+        if (name.includes('permanent')) { icon = 'shield-check'; colorClass = 'cat-perm'; }
+        else if (name.includes('contract')) { icon = 'file-text'; colorClass = 'cat-cont'; }
+        else if (name.includes('intern')) { icon = 'graduation-cap'; colorClass = 'cat-intn'; }
+        else if (name.includes('temp')) { icon = 'clock'; colorClass = 'cat-temp'; }
 
-        const card = document.createElement('div');
-        card.className = 'etype-card';
-        card.innerHTML = `
-          <div class="etype-card-top">
-            <div class="etype-icon-box">
-              <i data-lucide="${icon}" size="22"></i>
+        // Percentage for bar
+        const percentage = Math.max(5, (parseInt(item.count) / totalCount) * 100);
+
+        const row = document.createElement('div');
+        row.className = `etype-master-row ${colorClass}`;
+        row.innerHTML = `
+          <div class="etype-visual">
+            <div class="etype-icon-box"><i data-lucide="${icon}" size="20"></i></div>
+          </div>
+          
+          <div class="etype-identity">
+            <span class="etype-label">${item.name}</span>
+            <span class="etype-sub">${item.desc || 'Active organizational policy for ' + item.name + ' staff.'}</span>
+          </div>
+          
+          <div class="etype-distribution">
+            <span class="dist-label">Workforce Distribution</span>
+            <div class="dist-track">
+                <div class="dist-fill" style="width: 0%" data-pct="${percentage}"></div>
             </div>
-            <div class="etype-tag">Enterprise</div>
           </div>
-          <div class="etype-info">
-            <div class="etype-name">${item.name}</div>
-            <div class="etype-desc">${item.desc || 'Comprehensive employment category defining standard organizational terms and conditions for personnel.'}</div>
-          </div>
-          <div class="etype-meta">
-            <div class="etype-count-wrap">
-              <span class="etype-count-label">Active Personnel</span>
-              <span class="etype-count-val">${item.count}</span>
-            </div>
-          </div>
+          
+          <div class="etype-data">
+            <span class="data-val">${item.count}</span>
+            <span class="data-unit">Emp</span>
+          </div> 
         `;
-        grid.appendChild(card);
+        stack.appendChild(row);
       });
-      lcIcons(grid);
+
+      // 2. Animate the bars after they are added to the DOM
+      setTimeout(() => {
+        stack.querySelectorAll('.dist-fill').forEach(bar => {
+          bar.style.width = bar.dataset.pct + '%';
+        });
+      }, 100);
+
+      lcIcons(stack);
     })
     .catch(err => {
-      grid.innerHTML = `<div style="grid-column: 1/-1; padding: 40px; text-align: center; color: var(--danger); font-weight:600;">System Error: ${err.message}</div>`;
+      stack.innerHTML = `<div style="padding:40px; text-align:center; color:var(--danger); font-weight:800;">${err.message}</div>`;
     });
 }
 
