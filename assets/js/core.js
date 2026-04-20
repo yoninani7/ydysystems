@@ -826,6 +826,15 @@ function jumpToStep(step){
   
   validateMasterRecord();
   lcIcons(document.getElementById('p-add-employee'));
+  // Refresh CSRF token every time we change step
+    fetch('api/get_csrf.php')
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            const csrfInput = document.getElementById('csrf_token') || document.querySelector('input[name="csrf_token"]');
+            if (csrfInput) csrfInput.value = data.token;
+        }
+    });
 }
 
 function renderSummary() {
@@ -1075,66 +1084,79 @@ function saveNewEmployee() {
 
     console.log('[DEBUG] Submitting to api/employees/add_employee.php');
     
-        fetch('api/employees/add_employee.php', {
-          method: 'POST',
-          body: formData
-      })
-      .then(response => {
-          if (!response.ok) {
-              // Try to get text for debugging
-              return response.text().then(text => {
-                  console.error('Server Error Response:', text);
-                  throw new Error(`HTTP ${response.status}: ${text.substring(0, 100)}`);
-              });
-          }
-          return response.json();
-      })
-      .then(result => {
-        console.log('[DEBUG] Result:', result);
-        if (result.success) {
-            clearDropdownCache('employees');    
-            showNotification('Success', result.message, 'success');
-            setTimeout(() => {
-                goPage('employee-directory');
-            }, 1500);
+    fetch('api/employees/add_employee.php', {
+    method: 'POST',
+    body: formData
+})
+.then(response => {
+    console.log('[DEBUG] Response status:', response.status);
+    if (!response.ok) {
+        // Attempt to read the response body as text for debugging
+        return response.text().then(text => {
+            console.error('Server Error Response:', text);
+            throw new Error(`HTTP ${response.status}: ${text.substring(0, 100)}`);
+        });
+    }
+    return response.json();
+})
+.then(result => {
+    console.log('[DEBUG] Result:', result);
+    if (result.success) {
+        clearDropdownCache('employees');    
+        showNotification('Success', result.message, 'success');
+        setTimeout(() => {
+            goPage('employee-directory');
+        }, 1500);
+    } else {
+        // Map server-side validation errors to wizard fields
+        if (result.errors) {
+            const fieldMap = {
+                'first_name': 'o-fname',
+                'middle_name': 'o-mname',
+                'last_name': 'o-lname',
+                'date_of_birth': 'o-dob',
+                'gender': 'o-gender',
+                'department_id': 'o-dept',
+                'branch_id': 'o-branch',
+                'job_position_id': 'o-pos',
+                'employment_type_id': 'o-etype',
+                'hire_date': 'o-hire',
+                'contract_end_date': 'o-end-date',
+                'salary': 'o-sal',
+                'emergency_phone': 'o-ephone'
+            };
+            // Clear all error highlights first
+            document.querySelectorAll('.field-error').forEach(el => el.classList.remove('field-error'));
+            // Highlight fields with errors
+            Object.keys(result.errors).forEach(field => {
+                const inputId = fieldMap[field] || field;
+                const input = document.getElementById(inputId);
+                if (input) input.classList.add('field-error');
+            });
+            showNotification('Validation Failed', result.message || 'Please check highlighted fields.', 'error');
         } else {
-            if (result.errors) {
-                let errorMsg = result.message || 'Validation failed.';
-                const firstError = Object.values(result.errors)[0];
-                if (firstError) errorMsg = firstError;
-                showNotification('Error', errorMsg, 'error');
-
-                const fieldMap = {
-                    'first_name': 'o-fname', 'middle_name': 'o-mname', 'last_name': 'o-lname',
-                    'date_of_birth': 'o-dob', 'gender': 'o-gender', 'department_id': 'o-dept',
-                    'branch_id': 'o-branch', 'job_position_id': 'o-pos', 'employment_type_id': 'o-etype',
-                    'hire_date': 'o-hire', 'contract_end_date': 'o-end-date', 'salary': 'o-sal',
-                    'emergency_phone': 'o-ephone', 'emergency_name': 'o-ename', 'emergency_relation': 'o-idno'
-                };
-
-                Object.keys(result.errors).forEach(field => {
-                    const id = fieldMap[field] || field;
-                    const input = document.getElementById(id) || document.querySelector(`[name="${field}"]`);
-                    if (input) input.classList.add('field-error');
-                });
-            } else {
-                showNotification('Error', result.message || 'Failed to create employee.', 'error');
-            }
+            showNotification('Error', result.message || 'Failed to create employee.', 'error');
         }
-    })
-    .catch(error => {
-        console.error('[ERROR] Fetch failed:', error);
-        showNotification('Network Error', 'Could not connect to server. Please try again.', 'error');
-    })
-    .finally(() => {
-        allBtns.forEach(btn => {
+    }
+})
+.catch(error => {
+    console.error('[ERROR] Fetch failed:', error);
+    showNotification('Network Error', error.message || 'Could not connect to server. Check console for details.', 'error');
+})
+.finally(() => {
+    // Re-enable save buttons
+    const btnTop = document.getElementById('btn-save-master');
+    const btnBottom = document.getElementById('btn-save-master-bottom');
+    [btnTop, btnBottom].forEach(btn => {
+        if (btn) {
             btn.disabled = false;
             btn.innerHTML = btn.id === 'btn-save-master' 
                 ? `<i data-lucide="shield-check"></i> Commit Record`
                 : `<i data-lucide="user-plus"></i> Add Employee`;
-            if (typeof lucide !== 'undefined') lucide.createIcons({ nodes: [btn] });
-        });
+            lucide.createIcons({ nodes: [btn] });
+        }
     });
+});        
 } 
 
 // ── PAGE INIT ROUTER ──
@@ -1415,16 +1437,7 @@ function initPage(id){
     setTimeout(() => validateMasterRecord(), 50);
     break;
     case 'employment-types':
-        initServerPaginatedTable('tbl-employment-types', 'api/employees/fetch_emptypes.php', {
-          columns: [
-            { key: 'name', label: 'Type Name' },
-            { key: 'desc', label: 'Description' },
-            { key: 'count', label: 'Employees' },
-            { key: '_', label: 'Actions', render: () => `<div class="flex-row"><button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;"><i data-lucide="trash-2" size="10"></i></button></div>` }
-          ],
-          perPage: 15,
-          searchPlaceholder: 'Search employment types...'
-        });
+        initEmploymentTypesCards();
         break;
       case 'probation-tracker':
     initServerPaginatedTable('tbl-probation', 'api/employees/fetch_probation.php', {
@@ -2069,6 +2082,77 @@ function initPage(id){
     case 'hr-analytics':initAnalytics();break;
   }
 }
+function initEmploymentTypesCards() {
+  const container = document.getElementById('tbl-employment-types');
+  if (!container) return;
+  
+  // Clear any existing content
+  container.innerHTML = '<div class="etype-grid" id="etype-grid"></div>';
+  const grid = document.getElementById('etype-grid');
+  
+  // Show loading state
+  grid.innerHTML = '<div style="grid-column: 1/-1; padding: 80px 20px; text-align: center; color: var(--muted);"><i data-lucide="loader-2" class="spin" size="32"></i><div style="margin-top:12px; font-weight:600; font-size:0.85rem;">Cataloging Employment Categories...</div></div>';
+  lcIcons(grid);
+
+  fetch('api/employees/fetch_emptypes.php?limit=100') 
+    .then(r => r.json())
+    .then(res => {
+      if (!res.success) throw new Error(res.message);
+      
+      if (!res.data || res.data.length === 0) {
+        grid.innerHTML = `
+          <div style="grid-column: 1/-1; padding: 80px 20px; text-align: center;">
+            <div style="width:64px; height:64px; background:var(--primary-light); color:var(--primary); border-radius:16px; display:flex; align-items:center; justify-content:center; margin:0 auto 20px;">
+              <i data-lucide="briefcase" size="32"></i>
+            </div>
+            <div style="font-weight:800; color:var(--text); font-size:1.1rem;">No Categories Defined</div>
+            <div style="color:var(--muted); font-size:0.85rem; margin-top:8px;">No employment types have been configured in the system yet.</div>
+          </div>
+        `;
+        lcIcons(grid);
+        return;
+      }
+
+      grid.innerHTML = '';
+      res.data.forEach(item => {
+        let icon = 'briefcase';
+        const name = (item.name || '').toLowerCase();
+        if (name.includes('permanent')) icon = 'shield-check';
+        else if (name.includes('contract')) icon = 'file-text';
+        else if (name.includes('temporary')) icon = 'clock';
+        else if (name.includes('part')) icon = 'pie-chart';
+        else if (name.includes('intern')) icon = 'graduation-cap';
+        else if (name.includes('probation')) icon = 'timer';
+
+        const card = document.createElement('div');
+        card.className = 'etype-card';
+        card.innerHTML = `
+          <div class="etype-card-top">
+            <div class="etype-icon-box">
+              <i data-lucide="${icon}" size="22"></i>
+            </div>
+            <div class="etype-tag">Enterprise</div>
+          </div>
+          <div class="etype-info">
+            <div class="etype-name">${item.name}</div>
+            <div class="etype-desc">${item.desc || 'Comprehensive employment category defining standard organizational terms and conditions for personnel.'}</div>
+          </div>
+          <div class="etype-meta">
+            <div class="etype-count-wrap">
+              <span class="etype-count-label">Active Personnel</span>
+              <span class="etype-count-val">${item.count}</span>
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+      lcIcons(grid);
+    })
+    .catch(err => {
+      grid.innerHTML = `<div style="grid-column: 1/-1; padding: 40px; text-align: center; color: var(--danger); font-weight:600;">System Error: ${err.message}</div>`;
+    });
+}
+
 function initServerPaginatedTable(containerId, apiUrl, {columns, perPage = 15, searchPlaceholder = 'Search...'}) {
   const container = document.getElementById(containerId);
   if (!container) return;

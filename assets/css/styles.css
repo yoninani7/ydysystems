@@ -194,31 +194,38 @@ table.tbl{width:100%;border-collapse:separate;border-spacing:0;table-layout:auto
 table.tbl th {
   cursor: pointer;
   user-select: none;
-  transition: background .15s;
-  /* Updated Padding: Match the more spacious 'Employment Types' look */
-  padding: 12px 16px !important; 
-  background: #f8fafc;
-  font-size: .72rem;
-  font-weight: 900;
+  transition: all 0.2s ease;
+  padding: 16px 20px !important; 
+  background: linear-gradient(to bottom, #ffffff, #f8fafc);
+  font-size: 0.68rem;
+  font-weight: 800;
   color: var(--muted);
   text-transform: uppercase;
-  letter-spacing: .05em;
-  border-bottom: 1px solid var(--border);
+  letter-spacing: 0.08em;
+  border-bottom: 2px solid var(--border);
   white-space: nowrap;
   text-align: left;
 } 
-table.tbl th:hover { background: #f1f5f9!important; color: var(--primary); }
+table.tbl th:hover { 
+  background: var(--primary-light) !important; 
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
 .sort-indicator { margin-left: 4px; opacity: 0.5; font-family: monospace; font-size: 10px; }
 table.tbl td {
-  /* Updated Padding: Match the more spacious 'Employment Types' look */
-  padding: 12px 16px !important; 
-  font-size: .8rem;
-  border-bottom: 1px solid var(--border);
+  padding: 14px 20px !important; 
+  font-size: 0.82rem;
+  border-bottom: 1px solid #f1f5f9;
   color: var(--text);
   vertical-align: middle;
   background-color: var(--surface);
+  transition: background-color 0.15s ease;
 }
-table.tbl tr:hover td{background-color:#fcfdfe!important}
+table.tbl tr:last-child td { border-bottom: none; }
+table.tbl tr:hover td {
+  background-color: #fcfdfe !important;
+  color: var(--primary-dark);
+}
 table.tbl th:last-child,table.tbl td:last-child{width:.1%;white-space:nowrap;position:sticky;right:0;z-index:20;border-left:1px solid var(--border);box-shadow:-4px 0 8px -4px rgba(0,0,0,.1)}
 table.tbl th:last-child{background:#f8fafc}
 table.tbl td:last-child{background:var(--surface);text-align:center}
@@ -1021,3 +1028,154 @@ input:disabled, input[disabled] {
     font-size: 12px;
     color: var(--primary);
 }
+/* ── BENTO EMPLOYMENT CATEGORIES ── */
+#p-employment-types {
+  height: calc(100vh - var(--header-h) - 96px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.etype-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  grid-template-rows: 1fr 1fr;
+  gap: 14px;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Row 1: col spans that fill the 12-column row */
+.etype-card:nth-child(1) { grid-column: span 5; grid-row: 1; }
+.etype-card:nth-child(2) { grid-column: span 4; grid-row: 1; }
+.etype-card:nth-child(3) { grid-column: span 3; grid-row: 1; }
+
+/* Row 2: Remaining cards fill the second row */
+.etype-card:nth-child(4) { grid-column: span 4; grid-row: 2; }
+.etype-card:nth-child(5) { grid-column: span 4; grid-row: 2; }
+.etype-card:nth-child(6) { grid-column: span 4; grid-row: 2; }
+
+/* Overflow cards (7+): auto-placed after the 2 fixed rows */
+.etype-card:nth-child(n+7) { grid-column: span 4; }
+
+.etype-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.35s cubic-bezier(0.23, 1, 0.32, 1);
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.etype-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 12px 32px rgba(21, 178, 1, 0.08);
+  transform: translateY(-2px);
+}
+
+.etype-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.etype-icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--primary-light) 0%, #fff 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  border: 1px solid rgba(21, 178, 1, 0.12);
+  flex-shrink: 0;
+}
+
+.etype-info {
+  flex: 1;
+  margin-top: 16px;
+}
+
+.etype-name {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.etype-desc {
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.55;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.etype-meta {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.etype-count-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.etype-count-label {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+.etype-count-val {
+  font-size: 1.6rem;
+  font-weight: 200;
+  color: var(--text);
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.etype-tag {
+  background: var(--primary-light);
+  color: var(--primary);
+  padding: 4px 12px;
+  border-radius: 100px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 1200px) {
+  .etype-card:nth-child(1) { grid-column: span 6; }
+  .etype-card:nth-child(2) { grid-column: span 6; }
+  .etype-card:nth-child(3) { grid-column: span 6; }
+  .etype-card:nth-child(4) { grid-column: span 6; }
+  .etype-card:nth-child(5) { grid-column: span 6; }
+  .etype-card:nth-child(6) { grid-column: span 12; }
+}
+
+@media (max-width: 768px) {
+  #p-employment-types { height: auto; overflow: visible; }
+  .etype-grid { grid-template-rows: auto; gap: 12px; }
+  .etype-card:nth-child(n) { grid-column: span 12 !important; grid-row: auto !important; }
+}

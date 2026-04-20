@@ -24,6 +24,10 @@ if (!csrf_verify()) {
     echo json_encode(['success' => false, 'message' => 'Security token expired. Please refresh the page.']);
     exit;
 }
+// Handle large file upload
+if (isset($_FILES['avatar'])) {
+    set_time_limit(120); // Allow 2 minutes for image processing
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 3. Initialize Data & Errors
@@ -401,9 +405,11 @@ try {
 
         $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
         $filename = $employeeId . '_' . time() . '.' . $ext;
-        $uploadDir = __DIR__ . '/../../uploads/avatars/';
+       $uploadDir = __DIR__ . '/../../uploads/avatars/';
         if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0755, true);
+            if (!mkdir($uploadDir, 0755, true)) {
+                throw new Exception("Cannot create avatar upload directory. Please check folder permissions.");
+            }
         }
 
         // Check if GD is available for resizing
