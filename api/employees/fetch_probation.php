@@ -47,6 +47,7 @@ try {
     // Fetch paginated data
     $sql = "
         SELECT 
+            e.id AS employee_id,
             CONCAT(e.first_name, ' ', e.last_name) AS name,
             COALESCE(d.name, 'N/A') AS dept,
             pr.start_date AS start,

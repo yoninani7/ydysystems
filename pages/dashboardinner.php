@@ -4,7 +4,7 @@
   <header class="db-hero-banner" style="padding:16px 28px;min-height:auto;position:relative;">
     <div class="db-hero-content">
       <h1 class="db-hero-title" style="font-size:1.5rem;">Dashboard Intelligence</h1>
-      <p class="db-hero-sub">Organization performance is at peak efficiency.</p>
+      <p class="db-hero-sub">Where the organization data is centralized</p>
     </div>
     <img src="assets/img/bgt.png" class="db-hero-center-img" alt="Banner Illustration">
     <div class="qa-stack-v2">

@@ -1452,7 +1452,7 @@ function initPage(id){
                 render: (v) => {
                     const days = parseInt(v);
                     if (days < 0) return `<span style="color:var(--danger); font-weight:bold;">Overdue (${Math.abs(days)})</span>`;
-                    if (days <= 14) return `<span style="color:var(--warning); font-weight:bold;">${days} Days</span>`;
+                    if (days <= 30) return `<span style="color:var(--warning); font-weight:bold;">${days} Days</span>`;
                     return `${days} Days`;
                 }
             },
@@ -1469,13 +1469,16 @@ function initPage(id){
             {
                 key: '_',
                 label: 'Actions',
-                render: () => `
-                    <div class="flex-row">
-                        <button class="btn btn-xs btn-secondary" title="Evaluate"><i data-lucide="clipboard-check" size="10"></i></button>
-                        <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;">
-                            <i data-lucide="trash-2" size="10"></i>
-                        </button>
-                    </div>`
+                render: (v, row) => `
+    <div style="display: flex; align-items: center; gap: 10px; justify-content: center;">
+        <button class="btn btn-xs" style="background: #f1f5f9; color: var(--primary); border: 1px solid #e2e8f0; display: inline-flex; align-items: center; justify-content: center; padding: 5px; border-radius: 6px;" title="Evaluate Employee" onclick="openProbationEvalModal('${row.employee_id}', '${row.name.replace(/'/g, "\\'")}')">
+            <i data-lucide="clipboard-check" size="13"></i>
+        </button>
+        <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;display:inline-flex;align-items:center;justify-content:center;padding: 5px; border-radius: 6px; cursor:pointer;">
+            <i data-lucide="trash-2" size="13"></i>
+        </button>
+    </div>`
+
             }
         ],
         perPage: 15,
@@ -1760,18 +1763,7 @@ function initPage(id){
       });
       break;
     case 'leave-types':
-      initServerPaginatedTable('tbl-leave-types', 'api/leave/fetch_leave_types.php', {
-        columns: [
-          { key: 'name', label: 'Leave Type' },
-          { key: 'days', label: 'Days/Year', render: (v) => v ? v : '—' },
-          { key: 'carry', label: 'Carryover', render: (v) => v ? v + ' days' : '0 days' },
-          { key: 'paid', label: 'Paid Status', render: (v) => v === 'Yes' ? b('success', 'Paid') : (v === 'No' ? b('danger', 'Unpaid') : b('warning', v)) },
-          { key: 'approval', label: 'Needs Approval', render: (v) => v == 1 ? 'Yes' : 'No' },
-          { key: '_', label: 'Actions', render: () => `<div class="flex-row"><button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;"><i data-lucide="trash-2" size="10"></i></button></div>` }
-        ],
-        perPage: 15,
-        searchPlaceholder: 'Search leave types...'
-      });
+      initLeaveTypesCards();
       break; 
     case 'leave-requests':
       initServerPaginatedTable('tbl-leave-requests', 'api/leave/fetch_leaverequests.php', {
@@ -2088,6 +2080,7 @@ function initEmploymentTypesCards() {
   
   container.innerHTML = '<div class="etype-ledger" id="etype-ledger-stack"></div>';
   const stack = document.getElementById('etype-ledger-stack');
+  const accentPalette = ['#15b201', '#3b82f6', '#a855f7', '#f59e0b', '#ef4444', '#06b6d4', '#22c55e', '#e11d48', '#8b5cf6', '#14b8a6'];
   
   // High-end Loader
   stack.innerHTML = '<div style="padding:100px; text-align:center;"><i data-lucide="loader-2" class="spin" style="color:var(--primary); opacity:0.3;"></i></div>';
@@ -2102,7 +2095,7 @@ function initEmploymentTypesCards() {
       // 1. Calculate Total Count for the Distribution Bars
       const totalCount = res.data.reduce((sum, item) => sum + parseInt(item.count), 0) || 1;
 
-      res.data.forEach(item => {
+      res.data.forEach((item, index) => {
         const name = (item.name || '').toLowerCase();
         let icon = 'briefcase';
         let colorClass = 'cat-perm';
@@ -2110,14 +2103,17 @@ function initEmploymentTypesCards() {
         // Semantic Logic
         if (name.includes('permanent')) { icon = 'shield-check'; colorClass = 'cat-perm'; }
         else if (name.includes('contract')) { icon = 'file-text'; colorClass = 'cat-cont'; }
+        else if (name.includes('part')) { icon = 'file-check'; colorClass = 'cat-part'; }
         else if (name.includes('intern')) { icon = 'graduation-cap'; colorClass = 'cat-intn'; }
         else if (name.includes('temp')) { icon = 'clock'; colorClass = 'cat-temp'; }
 
         // Percentage for bar
         const percentage = Math.max(5, (parseInt(item.count) / totalCount) * 100);
+        const accentColor = accentPalette[index % accentPalette.length];
 
         const row = document.createElement('div');
         row.className = `etype-master-row ${colorClass}`;
+        row.style.setProperty('--accent-color', accentColor);
         row.innerHTML = `
           <div class="etype-visual">
             <div class="etype-icon-box"><i data-lucide="${icon}" size="20"></i></div>
@@ -2149,6 +2145,81 @@ function initEmploymentTypesCards() {
           bar.style.width = bar.dataset.pct + '%';
         });
       }, 100);
+
+      lcIcons(stack);
+    })
+    .catch(err => {
+      stack.innerHTML = `<div style="padding:40px; text-align:center; color:var(--danger); font-weight:800;">${err.message}</div>`;
+    });
+}
+
+function initLeaveTypesCards() {
+  const container = document.getElementById('tbl-leave-types');
+  if (!container) return;
+
+  container.innerHTML = '<div class="leave-type-viewport"><div class="etype-ledger" id="leave-type-ledger-stack"></div></div>';
+  const stack = document.getElementById('leave-type-ledger-stack');
+  const accentPalette = [
+    'var(--primary)',
+    'var(--info)',
+    'var(--success)',
+    'var(--warning)',
+    'var(--danger)'
+  ];
+
+  stack.innerHTML = '<div style="padding:100px; text-align:center;"><i data-lucide="loader-2" class="spin" style="color:var(--primary); opacity:0.3;"></i></div>';
+  lcIcons(stack);
+
+  fetch('api/leave/fetch_leave_types.php?limit=1000')
+    .then(r => r.json())
+    .then(res => {
+      if (!res.success) throw new Error(res.message);
+      stack.innerHTML = '';
+
+      res.data.forEach((item, index) => {
+        const name = (item.name || '').toLowerCase();
+        let icon = 'calendar';
+        if (name.includes('annual')) icon = 'sun';
+        else if (name.includes('sick')) icon = 'stethoscope';
+        else if (name.includes('maternity') || name.includes('paternity')) icon = 'baby';
+        else if (name.includes('compassionate')) icon = 'heart-handshake';
+        else if (name.includes('study')) icon = 'book-open';
+
+        const days = parseInt(item.days, 10) || 0;
+        const carry = parseInt(item.carry, 10) || 0;
+        const accentColor = accentPalette[index % accentPalette.length];
+        const isPaid = String(item.paid) === 'Yes';
+        const needsApproval = String(item.approval) === '1';
+
+        const row = document.createElement('div');
+        row.className = 'etype-master-row leave-type-row';
+        row.style.setProperty('--accent-color', accentColor);
+        row.innerHTML = `
+          <div class="etype-visual leave-type-visual">
+            <div class="etype-icon-box leave-type-icon"><i data-lucide="${icon}" size="18"></i></div>
+          </div>
+
+          <div class="etype-identity">
+            <div class="leave-type-head">
+              <span class="etype-label">${item.name}</span>
+            </div>
+            <div class="leave-type-meta">
+              <span class="badge ${isPaid ? 'badge-success' : 'badge-warning'}">${isPaid ? 'Paid' : 'Unpaid'}</span>
+              <span class="badge ${needsApproval ? 'badge-info' : 'badge-neutral'}">${needsApproval ? 'Approval Required' : 'No Approval'}</span>
+              <span class="badge badge-neutral">Carryover ${carry} days</span>
+            </div>
+            <div class="leave-type-foot">
+              <span class="leave-foot-item"><i data-lucide="calendar-days" size="13"></i>Policy cycle: <b>Yearly</b></span>
+            </div>
+          </div>
+
+          <div class="etype-data leave-type-data">
+            <span class="data-val">${days}</span>
+            <span class="data-unit">Days / Year</span>
+          </div>
+        `;
+        stack.appendChild(row);
+      });
 
       lcIcons(stack);
     })
@@ -2666,7 +2737,34 @@ function savePermissionChanges() {
     }, 1000);
 }
 
+function openProbationEvalModal(empId, empName) {
+  document.getElementById('eval-emp-id').value = empId;
+  document.getElementById('eval-modal-title').textContent = `Evaluate ${empName}`;
+  document.getElementById('eval-notes').value = '';
+  openModal('modal-probation-eval');
+}
+
+function submitProbationEval(decision) {
+  const empId = document.getElementById('eval-emp-id').value;
+  const notes = document.getElementById('eval-notes').value;
+  
  
+
+  const confirmMsg = `Are you sure you want to ${decision.toLowerCase()} this employee?`;
+  if (!confirm(confirmMsg)) return;
+
+  console.log(`Submitting evaluation for ID ${empId}: Decision=${decision}, Notes=${notes}`);
+  
+  alert(`Evaluation submitted: Employee marked for ${decision}.`);
+  closeModal('modal-probation-eval');
+  
+  if (typeof initServerPaginatedTable === 'function') {
+    const tableContainer = document.getElementById('tbl-probation');
+    if (tableContainer) {
+        location.reload();
+    }
+  }
+}
 
 const ATT_CODES = ['P', 'H', 'A', 'L', 'O'];
 function buildMatrix() {

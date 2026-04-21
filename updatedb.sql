@@ -61,9 +61,11 @@ CREATE TABLE branches (
     email       VARCHAR(150),
     manager_id  INT             NULL,
     status      ENUM('Active','Inactive') DEFAULT 'Active',
+    created_by  INT          NULL ,
     created_at  TIMESTAMP       DEFAULT CURRENT_TIMESTAMP,
     deleted_at  TIMESTAMP       NULL DEFAULT NULL,  
-    updated_at  TIMESTAMP       DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at  TIMESTAMP       DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
 );
 
 CREATE TABLE departments (
@@ -87,6 +89,8 @@ CREATE TABLE job_positions (
     created_at    TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
     deleted_at    TIMESTAMP     NULL DEFAULT NULL,
     updated_at    TIMESTAMP     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by    INT          NULL,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL
 );
 
@@ -129,6 +133,7 @@ CREATE TABLE employees (
     emergency_contact_phone   VARCHAR(50),
     emergency_contact_relation VARCHAR(100),
     status                    ENUM('Active','Inactive','On Leave','Resigned','Terminated','Retired') DEFAULT 'Active',
+    created_by      INT          NULL,
     created_at                TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
     deleted_at                TIMESTAMP    NULL DEFAULT NULL,
     updated_at                TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -136,7 +141,8 @@ CREATE TABLE employees (
     FOREIGN KEY (job_position_id)    REFERENCES job_positions(id)    ON DELETE SET NULL,
     FOREIGN KEY (employment_type_id) REFERENCES employment_types(id) ON DELETE SET NULL,
     FOREIGN KEY (branch_id)          REFERENCES branches(id)         ON DELETE SET NULL,
-    FOREIGN KEY (reports_to_id)      REFERENCES employees(id)        ON DELETE SET NULL
+    FOREIGN KEY (reports_to_id)      REFERENCES employees(id)        ON DELETE SET NULL,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- Back-fill FKs
@@ -158,6 +164,8 @@ CREATE TABLE employee_contracts (
     notes             TEXT,
     created_at        TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
     updated_at        TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by      INT          NULL,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (employee_id)        REFERENCES employees(id)        ON DELETE CASCADE,
     FOREIGN KEY (employment_type_id) REFERENCES employment_types(id) ON DELETE RESTRICT
 );
@@ -170,6 +178,8 @@ CREATE TABLE probation_records (
     status         ENUM('Active','Completed','Extended','Failed') DEFAULT 'Active',
     created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by      INT          NULL,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
 );
 
@@ -210,6 +220,8 @@ CREATE TABLE employee_documents (
     status           ENUM('Uploaded','Missing') DEFAULT 'Uploaded',
     uploaded_at      TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
     updated_at       TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by      INT          NULL COMMENT 'User who uploaded the document',
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (employee_id)      REFERENCES employees(id)     ON DELETE CASCADE,
     FOREIGN KEY (document_type_id) REFERENCES document_types(id) ON DELETE RESTRICT
 );
@@ -234,6 +246,8 @@ CREATE TABLE assets (
     status                 ENUM('Active','In Repair','Disposed','Lost') DEFAULT 'Active',
     created_at             TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
     updated_at             TIMESTAMP     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by      INT          NULL COMMENT 'User who registered the asset',
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (category_id)           REFERENCES asset_categories(id) ON DELETE SET NULL,
     FOREIGN KEY (current_custodian_id)  REFERENCES employees(id)        ON DELETE SET NULL,
     FOREIGN KEY (previous_custodian_id) REFERENCES employees(id)        ON DELETE SET NULL,
@@ -249,6 +263,8 @@ CREATE TABLE asset_assignments (
     assigned_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     returned_at      TIMESTAMP NULL,
     notes            TEXT,
+    created_by      INT          NULL COMMENT 'User who performed the assignment',
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (asset_id)         REFERENCES assets(id)    ON DELETE CASCADE,
     FOREIGN KEY (assigned_from_id) REFERENCES employees(id) ON DELETE SET NULL,
     FOREIGN KEY (assigned_to_id)   REFERENCES employees(id) ON DELETE SET NULL,
@@ -271,13 +287,14 @@ CREATE TABLE job_vacancies (
     deadline_date      DATE,
     openings           INT          DEFAULT 1,
     status             ENUM('Open','On Hold','Filled','Closed') DEFAULT 'Open',
-    created_by         INT          NULL,
     created_at         TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
     updated_at         TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by      INT          NULL COMMENT 'User who posted the vacancy',
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (department_id)      REFERENCES departments(id)      ON DELETE SET NULL,
     FOREIGN KEY (branch_id)          REFERENCES branches(id)         ON DELETE SET NULL,
-    FOREIGN KEY (employment_type_id) REFERENCES employment_types(id) ON DELETE SET NULL,
-    FOREIGN KEY (created_by)         REFERENCES employees(id)        ON DELETE SET NULL
+    FOREIGN KEY (employment_type_id) REFERENCES employment_types(id) ON DELETE SET NULL
+     
 );
 
 CREATE TABLE candidates (
@@ -292,7 +309,9 @@ CREATE TABLE candidates (
     notes         TEXT,
     created_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
     updated_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (vacancy_id) REFERENCES job_vacancies(id) ON DELETE SET NULL
+    created_by      INT          NULL COMMENT 'User who added the candidate',
+FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (vacancy_id) REFERENCES job_vacancies(id) ON DELETE CASCADE
 );
 
 CREATE TABLE interviews (
@@ -307,6 +326,8 @@ CREATE TABLE interviews (
     notes          TEXT,
     created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by      INT          NULL COMMENT 'User who scheduled the interview',
+FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (candidate_id)   REFERENCES candidates(id)  ON DELETE CASCADE,
     FOREIGN KEY (vacancy_id)     REFERENCES job_vacancies(id) ON DELETE SET NULL,
     FOREIGN KEY (interviewer_id) REFERENCES employees(id)   ON DELETE SET NULL
@@ -327,6 +348,8 @@ CREATE TABLE internships (
     created_at       TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
     deleted_at         TIMESTAMP    NULL DEFAULT NULL,
     updated_at       TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by      INT          NULL,
+FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL,
     FOREIGN KEY (mentor_id)     REFERENCES employees(id)   ON DELETE SET NULL
 );
@@ -351,6 +374,8 @@ CREATE TABLE promotions (
     status              ENUM('Pending','Approved','Rejected','Processing') DEFAULT 'Pending',
     created_at          TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
     updated_at          TIMESTAMP     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by      INT          NULL COMMENT 'User who initiated the promotion/demotion',
+FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (employee_id)        REFERENCES employees(id)    ON DELETE CASCADE,
     FOREIGN KEY (from_position_id)   REFERENCES job_positions(id) ON DELETE SET NULL,
     FOREIGN KEY (to_position_id)     REFERENCES job_positions(id) ON DELETE SET NULL,
@@ -373,6 +398,8 @@ CREATE TABLE transfers (
     status              ENUM('Pending','Approved','Rejected') DEFAULT 'Pending',
     created_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by      INT          NULL COMMENT 'User who initiated the transfer',
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (employee_id)        REFERENCES employees(id)   ON DELETE CASCADE,
     FOREIGN KEY (from_department_id) REFERENCES departments(id) ON DELETE SET NULL,
     FOREIGN KEY (to_department_id)   REFERENCES departments(id) ON DELETE SET NULL,
@@ -432,6 +459,8 @@ CREATE TABLE leave_entitlements (
     balance_days       INT      AS (total_days + carried_over_days - used_days) STORED,
     created_at         TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at         TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by      INT          NULL,
+FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
     UNIQUE KEY uq_emp_leave_year (employee_id, leave_type_id, fiscal_year),
     FOREIGN KEY (employee_id)   REFERENCES employees(id)   ON DELETE CASCADE,
     FOREIGN KEY (leave_type_id) REFERENCES leave_types(id) ON DELETE CASCADE
@@ -450,6 +479,8 @@ CREATE TABLE leave_requests (
     reviewed_at   TIMESTAMP NULL,
     created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by      INT          NULL ,
+FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (employee_id)   REFERENCES employees(id)   ON DELETE CASCADE,
     FOREIGN KEY (leave_type_id) REFERENCES leave_types(id) ON DELETE RESTRICT,
     FOREIGN KEY (approved_by)   REFERENCES employees(id)   ON DELETE SET NULL
@@ -473,6 +504,8 @@ CREATE TABLE medical_claims (
     reviewed_at    TIMESTAMP   NULL,
     notes          TEXT,
     created_at     TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
+    created_by      INT          NULL COMMENT 'User who submitted the claim',
+FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
     FOREIGN KEY (approved_by) REFERENCES employees(id) ON DELETE SET NULL
 );
@@ -488,6 +521,8 @@ CREATE TABLE overtime_requests (
     status         ENUM('Pending','Approved','Rejected') DEFAULT 'Pending',
     reviewed_at    TIMESTAMP   NULL,
     created_at     TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
+    created_by      INT          NULL COMMENT 'User who submitted the request',
+FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
     FOREIGN KEY (approved_by) REFERENCES employees(id) ON DELETE SET NULL
 );
@@ -505,6 +540,8 @@ CREATE TABLE disciplinary_actions (
     issued_by     INT       NULL,
     description   TEXT,
     created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by      INT          NULL COMMENT 'User who recorded the action',
+FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
     FOREIGN KEY (issued_by)   REFERENCES employees(id) ON DELETE SET NULL
 );
@@ -521,6 +558,8 @@ CREATE TABLE resignations (
     notes        TEXT,
     created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by      INT          NULL COMMENT 'User who logged the resignation',
+FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
     FOREIGN KEY (assigned_to) REFERENCES employees(id) ON DELETE SET NULL
 );
@@ -538,6 +577,8 @@ CREATE TABLE separations (
     processed_by     INT           NULL,
     created_at       TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
     updated_at       TIMESTAMP     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by      INT          NULL COMMENT 'User who initiated the separation process',
+FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (employee_id)  REFERENCES employees(id) ON DELETE CASCADE,
     FOREIGN KEY (processed_by) REFERENCES employees(id) ON DELETE SET NULL
 );
@@ -556,6 +597,8 @@ CREATE TABLE exit_clearances (
     notes           TEXT,
     created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by      INT          NULL,
+FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (employee_id)   REFERENCES employees(id)  ON DELETE CASCADE,
     FOREIGN KEY (separation_id) REFERENCES separations(id) ON DELETE SET NULL
 );
@@ -573,6 +616,8 @@ CREATE TABLE training_needs (
     proposed_training    VARCHAR(200),
     status               ENUM('Pending','Approved','Ongoing') DEFAULT 'Pending',
     created_at           TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+    created_by      INT          NULL,
+FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL
 );
 
@@ -588,6 +633,8 @@ CREATE TABLE training_schedules (
     enrolled_seats INT         DEFAULT 0,
     status        ENUM('Confirmed','Open','Cancelled') DEFAULT 'Open',
     created_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+    created_by      INT          NULL,
+FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
     FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL,
     FOREIGN KEY (trainer_id)    REFERENCES employees(id)   ON DELETE SET NULL
 );
@@ -598,6 +645,8 @@ CREATE TABLE training_enrollments (
     employee_id INT       NOT NULL,
     enrolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY uq_training_emp (training_id, employee_id),
+    created_by      INT          NULL COMMENT 'User who enrolled the employee',
+FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (training_id) REFERENCES training_schedules(id) ON DELETE CASCADE,
     FOREIGN KEY (employee_id) REFERENCES employees(id)          ON DELETE CASCADE
 );
@@ -617,6 +666,8 @@ CREATE TABLE performance_reviews (
     status        ENUM('Pending','Submitted','Acknowledged') DEFAULT 'Pending',
     created_at    TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
     updated_at    TIMESTAMP   DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by      INT          NULL COMMENT 'User who created the review',
+FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
     FOREIGN KEY (reviewer_id) REFERENCES employees(id) ON DELETE SET NULL
 );
@@ -631,6 +682,8 @@ CREATE TABLE feedback_360 (
     status                ENUM('Open','In Progress','Closed') DEFAULT 'Open',
     created_at            TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
     updated_at            TIMESTAMP   DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by      INT          NULL COMMENT 'User who initiated the feedback cycle',
+FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (subject_employee_id) REFERENCES employees(id) ON DELETE CASCADE
 );
 
@@ -654,6 +707,8 @@ CREATE TABLE roles (
     name        VARCHAR(100) UNIQUE NOT NULL,
     description TEXT,
     created_at  TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
+    created_by      INT          NULL,
+FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
 );
 
 CREATE TABLE modules (
@@ -662,6 +717,8 @@ CREATE TABLE modules (
     name        VARCHAR(100) NOT NULL,
     parent_id   INT DEFAULT NULL,
     sort_order  INT DEFAULT 0,
+    created_by      INT          NULL,
+FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (parent_id) REFERENCES modules(id) ON DELETE CASCADE
 );
 
@@ -671,6 +728,8 @@ CREATE TABLE role_permissions (
     module_id   INT NOT NULL,
     can_access  BOOLEAN DEFAULT TRUE,
     updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by      INT          NULL,
+FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     UNIQUE KEY uq_role_module (role_id, module_id),
     FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE,
     FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE
@@ -689,6 +748,8 @@ CREATE TABLE users (
     created_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
     deleted_at    TIMESTAMP    NULL DEFAULT NULL,
     updated_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by      INT          NULL COMMENT 'User who created this account',
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE RESTRICT,
     FOREIGN KEY (employee_id)   REFERENCES employees(id)   ON DELETE SET NULL,
     FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL
@@ -700,6 +761,8 @@ CREATE TABLE user_permission_overrides (
     module_id   INT NOT NULL,
     can_access  BOOLEAN DEFAULT TRUE,
     updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by      INT          NULL,
+FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     UNIQUE KEY uq_user_module (user_id, module_id),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE
