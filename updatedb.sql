@@ -29,8 +29,8 @@ CREATE TABLE company_profile (
     vat_reg_number      VARCHAR(100),
     trade_license_no    VARCHAR(100),
     work_week_desc      VARCHAR(200),
-    probation_days      VARCHAR(200),
-    retirement_age      VARCHAR(200),
+    probation_days      INT(200),
+    retirement_age      INT(200),
     main_bank           VARCHAR(150),
     bank_account_primary VARCHAR(100),
     base_currency       VARCHAR(20)     DEFAULT 'ETB',
@@ -100,7 +100,7 @@ CREATE TABLE job_positions (
 
 CREATE TABLE employees (
     id                        INT          PRIMARY KEY AUTO_INCREMENT,
-    employee_id               VARCHAR(50) NULL,
+    employee_id               VARCHAR(50) NULL UNIQUE,
     first_name                VARCHAR(100),
     middle_name               VARCHAR(100),
     last_name                 VARCHAR(100),
@@ -246,6 +246,7 @@ CREATE TABLE assets (
     status                 ENUM('Active','In Repair','Disposed','Lost') DEFAULT 'Active',
     created_at             TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
     updated_at             TIMESTAMP     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at             TIMESTAMP     NULL DEFAULT NULL,
     created_by      INT          NULL COMMENT 'User who registered the asset',
     FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (category_id)           REFERENCES asset_categories(id) ON DELETE SET NULL,
@@ -289,6 +290,7 @@ CREATE TABLE job_vacancies (
     status             ENUM('Open','On Hold','Filled','Closed') DEFAULT 'Open',
     created_at         TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
     updated_at         TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at         TIMESTAMP    NULL DEFAULT NULL,
     created_by      INT          NULL COMMENT 'User who posted the vacancy',
     FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (department_id)      REFERENCES departments(id)      ON DELETE SET NULL,
@@ -479,6 +481,7 @@ CREATE TABLE leave_requests (
     reviewed_at   TIMESTAMP NULL,
     created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at    TIMESTAMP NULL DEFAULT NULL, 
     created_by      INT          NULL ,
 FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (employee_id)   REFERENCES employees(id)   ON DELETE CASCADE,
@@ -877,6 +880,10 @@ CREATE INDEX idx_vacancies_status_deadline ON job_vacancies(status, deadline_dat
 CREATE INDEX idx_emp_deleted_at ON employees(deleted_at);
 CREATE INDEX idx_dept_deleted_at ON departments(deleted_at);
 CREATE INDEX idx_user_deleted_at ON users(deleted_at); 
+
+CREATE INDEX idx_ast_deleted_at ON assets(deleted_at);
+CREATE INDEX idx_vac_deleted_at ON job_vacancies(deleted_at);
+CREATE INDEX idx_lr_deleted_at  ON leave_requests(deleted_at);
 -- ============================================================
 -- VIEWS (Required by PHP fetch scripts)
 -- ============================================================
@@ -960,7 +967,8 @@ SELECT
 FROM assets a
 LEFT JOIN asset_categories ac ON a.category_id = ac.id
 LEFT JOIN employees e ON a.current_custodian_id = e.id AND e.deleted_at IS NULL
-LEFT JOIN branches b ON a.location_branch_id = b.id;
+LEFT JOIN branches b ON a.location_branch_id = b.id
+WHERE a.deleted_at IS NULL;
 
 CREATE OR REPLACE VIEW v_dept_structure_stats AS
 SELECT 
@@ -996,7 +1004,8 @@ SELECT
     SUM(CASE WHEN c.current_stage = 'Offer' THEN 1 ELSE 0 END) AS offers_made
 FROM job_vacancies jv
 LEFT JOIN departments d ON jv.department_id = d.id
-LEFT JOIN candidates c ON jv.id = c.vacancy_id 
+LEFT JOIN candidates c ON jv.id = c.vacancy_id
+WHERE jv.deleted_at IS NULL 
 GROUP BY jv.id;
 
 CREATE OR REPLACE VIEW v_exit_clearance_master AS
@@ -1115,8 +1124,8 @@ CREATE OR REPLACE VIEW v_dashboard_hero_stats AS
 SELECT 
     (SELECT COUNT(*) FROM employees WHERE status = 'Active') AS total_headcount,
     (SELECT COUNT(*) FROM departments WHERE status = 'Active') AS total_departments,
-    (SELECT COUNT(*) FROM leave_requests WHERE status = 'Approved' AND CURDATE() BETWEEN from_date AND to_date) AS staff_on_leave,
-    (SELECT COUNT(*) FROM leave_requests WHERE status = 'Pending') AS pending_leave_approvals,
+    (SELECT COUNT(*) FROM leave_requests WHERE status = 'Approved' AND CURDATE() BETWEEN from_date AND to_date AND deleted_at IS NULL) AS staff_on_leave,
+    (SELECT COUNT(*) FROM leave_requests WHERE status = 'Pending' AND deleted_at IS NULL) AS pending_leave_approvals,
     (SELECT COUNT(*) FROM employees WHERE contract_end_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 15 DAY)) AS critical_expiring_contracts,
     (SELECT COUNT(*) FROM asset_categories) AS total_asset_categories
 FROM dual ;
@@ -1180,7 +1189,7 @@ INSERT INTO company_profile (
     'YDY systems PLC', 'YDY', 'Abebe Kebede', 'Bole Sub-city, Woreda 03, Addis Ababa',
     'Private Limited Company', '2015-06-12', 'MT/AA/1/0012345/2007', '0043829104',
     '8829103347', 'TRADE/FED/778/2016', 'Mon-Fri (40 hrs) + Sat Half-day',
-    '60 Days', '60 Years', 'Commercial Bank of Ethiopia (CBE)', '1000123456789', 'ETB',
+    '60 Days', '60', 'Commercial Bank of Ethiopia (CBE)', '1000123456789', 'ETB',
     'Hamle 01 (July 08)', 'ydy.com', 'info@ydy-innovations.com', '+251 11 661 2345',
     '@ydy', '+251 91 122 3344', 'linkedin.com/company/ydy'
 );
