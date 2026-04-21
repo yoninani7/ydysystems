@@ -460,8 +460,8 @@ CREATE TABLE leave_entitlements (
     created_at         TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at         TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     created_by      INT          NULL,
-FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
     UNIQUE KEY uq_emp_leave_year (employee_id, leave_type_id, fiscal_year),
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (employee_id)   REFERENCES employees(id)   ON DELETE CASCADE,
     FOREIGN KEY (leave_type_id) REFERENCES leave_types(id) ON DELETE CASCADE
 );
@@ -634,7 +634,7 @@ CREATE TABLE training_schedules (
     status        ENUM('Confirmed','Open','Cancelled') DEFAULT 'Open',
     created_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
     created_by      INT          NULL,
-FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL,
     FOREIGN KEY (trainer_id)    REFERENCES employees(id)   ON DELETE SET NULL
 );
@@ -706,7 +706,7 @@ CREATE TABLE roles (
     id          INT          PRIMARY KEY AUTO_INCREMENT,
     name        VARCHAR(100) UNIQUE NOT NULL,
     description TEXT,
-    created_at  TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
+    created_at  TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
     created_by      INT          NULL,
 FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
 );
@@ -959,9 +959,8 @@ SELECT
     DATEDIFF(a.warranty_expiry, CURDATE()) AS days_until_warranty_end
 FROM assets a
 LEFT JOIN asset_categories ac ON a.category_id = ac.id
-LEFT JOIN employees e ON a.current_custodian_id = e.id
-LEFT JOIN branches b ON a.location_branch_id = b.id
-WHERE e.deleted_at IS NULL;
+LEFT JOIN employees e ON a.current_custodian_id = e.id AND e.deleted_at IS NULL
+LEFT JOIN branches b ON a.location_branch_id = b.id;
 
 CREATE OR REPLACE VIEW v_dept_structure_stats AS
 SELECT 
@@ -971,8 +970,8 @@ SELECT
     (SELECT COUNT(*) FROM employees WHERE department_id = d.id AND status = 'Active') AS active_headcount,
     (SELECT COUNT(*) FROM job_positions WHERE department_id = d.id) AS total_positions
 FROM departments d
-LEFT JOIN employees e ON d.head_employee_id = e.id
-WHERE e.deleted_at IS NULL;
+LEFT JOIN employees e ON d.head_employee_id = e.id AND e.deleted_at IS NULL
+WHERE d.deleted_at IS NULL;
 
 CREATE OR REPLACE VIEW v_retirement_forecast AS
 SELECT 
@@ -1035,7 +1034,6 @@ SELECT
 FROM attendance a
 JOIN employees e ON a.employee_id = e.id
 LEFT JOIN departments d ON e.department_id = d.id
-WHERE e.deleted_at IS NULL
 GROUP BY a.employee_id, a.year, a.month;
 
 CREATE OR REPLACE VIEW v_contract_renewal_alerts AS
