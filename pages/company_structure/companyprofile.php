@@ -125,4 +125,208 @@ function check($val) {
 
     </div>
   </div> 
+  <!-- COMPANY PROFILE UPDATE MODAL (RESPONSIVE & THEME-ONLY) -->
+<div class="modal-overlay" id="modal-edit-company" onclick="closeCompanyModal(event)">
+  <div class="modal-box" style="max-width: 980px; width: 95%; border-radius: 16px; overflow: hidden;">
+    <div class="modal-header">
+      <div>
+        <div style="font-size:1.1rem; font-weight:800; letter-spacing: -0.02em;">Update Company Profile</div>
+        <div style="font-size:0.75rem; color: var(--muted); margin-top: 4px;">Edit legal, operational, and digital records</div>
+      </div>
+      <button class="icon-btn" onclick="closeCompanyModal()"><i data-lucide="x" size="16"></i></button>
+    </div>
+    
+    <div class="modal-body" style="padding: 24px;">
+      <form id="company-profile-form">
+        <input type="hidden" id="edit_csrf_token" value="<?php echo csrf_token(); ?>">
+        
+        <!-- RESPONSIVE GRID: 3 columns on desktop, 1 column on mobile -->
+        <div class="company-profile-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;">
+          
+          <!-- COLUMN 1: LEGAL & INCORPORATION -->
+          <div class="profile-card" style="background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 18px;">
+              <div style="width: 32px; height: 32px; background: var(--primary-light); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--primary);">
+                <i data-lucide="file-text" size="16"></i>
+              </div>
+              <span style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text);">Legal & Incorporation</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 14px;">
+              <div class="form-group" style="margin:0;">
+                <label style="font-size:0.65rem; font-weight:700; color: var(--muted); margin-bottom:4px;">LEGAL NAME *</label>
+                <input id="edit_legal_name" class="form-ctrl" placeholder="e.g. YDY Systems PLC">
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label style="font-size:0.65rem; font-weight:700; color: var(--muted); margin-bottom:4px;">TRADING NAME</label>
+                <input id="edit_trading_name" class="form-ctrl" placeholder="e.g. YDY">
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label style="font-size:0.65rem; font-weight:700; color: var(--muted); margin-bottom:4px;">CEO / GENERAL MANAGER</label>
+                <input id="edit_ceo_name" class="form-ctrl" placeholder="Full name">
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label style="font-size:0.65rem; font-weight:700; color: var(--muted); margin-bottom:4px;">HEAD OFFICE</label>
+                <input id="edit_head_office" class="form-ctrl" placeholder="Full address">
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label style="font-size:0.65rem; font-weight:700; color: var(--muted); margin-bottom:4px;">ENTITY TYPE</label>
+                <div class="as-combo-container">
+                  <input type="text" id="edit_entity_type" class="form-ctrl" placeholder="Select..." onfocus="toggleStaticDrop('as-drop-entity')" readonly>
+                  <div class="as-combo-results" id="as-drop-entity">
+                    <div class="as-res-item" onclick="selectAsItem('edit_entity_type','as-drop-entity','Private Limited Company')">Private Limited Company</div>
+                    <div class="as-res-item" onclick="selectAsItem('edit_entity_type','as-drop-entity','PLC (Share Company)')">PLC (Share Company)</div>
+                    <div class="as-res-item" onclick="selectAsItem('edit_entity_type','as-drop-entity','Sole Proprietorship')">Sole Proprietorship</div>
+                    <div class="as-res-item" onclick="selectAsItem('edit_entity_type','as-drop-entity','NGO')">NGO</div>
+                  </div>
+                </div>
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label style="font-size:0.65rem; font-weight:700; color: var(--muted); margin-bottom:4px;">ESTABLISHMENT DATE</label>
+                <input type="date" id="edit_establishment_date" class="form-ctrl">
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label style="font-size:0.65rem; font-weight:700; color: var(--muted); margin-bottom:4px;">REGISTRATION NUMBER</label>
+                <input id="edit_registration_no" class="form-ctrl" placeholder="e.g. MT/AA/1/0012345/2007">
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label style="font-size:0.65rem; font-weight:700; color: var(--muted); margin-bottom:4px;">TAX ID (TIN)</label>
+                <input id="edit_tin" class="form-ctrl" placeholder="10 digits">
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label style="font-size:0.65rem; font-weight:700; color: var(--muted); margin-bottom:4px;">VAT REGISTRATION NUMBER</label>
+                <input id="edit_vat_reg_number" class="form-ctrl" placeholder="VAT number">
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label style="font-size:0.65rem; font-weight:700; color: var(--muted); margin-bottom:4px;">TRADE LICENSE NUMBER</label>
+                <input id="edit_trade_license_no" class="form-ctrl" placeholder="License number">
+              </div>
+            </div>
+          </div>
+          
+          <!-- COLUMN 2: OPERATIONS & TREASURY -->
+          <div style="display: flex; flex-direction: column; gap: 24px;">
+            <!-- Operations Card -->
+            <div class="profile-card" style="background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 18px;">
+                <div style="width: 32px; height: 32px; background: var(--primary-light); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--primary);">
+                  <i data-lucide="gavel" size="16"></i>
+                </div>
+                <span style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text);">Operational Policies</span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 14px;">
+                <div class="form-group" style="margin:0;">
+                  <label style="font-size:0.65rem; font-weight:700; color: var(--muted); margin-bottom:4px;">STANDARD WORK WEEK</label>
+                  <input id="edit_work_week_desc" class="form-ctrl" placeholder="e.g. Mon-Fri (40 hrs) + Sat Half-day">
+                </div>
+                <div class="form-group" style="margin:0;">
+                  <label style="font-size:0.65rem; font-weight:700; color: var(--muted); margin-bottom:4px;">PROBATION PERIOD (DAYS)</label>
+                  <input type="number" id="edit_probation_days" class="form-ctrl" placeholder="e.g. 60">
+                </div>
+                <div class="form-group" style="margin:0;">
+                  <label style="font-size:0.65rem; font-weight:700; color: var(--muted); margin-bottom:4px;">RETIREMENT AGE</label>
+                  <input type="number" id="edit_retirement_age" class="form-ctrl" placeholder="e.g. 60">
+                </div>
+              </div>
+            </div>
+            
+            <!-- Treasury Card -->
+            <div class="profile-card" style="background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 18px;">
+                <div style="width: 32px; height: 32px; background: var(--primary-light); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--primary);">
+                  <i data-lucide="landmark" size="16"></i>
+                </div>
+                <span style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text);">Treasury & Finance</span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 14px;">
+                <div class="form-group" style="margin:0;">
+                  <label style="font-size:0.65rem; font-weight:700; color: var(--muted); margin-bottom:4px;">MAIN BANK</label>
+                  <input id="edit_main_bank" class="form-ctrl" placeholder="e.g. Commercial Bank of Ethiopia">
+                </div>
+                <div class="form-group" style="margin:0;">
+                  <label style="font-size:0.65rem; font-weight:700; color: var(--muted); margin-bottom:4px;">PRIMARY ACCOUNT</label>
+                  <input id="edit_bank_account_primary" class="form-ctrl" placeholder="Account number">
+                </div>
+                <div class="form-group" style="margin:0;">
+                  <label style="font-size:0.65rem; font-weight:700; color: var(--muted); margin-bottom:4px;">BASE CURRENCY</label>
+                  <div class="as-combo-container">
+                    <input type="text" id="edit_base_currency" class="form-ctrl" placeholder="Select..." onfocus="toggleStaticDrop('as-drop-currency')" readonly>
+                    <div class="as-combo-results" id="as-drop-currency">
+                      <div class="as-res-item" onclick="selectAsItem('edit_base_currency','as-drop-currency','ETB')">ETB (Ethiopian Birr)</div>
+                      <div class="as-res-item" onclick="selectAsItem('edit_base_currency','as-drop-currency','USD')">USD</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-group" style="margin:0;">
+                  <label style="font-size:0.65rem; font-weight:700; color: var(--muted); margin-bottom:4px;">FISCAL YEAR START</label>
+                  <input id="edit_fiscal_start" class="form-ctrl" placeholder="e.g. Hamle 01 (July 08)">
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- COLUMN 3: DIGITAL & SOCIAL -->
+          <div style="display: flex; flex-direction: column; gap: 24px;">
+            <!-- Digital Card -->
+            <div class="profile-card" style="background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 18px;">
+                <div style="width: 32px; height: 32px; background: var(--primary-light); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--primary);">
+                  <i data-lucide="globe" size="16"></i>
+                </div>
+                <span style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text);">Digital Identity</span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 14px;">
+                <div class="form-group" style="margin:0;">
+                  <label style="font-size:0.65rem; font-weight:700; color: var(--muted); margin-bottom:4px;">OFFICIAL WEBSITE</label>
+                  <input id="edit_website" class="form-ctrl" placeholder="https://">
+                </div>
+                <div class="form-group" style="margin:0;">
+                  <label style="font-size:0.65rem; font-weight:700; color: var(--muted); margin-bottom:4px;">CORPORATE EMAIL</label>
+                  <input type="email" id="edit_corporate_email" class="form-ctrl" placeholder="info@company.com">
+                </div>
+                <div class="form-group" style="margin:0;">
+                  <label style="font-size:0.65rem; font-weight:700; color: var(--muted); margin-bottom:4px;">CORPORATE PHONE</label>
+                  <input id="edit_corporate_phone" class="form-ctrl" placeholder="+251...">
+                </div>
+              </div>
+            </div>
+            
+            <!-- Social Media Card -->
+            <div class="profile-card" style="background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 18px;">
+                <div style="width: 32px; height: 32px; background: var(--primary-light); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--primary);">
+                  <i data-lucide="share-2" size="16"></i>
+                </div>
+                <span style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text);">Social Media</span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 14px;">
+                <div class="form-group" style="margin:0;">
+                  <label style="font-size:0.65rem; font-weight:700; color: var(--muted); margin-bottom:4px;">TELEGRAM</label>
+                  <input id="edit_telegram" class="form-ctrl" placeholder="@handle">
+                </div>
+                <div class="form-group" style="margin:0;">
+                  <label style="font-size:0.65rem; font-weight:700; color: var(--muted); margin-bottom:4px;">WHATSAPP</label>
+                  <input id="edit_whatsapp" class="form-ctrl" placeholder="+251...">
+                </div>
+                <div class="form-group" style="margin:0;">
+                  <label style="font-size:0.65rem; font-weight:700; color: var(--muted); margin-bottom:4px;">LINKEDIN</label>
+                  <input id="edit_linkedin" class="form-ctrl" placeholder="Company page URL">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+    
+   <div class="modal-footer">
+  <button class="btn btn-secondary" onclick="closeCompanyModal()">Cancel</button>
+  <button class="btn btn-primary" id="btn-enable-edit" onclick="enableCompanyEdit()">
+    <i data-lucide="edit" size="14"></i> Update
+  </button>
+  <button class="btn btn-primary" id="btn-save-company" onclick="saveCompanyProfile()" style="display: none;">
+    <i data-lucide="save" size="14"></i> Save Changes
+  </button>
+</div>
+  </div>
+</div>
 </div>

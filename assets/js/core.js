@@ -287,7 +287,10 @@ let ocZoom=1.0;
 function zoomOC(delta){const n=ocZoom+delta;if(n>=0.3&&n<=1.5){ocZoom=n;applyOCZoom();}}
 function resetOC(){ocZoom=1.0;applyOCZoom();const bp=document.getElementById('oc-blueprint-area');if(bp)bp.scrollLeft=(bp.scrollWidth-bp.clientWidth)/2;}
 function applyOCZoom(){const c=document.getElementById('oc-zoom-container'),l=document.getElementById('oc-zoom-label');if(c)c.style.transform=`scale(${ocZoom})`;if(l)l.textContent=Math.round(ocZoom*100)+'%';}
-function initOrgChart(){applyOCZoom();initOrgChartDrag();  renderOrgChartDepartments();}
+function initOrgChart(){
+    applyOCZoom();
+    initOrgChartDrag(); 
+}
 function initOrgChartDrag(){
   const slider=document.getElementById('oc-blueprint-area');
   if(!slider||slider.dataset.drag)return; slider.dataset.drag='1';
@@ -308,7 +311,29 @@ function initOrgChartDrag(){
     }
   }, {passive: false});
 }
- 
+function generateOrgChart() {
+    const emptyState = document.getElementById('org-chart-empty');
+    const blueprint = document.getElementById('oc-blueprint-area');
+    const generateBtn = document.getElementById('btn-generate-org');
+    
+    // Show loading state on button
+    const originalHtml = generateBtn.innerHTML;
+    generateBtn.disabled = true;
+    generateBtn.innerHTML = `<i data-lucide="loader-2" class="spin" size="16"></i> Generating...`;
+    lcIcons(generateBtn);
+    
+    // Hide empty state, show blueprint (will be populated)
+    emptyState.style.display = 'none';
+    blueprint.style.display = 'block';
+    
+    // Fetch and render data
+    fetchOrgChartData()
+        .finally(() => {
+            generateBtn.disabled = false;
+            generateBtn.innerHTML = originalHtml;
+            lcIcons(generateBtn);
+        });
+} 
 // ── VAULT MATRIX ──
 function initVaultMatrix() {
   const container = document.getElementById('vault-matrix-container');
@@ -443,7 +468,280 @@ function openDeptModal() {
     document.getElementById('dept-status').value = 'Active';
     enforceDropdownOnBlur('as-input-dept-head');
 }
+// Open modal and populate with current data
+function openCompanyEditModal() {
+    // Fetch current data from the DOM (already displayed in the page)
+    const getText = (selector) => document.querySelector(selector)?.textContent.trim() || '';
+    
+    // Helper to extract text from .de-value elements (they are inside .data-entry)
+    const getValue = (labelText) => {
+        const entries = document.querySelectorAll('.data-entry');
+        for (let entry of entries) {
+            const label = entry.querySelector('.de-label')?.textContent.trim();
+            if (label === labelText) {
+                return entry.querySelector('.de-value')?.textContent.trim() || '';
+            }
+        }
+        return '';
+    };
 
+    // Legal
+    document.getElementById('edit_legal_name').value = getValue('Legal Name');
+    document.getElementById('edit_trading_name').value = getValue('Trading Name');
+    document.getElementById('edit_ceo_name').value = getValue('CEO');
+    document.getElementById('edit_head_office').value = getValue('Head office');
+    document.getElementById('edit_entity_type').value = getValue('Entity Type');
+    
+    const estDateText = getValue('Establishment');
+    if (estDateText !== '-' && estDateText !== '—') {
+        // Convert "Dec 31, 2025" to YYYY-MM-DD
+        const d = new Date(estDateText);
+        if (!isNaN(d)) {
+            document.getElementById('edit_establishment_date').value = d.toISOString().split('T')[0];
+        }
+    }
+    
+    document.getElementById('edit_registration_no').value = getValue('Registration No.');
+    document.getElementById('edit_tin').value = getValue('Tax ID (TIN)');
+    document.getElementById('edit_vat_reg_number').value = getValue('VAT Reg Number');
+    document.getElementById('edit_trade_license_no').value = getValue('Trade License No.');
+
+    // Operational
+    document.getElementById('edit_work_week_desc').value = getValue('Standard Work Week');
+    document.getElementById('edit_probation_days').value = getValue('Probation Period');
+    document.getElementById('edit_retirement_age').value = getValue('Retirement Policy');
+
+    // Treasury
+    document.getElementById('edit_main_bank').value = getValue('Main Bank');
+    document.getElementById('edit_bank_account_primary').value = getValue('Account (Primary)');
+    document.getElementById('edit_base_currency').value = getValue('Base Currency');
+    document.getElementById('edit_fiscal_start').value = getValue('Fiscal Start');
+
+    // Digital
+    document.getElementById('edit_website').value = getValue('Official Website');
+    document.getElementById('edit_corporate_email').value = getValue('Corporate Email');
+    document.getElementById('edit_corporate_phone').value = getValue('Corporate Phone');
+
+    // Social (direct from .de-value)
+    document.getElementById('edit_telegram').value = getValue('Telegram:') || getValue('Telegram');
+    document.getElementById('edit_whatsapp').value = getValue('WhatsApp:') || getValue('WhatsApp');
+    document.getElementById('edit_linkedin').value = getValue('LinkedIn:') || getValue('LinkedIn');
+    // Open modal and populate with current data (all fields disabled)
+    populateCompanyFields();  
+    disableCompanyEdit(); 
+    // Show Update button, hide Save button
+    document.getElementById('btn-enable-edit').style.display = 'inline-flex';
+    document.getElementById('btn-save-company').style.display = 'none';
+    
+    openModal('modal-edit-company');
+}
+// Enable all form fields for editing
+function enableCompanyEdit() {
+    const form = document.getElementById('company-profile-form');
+    const inputs = form.querySelectorAll('input, select, textarea');
+    inputs.forEach(input => {
+        input.disabled = false;
+    });
+    
+    // Toggle buttons
+    document.getElementById('btn-enable-edit').style.display = 'none';
+    document.getElementById('btn-save-company').style.display = 'inline-flex';
+}
+
+// Disable all form fields (read-only mode)
+function disableCompanyEdit() {
+    const form = document.getElementById('company-profile-form');
+    const inputs = form.querySelectorAll('input, select, textarea');
+    inputs.forEach(input => {
+        input.disabled = true;
+    });
+}
+// Save changes (modified to re-disable after success)
+function saveCompanyProfile() {
+    const btn = document.getElementById('btn-save-company');
+    const originalHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<i data-lucide="loader-2" class="spin" size="14"></i> Saving...`;
+    lcIcons(btn);
+
+    // Gather form data (same as before)
+    const formData = new FormData(document.getElementById('company-profile-form'));
+    
+    // Basic validation
+    if (!formData.get('legal_name')) {
+        showNotification('Validation Error', 'Legal Name is required.', 'error');
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+        lcIcons(btn);
+        return;
+    }
+
+    fetch('api/companyprofile/update_company_profile.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            showNotification('Success', result.message || 'Company profile updated.', 'success');
+            closeCompanyModal();
+            // Reload to reflect changes
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showNotification('Error', result.message || 'Update failed.', 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Network Error', error.message, 'error');
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+        lcIcons(btn);
+        // Re-disable fields after save attempt (in case of error, user can try again)
+        disableCompanyEdit();
+        document.getElementById('btn-enable-edit').style.display = 'inline-flex';
+        document.getElementById('btn-save-company').style.display = 'none';
+    });
+}
+
+// Helper to populate fields from existing page data (same as before)
+function populateCompanyFields() {
+    const getValue = (labelText) => {
+        const entries = document.querySelectorAll('.data-entry');
+        for (let entry of entries) {
+            const label = entry.querySelector('.de-label')?.textContent.trim();
+            if (label === labelText) {
+                // Try standard .de-value first, fall back to .badge, then any other span
+                const valueEl = entry.querySelector('.de-value') 
+                             || entry.querySelector('.badge') 
+                             || entry.querySelector('span:not(.de-label)');
+                return valueEl ? valueEl.textContent.trim() : '';
+            }
+        }
+        return '';
+    };
+
+    document.getElementById('edit_legal_name').value = getValue('Legal Name');
+    document.getElementById('edit_trading_name').value = getValue('Trading Name');
+    document.getElementById('edit_ceo_name').value = getValue('CEO');
+    document.getElementById('edit_head_office').value = getValue('Head office');
+    document.getElementById('edit_entity_type').value = getValue('Entity Type');
+    
+    const estDateText = getValue('Establishment');
+    if (estDateText !== '-' && estDateText !== '—') {
+        const d = new Date(estDateText);
+        if (!isNaN(d)) {
+            document.getElementById('edit_establishment_date').value = d.toISOString().split('T')[0];
+        }
+    }
+    
+    document.getElementById('edit_registration_no').value = getValue('Registration No.');
+    document.getElementById('edit_tin').value = getValue('Tax ID (TIN)');
+    document.getElementById('edit_vat_reg_number').value = getValue('VAT Reg Number');
+    document.getElementById('edit_trade_license_no').value = getValue('Trade License No.');
+    
+    // Fixed: now correctly fetches the badge value
+    document.getElementById('edit_work_week_desc').value = getValue('Standard Work Week');
+    
+    document.getElementById('edit_probation_days').value = getValue('Probation Period');
+    document.getElementById('edit_retirement_age').value = getValue('Retirement Policy');
+    document.getElementById('edit_main_bank').value = getValue('Main Bank');
+    document.getElementById('edit_bank_account_primary').value = getValue('Account (Primary)');
+    document.getElementById('edit_base_currency').value = getValue('Base Currency');
+    document.getElementById('edit_fiscal_start').value = getValue('Fiscal Start');
+    document.getElementById('edit_website').value = getValue('Official Website');
+    document.getElementById('edit_corporate_email').value = getValue('Corporate Email');
+    document.getElementById('edit_corporate_phone').value = getValue('Corporate Phone');
+    document.getElementById('edit_telegram').value = getValue('Telegram:') || getValue('Telegram');
+    document.getElementById('edit_whatsapp').value = getValue('WhatsApp:') || getValue('WhatsApp');
+    document.getElementById('edit_linkedin').value = getValue('LinkedIn:') || getValue('LinkedIn');
+}
+
+// Close modal function (unchanged)
+function closeCompanyModal(e) {
+    if (!e || e.target.classList.contains('modal-overlay')) {
+        closeModal('modal-edit-company');
+    }
+}
+
+function saveCompanyProfile() {
+    const btn = document.getElementById('btn-save-company');
+    const originalHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<i data-lucide="loader-2" class="spin" size="13"></i> Saving...`;
+    lcIcons(btn);
+
+    // Gather form data
+    const formData = new FormData();
+    formData.append('legal_name', document.getElementById('edit_legal_name').value.trim());
+    formData.append('trading_name', document.getElementById('edit_trading_name').value.trim());
+    formData.append('ceo_name', document.getElementById('edit_ceo_name').value.trim());
+    formData.append('head_office', document.getElementById('edit_head_office').value.trim());
+    formData.append('entity_type', document.getElementById('edit_entity_type').value.trim());
+    formData.append('establishment_date', document.getElementById('edit_establishment_date').value);
+    formData.append('registration_no', document.getElementById('edit_registration_no').value.trim());
+    formData.append('tin', document.getElementById('edit_tin').value.trim());
+    formData.append('vat_reg_number', document.getElementById('edit_vat_reg_number').value.trim());
+    formData.append('trade_license_no', document.getElementById('edit_trade_license_no').value.trim());
+    formData.append('work_week_desc', document.getElementById('edit_work_week_desc').value.trim());
+    formData.append('probation_days', document.getElementById('edit_probation_days').value);
+    formData.append('retirement_age', document.getElementById('edit_retirement_age').value);
+    formData.append('main_bank', document.getElementById('edit_main_bank').value.trim());
+    formData.append('bank_account_primary', document.getElementById('edit_bank_account_primary').value.trim());
+    formData.append('base_currency', document.getElementById('edit_base_currency').value.trim());
+    formData.append('fiscal_start', document.getElementById('edit_fiscal_start').value.trim());
+    formData.append('website', document.getElementById('edit_website').value.trim());
+    formData.append('corporate_email', document.getElementById('edit_corporate_email').value.trim());
+    formData.append('corporate_phone', document.getElementById('edit_corporate_phone').value.trim());
+    formData.append('telegram', document.getElementById('edit_telegram').value.trim());
+    formData.append('whatsapp', document.getElementById('edit_whatsapp').value.trim());
+    formData.append('linkedin', document.getElementById('edit_linkedin').value.trim());
+    formData.append('csrf_token', document.getElementById('edit_csrf_token').value);
+
+    // Basic validation
+    if (!formData.get('legal_name')) {
+        showNotification('Validation Error', 'Legal Name is required.', 'error');
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+        lcIcons(btn);
+        return;
+    }
+
+    // Placeholder API endpoint (you can replace with actual endpoint later)
+    fetch('api/companyprofile/update_company_profile.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            showNotification('Success', result.message || 'Company profile updated.', 'success');
+            closeCompanyModal();
+            // Reload the page to reflect changes (or you could update DOM directly)
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showNotification('Error', result.message || 'Update failed.', 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Network Error', error.message, 'error');
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+        lcIcons(btn);
+    });
+}
+
+// Hook the "Update records" button to open modal
+document.addEventListener('DOMContentLoaded', function() {
+    const updateBtn = document.querySelector('#p-company-profile .btn-glass-pro-slim');
+    if (updateBtn) {
+        // Replace the inline onclick or add listener
+        updateBtn.addEventListener('click', openCompanyEditModal);
+    }
+});
 function closeDeptModal(e){closeModal('modal-add-dept',e);} 
 function saveDepartment() {
     const deptName = document.getElementById('dept-name');
@@ -890,21 +1188,26 @@ function renderSummary() {
   const dynamicSummaryArea = document.getElementById('rev-dynamic-fields-area');
   dynamicSummaryArea.innerHTML = ''; // Clear previous
 
-  if (dynamicContainer) {
-    const inputs = dynamicContainer.querySelectorAll('input');
-    inputs.forEach(input => {
-      if (input.type === 'hidden') return;
-      // Find the label text for this input
-      const labelText = input.closest('.form-group')?.querySelector('label')?.textContent.replace('*', '').trim() || 'Detail';
-      const val = input.value.trim() || '—';
-      
-      // Append a new row to the summary for each dynamic field
-      const row = document.createElement('div');
-      row.className = 'review-row';
-      row.innerHTML = `<span class="rev-label">${labelText}</span><span class="rev-val">${val}</span>`;
-      dynamicSummaryArea.appendChild(row);
-    });
-  }
+    if (dynamicContainer) {
+        const inputs = dynamicContainer.querySelectorAll('input');
+        inputs.forEach(input => {
+          if (input.type === 'hidden') return;
+          const labelText = input.closest('.form-group')?.querySelector('label')?.textContent.replace('*', '').trim() || 'Detail';
+          let val = input.value.trim() || '—';
+          
+          // Special handling for probation field
+          if (input.id === 'o-probation_val') {
+              const days = input.value.trim();
+              if (days === '0') val = 'No probation';
+              else if (days !== '') val = days + ' Days';
+          }
+          
+          const row = document.createElement('div');
+          row.className = 'review-row';
+          row.innerHTML = `<span class="rev-label">${labelText}</span><span class="rev-val">${val}</span>`;
+          dynamicSummaryArea.appendChild(row);
+        });
+    }
 }
 // 3. Real-time Button States & auto-clears red highlights
 function validateMasterRecord(){
@@ -1163,117 +1466,85 @@ function saveNewEmployee() {
 const inited=new Set();
 let pendingEmployeeVaultData = null;
 // Department data removed for brevity
- 
-function renderOrgChartDepartments() {
-  const container = document.getElementById('dept-tree-container');
-  if (!container) return;
-  
-  // Department data with job titles
-  const departmentsForChart = [  
-    { 
-      name: 'Marketing', 
-      headcount: 195,
-      jobs: [
-        { title: 'Marketing Manager', count: 12 },
-        { title: 'Digital Marketing Specialist', count: 48 },
-        { title: 'Content Creator', count: 35 },
-        { title: 'Social Media Manager', count: 28 },
-        { title: 'Brand Strategist', count: 22 },
-        { title: 'Market Research Analyst', count: 32 },
-        { title: 'PR Specialist', count: 18 }
-      ]
-    },
-    { 
-      name: 'Finance', 
-      headcount: 110,
-      jobs: [
-        { title: 'Finance Manager', count: 8 },
-        { title: 'Senior Accountant', count: 22 },
-        { title: 'Accountant', count: 45 },
-        { title: 'Payroll Specialist', count: 15 },
-        { title: 'Financial Analyst', count: 12 },
-        { title: 'Auditor', count: 8 }
-      ]
-    },
-    { 
-      name: 'HR', 
-      headcount: 82,
-      jobs: [
-        { title: 'HR Manager', count: 5 },
-        { title: 'HR Generalist', count: 28 },
-        { title: 'Recruitment Specialist', count: 18 },
-        { title: 'Training Coordinator', count: 12 },
-        { title: 'Compensation Analyst', count: 9 },
-        { title: 'HR Assistant', count: 10 }
-      ]
-    }, 
-    { 
-      name: 'IT', 
-      headcount: 16,
-      jobs: [
-        { title: 'IT Manager', count: 2 },
-        { title: 'System Administrator', count: 5 },
-        { title: 'Network Engineer', count: 4 },
-        { title: 'Help Desk Support', count: 3 },
-        { title: 'Security Specialist', count: 2 }
-      ]
-    }
-  ];
-  
-  let html = '';
-  departmentsForChart.forEach(dept => {
-    // Build submenu items for job titles
-    let submenuHtml = '';
-    if (dept.jobs && dept.jobs.length > 0) {
-      submenuHtml = '<ul class="submenu-jobs" style="padding-top:20px;">';
-      dept.jobs.forEach(job => {
-        submenuHtml += `
-          <li>
-            <div class="oc-node oc-staff" style="width:160px; border-top:2px solid var(--primary-light);">
-              <div class="oc-node-body" style="padding:12px; text-align:center; flex-direction:column;">
-                <div class="oc-node-name" style="font-size:.75rem; font-weight:700;">${job.title}</div>
-                <div class="oc-node-role" style="font-size:.6rem; margin-top:4px;">${job.count} employees</div>
-              </div>
-            </div>
-          </li>
-        `;
-      });
-      submenuHtml += '</ul>';
-    }
-    
-    html += `
-      <li>
-        <div class="oc-node oc-mgr">
-          <div class="oc-node-header">
-            <span class="oc-id">${dept.name.toUpperCase()}</span>
-            <span class="badge badge-primary" style="font-size:8px;">${dept.headcount} EMP</span>
-          </div>
-          <div class="oc-node-body">
-            <div class="oc-node-avatar" style="background:var(--primary-light);color:var(--primary);">
-              <i data-lucide="users" size="20"></i>
-            </div>
-            <div class="oc-node-info">
-              <div class="oc-node-name">${dept.name}</div>
-              <div class="oc-node-role">Department</div>
-            </div>
-          </div>
-          <div class="oc-node-footer">
-            ${dept.jobs.length} Positions
-          </div>
-        </div>
-        ${submenuHtml}
-      </li>
-    `;
-  });
-  container.innerHTML = html;
-  
-  // Refresh icons
-  setTimeout(() => {
-    if (typeof lcIcons === 'function') lcIcons(container);
-  }, 50);
+function fetchOrgChartData() {
+    const container = document.getElementById('dept-tree-container');
+    if (!container) return Promise.reject('Container not found');
+
+    container.innerHTML = '<div style="padding:40px; text-align:center;"><i data-lucide="loader-2" class="spin"></i> Loading structure...</div>';
+    lcIcons(container);
+
+    return fetch('api/companyprofile/fetch_org_chart.php')
+        .then(r => r.json())
+        .then(res => {
+            if (!res.success) throw new Error(res.message);
+            renderOrgChartFromData(res.data);
+        })
+        .catch(err => {
+            container.innerHTML = `<div style="padding:40px; text-align:center; color:var(--danger);">Error: ${err.message}</div>`;
+            throw err;
+        });
 }
+function renderOrgChartFromData(data) {
+    const container = document.getElementById('dept-tree-container');
+    const departments = data.departments;
 
+    let html = '';
+    departments.forEach(dept => {
+        let submenuHtml = '';
+        if (dept.jobs && dept.jobs.length > 0) {
+            submenuHtml = '<ul class="submenu-jobs" style="padding-top:20px;">';
+            dept.jobs.forEach(job => {
+                submenuHtml += `
+                    <li>
+                        <div class="oc-node oc-staff" style="width:160px; border-top:2px solid var(--primary-light);">
+                            <div class="oc-node-body" style="padding:12px; text-align:center; flex-direction:column;">
+                                <div class="oc-node-name" style="font-size:.75rem; font-weight:700;">${job.title}</div>
+                                <div class="oc-node-role" style="font-size:.6rem; margin-top:4px;">${job.count} employees</div>
+                            </div>
+                        </div>
+                    </li>
+                `;
+            });
+            submenuHtml += '</ul>';
+        }
 
+        html += `
+            <li>
+                <div class="oc-node oc-mgr">
+                    <div class="oc-node-header">
+                        <span class="oc-id">${dept.name.toUpperCase()}</span>
+                        <span class="badge badge-primary" style="font-size:8px;">${dept.headcount} EMP</span>
+                    </div>
+                    <div class="oc-node-body">
+                        <div class="oc-node-avatar" style="background:var(--primary-light);color:var(--primary);">
+                            <i data-lucide="users" size="20"></i>
+                        </div>
+                        <div class="oc-node-info">
+                            <div class="oc-node-name">${dept.name}</div>
+                            <div class="oc-node-role">Department</div>
+                        </div>
+                    </div>
+                    <div class="oc-node-footer">
+                        ${dept.position_count} Positions
+                    </div>
+                </div>
+                ${submenuHtml}
+            </li>
+        `;
+    });
+
+    container.innerHTML = html;
+    
+    // Update root node stats
+    const totalBadge = document.getElementById('oc-total-badge');
+    if (totalBadge) totalBadge.textContent = `${data.total} TOTAL`;
+    
+    const deptCountFooter = document.getElementById('oc-dept-count');
+    if (deptCountFooter) deptCountFooter.textContent = `${departments.length} Departments`;
+
+    lcIcons(container);
+}
+  
 function initPage(id){
   if(inited.has(id))return;
   inited.add(id);
@@ -2905,7 +3176,7 @@ function updateEmploymentFields(type) {
             <label>Probation Duration (Days) *</label>
             <div style="display: flex; gap: 10px; align-items: center;">
                 <input type="number" id="o-probation_val" class="form-ctrl master-req" 
-                       placeholder="e.g. 90" value="45" style="width: 100px;">
+                       placeholder="e.g. 90" value="60" style="width: 100px;"> 
                 <span style="font-size: 0.75rem; color: var(--muted);">Total days from hire date</span>
                 <input type="hidden" id="o-probation" value="">
             </div>
@@ -2990,18 +3261,22 @@ function updateEmploymentFields(type) {
     // Enforce dropdown selection for reporting manager
     enforceDropdownOnBlur('o-reports');
 
-    // Sync probation values if present
     const pVal = document.getElementById('o-probation_val');
     const pHidden = document.getElementById('o-probation');
     if (pVal && pHidden) {
-        pVal.addEventListener('input', () => {
-            pHidden.value = pVal.value ? pVal.value + " Days" : "";
+        const updateHidden = () => {
+            const days = pVal.value.trim();
+            if (days === '0' || days === '') {
+                pHidden.value = 'No probation';
+            } else {
+                pHidden.value = days + ' Days';
+            }
             validateMasterRecord();
-        });
-        // Set initial hidden value
-        pHidden.value = pVal.value ? pVal.value + " Days" : "";
+        };
+        pVal.addEventListener('input', updateHidden);
+        updateHidden();
     }
-
+ 
     validateMasterRecord();
 }
 function showNotification(title, message, type = 'success') {

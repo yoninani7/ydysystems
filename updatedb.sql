@@ -40,8 +40,11 @@ CREATE TABLE company_profile (
     corporate_phone     VARCHAR(50),
     telegram            VARCHAR(150),
     whatsapp            VARCHAR(150),
-    linkedin            VARCHAR(150),
-    updated_at          TIMESTAMP       DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    linkedin            VARCHAR(150), 
+    created_by              INT          NULL,
+    updated_at          TIMESTAMP       DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+
 );
 
 CREATE TABLE employment_types (

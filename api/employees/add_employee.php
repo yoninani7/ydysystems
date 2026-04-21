@@ -517,28 +517,33 @@ try {
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
-    // 10b. Record Probation (If applicable)
-    // ─────────────────────────────────────────────────────────────────────────────
-    $probationDays = null;
+// 10b. Record Probation (If applicable)
+// ─────────────────────────────────────────────────────────────────────────────
+$probationDays = null;
+
+// 1. Extract numeric days from either hidden or visible input
+if (isset($_POST['probation_days']) && $_POST['probation_days'] !== '') {
+    $probationDays = (int)$_POST['probation_days'];
+} else {
     $probationPeriodString = trim($_POST['probation_period'] ?? '');
-    if (isset($_POST['probation_days']) && $_POST['probation_days'] !== '') {
-        $probationDays = (int)$_POST['probation_days'];
-    } elseif ($probationPeriodString !== '' && !str_contains(strtolower($probationPeriodString), 'no probation')) {
+    if ($probationPeriodString !== '' && !str_contains(strtolower($probationPeriodString), 'no probation')) {
+        // Attempt to parse numeric value from string like "60 Days"
         if (preg_match('/(\d+)\s*Days?/i', $probationPeriodString, $matches)) {
             $probationDays = (int)$matches[1];
         }
     }
+}
+
+// 2. Only create probation record if days > 0 and hire_date is valid
+if ($probationDays > 0 && !empty($data['hire_date'])) {
+    $startDate = $data['hire_date'];
     
-    if ($probationDays !== null && !empty($data['hire_date'])) {
-        $startDate = $data['hire_date'];
-        $endDate = date('Y-m-d', strtotime($startDate . " + $probationDays days"));
-        
-        $probStmt = $pdo->prepare("
-            INSERT INTO probation_records (employee_id, start_date, end_date, status)
-            VALUES (?, ?, ?, 'Active')
-        ");
-        $probStmt->execute([$newEmployeeRowId, $startDate, $endDate]);
-    }
+    // Use SQL DATE_ADD for precise calculation
+    $pdo->prepare("
+        INSERT INTO probation_records (employee_id, start_date, end_date, status)
+        VALUES (?, ?, DATE_ADD(?, INTERVAL ? DAY), 'Active')
+    ")->execute([$newEmployeeRowId, $startDate, $startDate, $probationDays]);
+}
 
     // Audit log
     $auditStmt = $pdo->prepare("
