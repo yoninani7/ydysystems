@@ -1462,8 +1462,8 @@ function initPage(id){
                 render: (v, row) => {
                     const days = parseInt(row.days);
                     if (v === 'Extended') return b('warning', 'Extended');
-                    if (days < 14) return b('danger', 'Ending Soon');
-                    if(days<=0)return b('warning', 'Ending Soon');
+                    if (days <= 0) return b('danger', 'Ended');
+                    if (days < 14) return b('warning', 'Ending Soon');
                     return b('info', 'Active');
                 }
             },
