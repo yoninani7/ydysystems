@@ -51,10 +51,12 @@ try {
             ts.venue,
             ts.total_seats,
             ts.enrolled_seats,
-            ts.status
+            ts.status,
+            COALESCE(u.username, 'System') AS updated_by_name
         FROM training_schedules ts
         LEFT JOIN departments d ON ts.department_id = d.id
         LEFT JOIN employees e ON ts.trainer_id = e.id
+        LEFT JOIN users u ON ts.updated_by = u.id
         $searchCondition
         ORDER BY ts.training_date ASC
         LIMIT ? OFFSET ?
