@@ -50,11 +50,13 @@ try {
             r.filed_date AS filed,
             CONCAT(h.first_name, ' ', h.last_name) AS assigned,
             r.priority,
-            r.status
+            r.status,
+            COALESCE(u.username, 'System') AS updated_by_name
         FROM resignations r
         JOIN employees e ON r.employee_id = e.id
         LEFT JOIN departments d ON e.department_id = d.id
         LEFT JOIN employees h ON r.assigned_to = h.id
+        LEFT JOIN users u ON r.updated_by = u.id
         $searchCondition
         ORDER BY r.filed_date DESC
         LIMIT ? OFFSET ?
