@@ -43,9 +43,11 @@ try {
             c.full_name AS name,
             COALESCE(jv.title, 'General Application') AS position,
             c.applied_date AS applied,
-            c.current_stage AS stage
+            c.current_stage AS stage,
+            COALESCE(u.username, 'System') AS updated_by_name
         FROM candidates c
         LEFT JOIN job_vacancies jv ON c.vacancy_id = jv.id
+        LEFT JOIN users u ON c.updated_by = u.id
         $searchCondition
         ORDER BY c.applied_date DESC
         LIMIT ? OFFSET ?
