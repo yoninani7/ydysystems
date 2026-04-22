@@ -18,7 +18,7 @@ if (!$employee_id) {
 
 try {
     $pdo = get_pdo();
-    $stmt = $pdo->prepare("SELECT end_date FROM probation_records WHERE employee_id = ? AND status = 'Active' ORDER BY end_date DESC LIMIT 1");
+    $stmt = $pdo->prepare("SELECT end_date FROM probation_records WHERE employee_id = ? ORDER BY end_date DESC LIMIT 1");
     $stmt->execute([$employee_id]);
     $data = $stmt->fetch();
     if ($data) {

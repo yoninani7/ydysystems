@@ -242,17 +242,20 @@
 </div> 
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<div class="modal-overlay" id="confirm-modal">
+<div class="modal-overlay" id="confirm-modal" onclick="if(event.target.id==='confirm-modal') closeConfirm()">
   <div class="modal-box" style="max-width: 400px;">
     <div class="modal-header">
-      <div id="confirm-title" style="font-weight: 800;">Confirm Action</div>
+      <div>
+        <div id="confirm-title" style="font-weight: 800; font-size: 1.1rem;">Confirm Action</div>
+      </div>
+      <button class="icon-btn" onclick="closeConfirm()"><i data-lucide="x" size="18"></i></button>
     </div>
     <div class="modal-body" id="confirm-body" style="font-size: 0.85rem;">
       Are you sure?
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeConfirm()">Cancel</button>
-      <button class="btn btn-primary" id="confirm-btn-yes">Yes, Logout</button>
+    <div class="modal-footer" style="background: #f8fafc; border-bottom-left-radius: 14px; border-bottom-right-radius: 14px;">
+      <button class="btn btn-secondary" onclick="closeConfirm()" style="font-size: 0.8rem; padding: 8px 20px;">Cancel</button>
+      <button class="btn btn-primary" id="confirm-btn-yes" style="font-size: 0.8rem; padding: 8px 20px;">Confirm</button>
     </div>
   </div>
 </div>
@@ -467,10 +470,6 @@
         <label style="font-weight:700;">New End Date *</label>
         <input type="date" id="new-end-date" class="form-ctrl" style="width:100%;">
         <div style="font-size:0.7rem; color:var(--muted); margin-top:6px;">Must be on or after current end date.</div>
-      </div>
-      <div class="form-group">
-        <label>Reason / Notes</label>
-        <textarea id="extend-notes" class="form-ctrl" rows="3" placeholder="Optional notes..."></textarea>
       </div>
     </div>
     <div class="modal-footer">

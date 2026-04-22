@@ -3484,7 +3484,6 @@ function savePermissionChanges() {
 function openProbationEvalModal(empId, empName) {
   document.getElementById('eval-emp-id').value = empId;
   document.getElementById('eval-modal-title').textContent = `Evaluate ${empName}`;
-  document.getElementById('eval-notes').value = '';
   openModal('modal-probation-eval');
 }
 
@@ -3493,7 +3492,6 @@ let pendingEvalData = null;
 
 function submitProbationEval(decision) {
   const empId = document.getElementById('eval-emp-id').value;
-  const notes = document.getElementById('eval-notes').value.trim();
   const csrfToken = document.getElementById('probation_eval_csrf_token')?.value || '';
   const empName = document.getElementById('eval-modal-title')?.textContent.replace('Evaluate ', '') || 'Employee';
 
@@ -3506,11 +3504,7 @@ function submitProbationEval(decision) {
   closeModal('modal-probation-eval');
 
   if (decision === 'Extend') {
-    // For Extend, we need to know current end date – fetch it from the table row or API.
-    // We'll pass it via a data attribute or fetch from server.
-    // For simplicity, we'll store the employee ID and open the extension modal.
-    // The current end date can be fetched from the probation record via a quick API call.
-    openExtendProbationModal(empId, empName, csrfToken, notes);
+    openExtendProbationModal(empId, empName, csrfToken);
     return;
   }
 
@@ -3518,13 +3512,14 @@ function submitProbationEval(decision) {
   const actionText = decision === 'Hire' ? 'confirm this employee as permanent' : 'terminate this employee';
   const confirmTitle = decision === 'Hire' ? 'Confirm Hire' : 'Confirm Termination';
   const confirmBody = `Are you sure you want to ${actionText}?`;
+  const confirmBtnText = decision === 'Hire' ? 'Yes, Confirm Hire' : 'Yes, Terminate';
 
-  openConfirm(confirmTitle, confirmBody);
+  openConfirm(confirmTitle, confirmBody, confirmBtnText);
 
   document.getElementById('confirm-btn-yes').onclick = function() {
     closeConfirm();
     // Proceed with the API call
-    executeProbationDecision(empId, decision, notes, csrfToken);
+    executeProbationDecision(empId, decision, '', csrfToken);
   };
 }
 
@@ -3568,11 +3563,10 @@ function executeProbationDecision(empId, decision, notes, csrfToken) {
 }
 
 // Open the Extend Probation modal and populate current end date
-function openExtendProbationModal(empId, empName, csrfToken, existingNotes) {
+function openExtendProbationModal(empId, empName, csrfToken) {
   // Set employee ID and CSRF token
   document.getElementById('extend-emp-id').value = empId;
   document.getElementById('extend-csrf-token').value = csrfToken;
-  document.getElementById('extend-notes').value = existingNotes || '';
 
   // Fetch current probation end date from the table row or via API
   // Since we don't have it readily in the modal, we can make a quick fetch
@@ -3600,7 +3594,6 @@ function submitExtendProbation() {
   const empId = document.getElementById('extend-emp-id').value;
   const csrfToken = document.getElementById('extend-csrf-token').value;
   const newEndDate = document.getElementById('new-end-date').value;
-  const notes = document.getElementById('extend-notes').value.trim();
   const currentEnd = document.getElementById('current-end-date').textContent;
 
   if (!newEndDate) {
@@ -3622,7 +3615,7 @@ function submitExtendProbation() {
     employee_id: empId,
     decision: 'Extend',
     new_end_date: newEndDate,
-    notes: notes,
+    notes: '',
     csrf_token: csrfToken
   };
 
@@ -3954,7 +3947,7 @@ function showNotification(title, message, type = 'success') {
   };
 }
 function handleLogout() {
-  openConfirm("Logout Session", "Are you sure you want to Logout now?");
+  openConfirm("Logout Session", "Are you sure you want to Logout now?", "Yes, Logout");
   document.getElementById('confirm-btn-yes').onclick = function () {
     // Proceed with logout
     showNotification("Security", "Ending secure session. Redirecting...", "danger");
@@ -3965,9 +3958,10 @@ function handleLogout() {
     closeConfirm(); // Close after finishing
   };
 }
-function openConfirm(title, message) {
+function openConfirm(title, message, btnText = "Confirm") {
   document.getElementById('confirm-title').innerText = title;
   document.getElementById('confirm-body').innerText = message;
+  document.getElementById('confirm-btn-yes').innerText = btnText;
   document.getElementById('confirm-modal').classList.add('open');
 }
 
