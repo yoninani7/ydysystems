@@ -43,22 +43,24 @@ try {
     $total = (int)$stmt->fetchColumn();
      
     $sql = "
-        SELECT 
-            u.id,
-            COALESCE(CONCAT(e.first_name, ' ', e.last_name), u.username) AS name,
-            u.email,
-            r.name AS role,
-            COALESCE(d.name, 'N/A') AS dept,
-            u.last_login,
-            u.status
-        FROM users u
-        LEFT JOIN roles r ON u.role_id = r.id
-        LEFT JOIN employees e ON u.employee_id = e.id
-        LEFT JOIN departments d ON u.department_id = d.id
-        $searchCondition
-        ORDER BY u.created_at DESC
-        LIMIT ? OFFSET ?
-    ";
+    SELECT 
+        u.id,
+        COALESCE(CONCAT(e.first_name, ' ', e.last_name), u.username) AS name,
+        u.email,
+        r.name AS role,
+        COALESCE(d.name, 'N/A') AS dept,
+        u.last_login,
+        u.status,
+        COALESCE(updater.username, 'System') AS updated_by_name
+    FROM users u
+    LEFT JOIN roles r ON u.role_id = r.id
+    LEFT JOIN employees e ON u.employee_id = e.id
+    LEFT JOIN departments d ON u.department_id = d.id
+    LEFT JOIN users updater ON u.updated_by = updater.id
+    $searchCondition
+    ORDER BY u.created_at DESC
+    LIMIT ? OFFSET ?
+";
     
     $stmt = $pdo->prepare($sql);
     $allParams = $params;
