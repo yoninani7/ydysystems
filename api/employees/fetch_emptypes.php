@@ -34,15 +34,17 @@ try {
     
     // Select the name, description (aliased as desc), and count active employees
     $sql = "
-        SELECT 
-            et.name,
-            et.description AS `desc`,
-            (SELECT COUNT(*) FROM employees e WHERE e.employment_type_id = et.id AND e.status = 'Active') AS count
-        FROM employment_types et
-        $searchCondition
-        ORDER BY et.id ASC
-        LIMIT ? OFFSET ?
-    ";
+    SELECT 
+        et.name,
+        et.description AS `desc`,
+        (SELECT COUNT(*) FROM employees e WHERE e.employment_type_id = et.id AND e.status = 'Active') AS count,
+        COALESCE(u.username, 'System') AS updated_by_name
+    FROM employment_types et
+    LEFT JOIN users u ON et.updated_by = u.id
+    $searchCondition
+    ORDER BY et.id ASC
+    LIMIT ? OFFSET ?
+";
     
     $stmt = $pdo->prepare($sql);
     $allParams = $params;
