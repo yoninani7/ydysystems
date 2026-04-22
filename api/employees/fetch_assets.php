@@ -44,26 +44,28 @@ try {
     $total = (int)$stmt->fetchColumn();
      
     $sql = "
-        SELECT 
-            a.asset_code AS id,
-            a.name AS name,
-            ac.name AS cat,
-            a.serial_number AS serial,
-            a.asset_value AS val,
-            CONCAT(e_prev.first_name, ' ', e_prev.last_name) AS user_prev,
-            CONCAT(e_curr.first_name, ' ', e_curr.last_name) AS user,
-            b.name AS loc,
-            a.warranty_expiry AS war,
-            a.status
-        FROM assets a
-        LEFT JOIN asset_categories ac ON a.category_id = ac.id
-        LEFT JOIN employees e_curr ON a.current_custodian_id = e_curr.id
-        LEFT JOIN employees e_prev ON a.previous_custodian_id = e_prev.id
-        LEFT JOIN branches b ON a.location_branch_id = b.id
-        $searchCondition
-        ORDER BY a.created_at DESC
-        LIMIT ? OFFSET ?
-    ";
+    SELECT 
+        a.asset_code AS id,
+        a.name AS name,
+        ac.name AS cat,
+        a.serial_number AS serial,
+        a.asset_value AS val,
+        CONCAT(e_prev.first_name, ' ', e_prev.last_name) AS user_prev,
+        CONCAT(e_curr.first_name, ' ', e_curr.last_name) AS user,
+        b.name AS loc,
+        a.warranty_expiry AS war,
+        a.status,
+        COALESCE(u.username, 'System') AS updated_by_name
+    FROM assets a
+    LEFT JOIN asset_categories ac ON a.category_id = ac.id
+    LEFT JOIN employees e_curr ON a.current_custodian_id = e_curr.id
+    LEFT JOIN employees e_prev ON a.previous_custodian_id = e_prev.id
+    LEFT JOIN branches b ON a.location_branch_id = b.id
+    LEFT JOIN users u ON a.updated_by = u.id
+    $searchCondition
+    ORDER BY a.created_at DESC
+    LIMIT ? OFFSET ?
+";
     
     $stmt = $pdo->prepare($sql);
     $allParams = $params;
