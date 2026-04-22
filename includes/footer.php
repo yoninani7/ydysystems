@@ -256,3 +256,193 @@
     </div>
   </div>
 </div>
+<!-- MODAL: EDIT JOB POSITION -->
+<div class="modal-overlay" id="modal-edit-job-position" onclick="closeEditJobModal(event)">
+  <input type="hidden" id="edit_job_csrf_token" value="<?php echo csrf_token(); ?>">
+  <input type="hidden" id="edit_job_id">
+  <div class="modal-box" style="max-width:500px;overflow:visible;">
+    <div class="modal-header">
+      <div>
+        <div style="font-size:1rem;font-weight:800;">Edit Job Position</div>
+        <div style="font-size:.75rem;color:var(--muted);margin-top:3px;">Update title or reassign department</div>
+      </div>
+      <button class="icon-btn" onclick="closeEditJobModal()"><i data-lucide="x" size="15"></i></button>
+    </div>
+    <div class="modal-body" style="overflow:visible;">
+      <div class="form-grid fg-2">
+        <!-- Job Title -->
+        <div class="form-group" style="grid-column:span 2;">
+          <label>Job Title *</label>
+          <input id="edit-job-title" placeholder="e.g. Senior Software Engineer" class="form-ctrl">
+        </div>
+        
+        <!-- Department Selection -->
+        <div class="form-group" style="position:relative;grid-column:span 2;">
+          <label>Department *</label>
+          <div class="as-combo-container">
+            <input type="text" id="as-input-edit-job-dept" 
+                   data-dropdown-type="departments"
+                   placeholder="Search department..." 
+                   onfocus="showAsDrop('as-drop-edit-job-dept')" 
+                   oninput="filterAsDrop('as-input-edit-job-dept','as-drop-edit-job-dept')" 
+                   autocomplete="off">
+            <div class="as-combo-results" id="as-drop-edit-job-dept"></div>
+          </div>
+        </div>
+
+        <!-- Status -->
+        <div class="form-group" style="grid-column:span 2;">
+          <label>Status</label>
+          <div class="as-combo-container">
+            <input type="text" id="edit-job-status" class="form-ctrl" value="Active" 
+                   onfocus="toggleStaticDrop('as-drop-edit-job-status')" style="cursor:pointer;" readonly>
+            <div class="as-combo-results" id="as-drop-edit-job-status">
+              <div class="as-res-item" onclick="selectAsItem('edit-job-status','as-drop-edit-job-status','Active')">Active</div>
+              <div class="as-res-item" onclick="selectAsItem('edit-job-status','as-drop-edit-job-status','Inactive')">Inactive</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeEditJobModal()">Cancel</button>
+      <button class="btn btn-primary" id="btn-update-job" onclick="updateJobPosition()">
+        <i data-lucide="check" size="13"></i> Save Changes
+      </button>
+    </div>
+  </div>
+</div>
+<!-- MODAL: EDIT DEPARTMENT -->
+<div class="modal-overlay" id="modal-edit-dept" onclick="closeEditDeptModal(event)">
+  <input type="hidden" id="edit_dept_csrf_token" value="<?php echo csrf_token(); ?>">
+  <input type="hidden" id="edit_dept_id">
+  <div class="modal-box" style="max-width:500px;overflow:visible;">
+    <div class="modal-header">
+      <div>
+        <div style="font-size:1rem;font-weight:800;">Edit Department</div>
+        <div style="font-size:.75rem;color:var(--muted);margin-top:3px;">Rename department or change head</div>
+      </div>
+      <button class="icon-btn" onclick="closeEditDeptModal()"><i data-lucide="x" size="15"></i></button>
+    </div>
+    <div class="modal-body" style="overflow:visible;">
+      <div class="form-grid fg-2">
+        <!-- Department Name -->
+        <div class="form-group" style="grid-column:span 2;">
+          <label>Department Name *</label>
+          <input id="edit-dept-name" placeholder="e.g. Engineering" class="form-ctrl">
+        </div>
+        
+        <!-- Head of Department (Employee Dropdown) -->
+        <div class="form-group" style="position:relative;grid-column:span 2;">
+          <label>Head of Department</label>
+          <div class="as-combo-container">
+            <input type="text" id="as-input-edit-dept-head" 
+                   data-dropdown-type="employees"
+                   placeholder="Search employee..." 
+                   onfocus="showAsDrop('as-drop-edit-dept-head')" 
+                   oninput="filterAsDrop('as-input-edit-dept-head','as-drop-edit-dept-head')"
+                   autocomplete="off">
+            <div class="as-combo-results" id="as-drop-edit-dept-head"></div>
+          </div>
+        </div>
+
+        <!-- Status -->
+        <div class="form-group" style="grid-column:span 2;">
+          <label>Status</label>
+          <div class="as-combo-container">
+            <input type="text" id="edit-dept-status" class="form-ctrl" value="Active" 
+                   onfocus="toggleStaticDrop('as-drop-edit-dept-status')" style="cursor:pointer;" readonly>
+            <div class="as-combo-results" id="as-drop-edit-dept-status">
+              <div class="as-res-item" onclick="selectAsItem('edit-dept-status','as-drop-edit-dept-status','Active')">Active</div>
+              <div class="as-res-item" onclick="selectAsItem('edit-dept-status','as-drop-edit-dept-status','Inactive')">Inactive</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeEditDeptModal()">Cancel</button>
+      <button class="btn btn-primary" id="btn-update-dept" onclick="updateDepartment()">
+        <i data-lucide="check" size="13"></i> Save Changes
+      </button>
+    </div>
+  </div>
+</div>
+<!-- MODAL: EDIT BRANCH -->
+<div class="modal-overlay" id="modal-edit-branch" onclick="closeEditBranchModal(event)">
+  <input type="hidden" id="edit_branch_csrf_token" value="<?php echo csrf_token(); ?>">
+  <input type="hidden" id="edit_branch_id">
+  <div class="modal-box" style="max-width:550px; overflow:visible;">
+    <div class="modal-header">
+      <div>
+        <div style="font-size:1rem; font-weight:800;">Edit Branch</div>
+        <div style="font-size:.75rem; color:var(--muted); margin-top:3px;">Update branch details and management</div>
+      </div>
+      <button class="icon-btn" onclick="closeEditBranchModal()"><i data-lucide="x" size="15"></i></button>
+    </div>
+    
+    <div class="modal-body" style="overflow:visible;">
+      <div class="form-grid fg-2">
+        <!-- Branch Name -->
+        <div class="form-group" style="grid-column: span 2;">
+          <label>Branch Name *</label>
+          <input type="text" id="edit-branch-name" placeholder="e.g. Headquarters / North Hub" class="form-ctrl">
+        </div>
+
+        <!-- Branch Manager (Dynamic Dropdown) -->
+        <div class="form-group" style="position:relative;">
+          <label>Branch Manager</label>
+          <div class="as-combo-container">
+            <input type="text" id="as-input-edit-branch-mgr" 
+                   data-dropdown-type="employees"
+                   placeholder="Search manager..." 
+                   onfocus="showAsDrop('as-drop-edit-branch-mgr')" 
+                   oninput="filterAsDrop('as-input-edit-branch-mgr','as-drop-edit-branch-mgr')"
+                   autocomplete="off">
+            <div class="as-combo-results" id="as-drop-edit-branch-mgr"></div>
+          </div>
+        </div>
+
+        <!-- Status -->
+        <div class="form-group">
+          <label>Operating Status</label>
+          <div class="as-combo-container">
+            <input type="text" id="edit-branch-status" class="form-ctrl" value="Active" 
+                   onfocus="toggleStaticDrop('as-drop-edit-branch-status')" readonly>
+            <div class="as-combo-results" id="as-drop-edit-branch-status">
+              <div class="as-res-item" onclick="selectAsItem('edit-branch-status','as-drop-edit-branch-status','Active')">Active</div>
+              <div class="as-res-item" onclick="selectAsItem('edit-branch-status','as-drop-edit-branch-status','Inactive')">Inactive</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Phone & Email -->
+        <div class="form-group">
+          <label>Phone Number</label>
+          <input type="text" id="edit-branch-phone" placeholder="+251..." class="form-ctrl">
+        </div>
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" id="edit-branch-email" placeholder="branch@company.com" class="form-ctrl">
+        </div>
+
+        <!-- City & Address -->
+        <div class="form-group">
+          <label>City</label>
+          <input type="text" id="edit-branch-city" placeholder="e.g. Addis Ababa" class="form-ctrl">
+        </div>
+        <div class="form-group">
+          <label>Specific Address</label>
+          <input type="text" id="edit-branch-address" placeholder="Sub-city, Woreda, Building..." class="form-ctrl">
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeEditBranchModal()">Cancel</button>
+      <button class="btn btn-primary" id="btn-update-branch" onclick="updateBranch()">
+        <i data-lucide="check" size="13"></i> Save Changes
+      </button>
+    </div>
+  </div>
+</div>
