@@ -49,11 +49,13 @@ try {
             da.action_type AS type,
             da.incident_date AS incident,
             da.issued_date AS issued,
-            CONCAT(issuer.first_name, ' ', issuer.last_name) AS issuer_name
+            CONCAT(issuer.first_name, ' ', issuer.last_name) AS issuer_name,
+            COALESCE(u.username, 'System') AS updated_by_name
         FROM disciplinary_actions da
         JOIN employees e ON da.employee_id = e.id
         LEFT JOIN departments d ON e.department_id = d.id
         LEFT JOIN employees issuer ON da.issued_by = issuer.id
+        LEFT JOIN users u ON da.updated_by = u.id
         $searchCondition
         ORDER BY da.issued_date DESC
         LIMIT ? OFFSET ?
