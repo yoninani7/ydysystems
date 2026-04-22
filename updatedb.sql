@@ -184,7 +184,7 @@ CREATE TABLE probation_records (
     start_date     DATE      NOT NULL,
     end_date       DATE      NOT NULL,
     notes          TEXT,
-    status         ENUM('Active','Completed','Extended','Failed') DEFAULT 'Active',
+    status         ENUM('Active','Completed','Failed') DEFAULT 'Active',
     created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
     updated_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by      INT          NULL,
