@@ -48,16 +48,20 @@ try {
 
     // Fetch paginated data
     $sql = "
-        SELECT 
-            b.name,
-            CONCAT(e.first_name, ' ', COALESCE(e.middle_name, ''), ' ', e.last_name) AS manager,
-            b.phone,
-            b.email,
-            b.city AS location,
-            (SELECT COUNT(*) FROM employees emp WHERE emp.branch_id = b.id AND emp.status = 'Active') AS emp,
-            b.status
+    SELECT 
+        b.id,
+        b.name,
+        CONCAT(e.first_name, ' ', COALESCE(e.middle_name, ''), ' ', e.last_name) AS manager,
+        b.phone,
+        b.email,
+        b.city AS location,
+        b.address,
+        (SELECT COUNT(*) FROM employees emp WHERE emp.branch_id = b.id AND emp.status = 'Active') AS emp,
+        b.status,
+        COALESCE(u.username, 'System') AS updated_by_name
         FROM branches b
         LEFT JOIN employees e ON b.manager_id = e.id
+        LEFT JOIN users u ON b.updated_by = u.id
         $searchCondition
         ORDER BY b.name ASC
         LIMIT ? OFFSET ?
