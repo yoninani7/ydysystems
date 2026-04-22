@@ -27,35 +27,42 @@ try {
         $params = [$searchTerm];
     }
 
-    // 1. Get the global document requirements defined in the system
-    $typeStmt = $pdo->query("SELECT id, code, name, category FROM document_types WHERE is_mandatory = 1 ORDER BY id ASC");
-    $docTypes = $typeStmt->fetchAll(PDO::FETCH_ASSOC);
+    // 1. Get the global document requirements defined in the system 
+        $typeStmt = $pdo->query("SELECT id, code, name, category FROM document_types WHERE is_mandatory = 1 ORDER BY id ASC");
+        $docTypes = $typeStmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Count query
-    $countSql = "SELECT COUNT(DISTINCT e.id) 
-                 FROM employees e 
-                 JOIN v_employee_compliance_status v ON e.id = v.employee_id
-                 $searchCondition";
-    $stmt = $pdo->prepare($countSql);
-    $stmt->execute($params);
-    $total = (int)$stmt->fetchColumn();
+        // 2. Count query (unchanged)
+        $countSql = "SELECT COUNT(DISTINCT e.id) 
+                    FROM employees e 
+                    JOIN v_employee_compliance_status v ON e.id = v.employee_id
+                    $searchCondition";
+        $stmt = $pdo->prepare($countSql);
+        $stmt->execute($params);
+        $total = (int)$stmt->fetchColumn();
 
-    // 2. Get Employee Compliance and a list of what they HAVE uploaded
-    // We use GROUP_CONCAT to get a comma-separated list of document_type_ids for each employee
-    $sql = "
-        SELECT 
-            e.employee_id AS empId,
-            CONCAT(e.first_name, ' ', e.last_name) AS name,
-            v.compliance_percentage AS progress,
-            GROUP_CONCAT(ed.document_type_id) AS uploaded_ids
-        FROM employees e
-        JOIN v_employee_compliance_status v ON e.id = v.employee_id
-        LEFT JOIN employee_documents ed ON e.id = ed.employee_id
-        $searchCondition
-        GROUP BY e.id
-        ORDER BY v.compliance_percentage ASC
-        LIMIT ? OFFSET ?
-    ";
+        // 3. Data query – now includes most recent updater per employee
+        $sql = "
+            SELECT 
+                e.employee_id AS empId,
+                CONCAT(e.first_name, ' ', e.last_name) AS name,
+                v.compliance_percentage AS progress,
+                GROUP_CONCAT(DISTINCT ed.document_type_id) AS uploaded_ids,
+                (
+                    SELECT u.username 
+                    FROM employee_documents ed2
+                    LEFT JOIN users u ON ed2.updated_by = u.id
+                    WHERE ed2.employee_id = e.id 
+                    ORDER BY ed2.updated_at DESC 
+                    LIMIT 1
+                ) AS updated_by_name
+            FROM employees e
+            JOIN v_employee_compliance_status v ON e.id = v.employee_id
+            LEFT JOIN employee_documents ed ON e.id = ed.employee_id
+            $searchCondition
+            GROUP BY e.id
+            ORDER BY v.compliance_percentage ASC
+            LIMIT ? OFFSET ?
+        ";
     
     $stmt = $pdo->prepare($sql);
     $allParams = $params;

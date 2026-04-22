@@ -372,6 +372,11 @@ function initVaultMatrix() {
         });
       });
       cols.push({ key: 'progress', label: 'Fulfillment', render: v => `<span style="font-size:.7rem;font-weight:800;color:var(--primary);">${v}%</span>` });
+      cols.push({ 
+        key: 'updated_by_name', 
+        label: 'Last Updated By',
+        render: (v) => v ? v : '<span style="color:var(--muted); font-style:italic;">—</span>'
+      });
       cols.push({
         key: '_',
         label: 'Actions',
@@ -796,18 +801,13 @@ function saveDepartment() {
     return; // STOP HERE
   }
 
-  // 🔒 3. THE STRICT GATEKEEPER:
-  // This blocks the process if the user typed text but no ID was assigned from the dropdown.
+  // 3. Strict dropdown validation
   if (headText !== '' && headId === '') {
     headInput.classList.add('field-error');
     showNotification('Selection Required', 'Please select an employee from the dropdown list or leave the field empty.', 'warning');
-
-    // Focus the field so the user knows where to fix the error
     headInput.focus();
-    return; // STOP HERE - No data will be sent to the server
+    return; // STOP HERE
   }
-
-  // --- EVERYTHING BELOW ONLY RUNS IF THE ABOVE RULES ARE SATISFIED ---
 
   const btn = document.querySelector('#modal-add-dept .btn-primary');
   const originalHtml = btn.innerHTML;
@@ -837,18 +837,21 @@ function saveDepartment() {
         closeDeptModal();
         inited.delete('departments');
         goPage('departments');
+        // Navigation occurs; no need to re-enable button.
       } else {
         showNotification("Error", result.message, "error");
-        btn.disabled = false;
-        btn.innerHTML = originalHtml;
-        lcIcons(btn);
       }
     })
     .catch(error => {
       showNotification("Error", "Network error: " + error.message, "error");
-      btn.disabled = false;
-      btn.innerHTML = originalHtml;
-      lcIcons(btn);
+    })
+    .finally(() => {
+      // Only re-enable if the button is still in the DOM (i.e., not navigated away)
+      if (btn && btn.isConnected) {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+        lcIcons(btn);
+      }
     });
 }
 // Open edit department modal
@@ -1226,7 +1229,7 @@ function saveBranch() {
   // If user typed something in manager field but no hidden ID exists, it's invalid
   if (managerText !== '' && managerId === '') {
     managerInput.classList.add('field-error');
-    showNotification("Invalid Manager", "Please select a manager from the dropdown list.", "warning");
+    showNotification("Invalid Manager", "Please select a manager from the dropdown list or leave empty field", "warning");
     return;
   }
 
@@ -3092,7 +3095,7 @@ function initServerPaginatedTable(containerId, apiUrl, { columns, perPage = 15, 
         container.style.opacity = '1';
       });
   };
-
+  container._fetchData = fetchData;
   // Attach search events (only once)
   const searchInput = document.getElementById(`${containerId}-search`);
   const clearBtn = document.getElementById(`${containerId}-clear-search`);
@@ -3485,25 +3488,179 @@ function openProbationEvalModal(empId, empName) {
   openModal('modal-probation-eval');
 }
 
+ // Store temporary evaluation data for use across modals
+let pendingEvalData = null;
+
 function submitProbationEval(decision) {
   const empId = document.getElementById('eval-emp-id').value;
-  const notes = document.getElementById('eval-notes').value;
+  const notes = document.getElementById('eval-notes').value.trim();
+  const csrfToken = document.getElementById('probation_eval_csrf_token')?.value || '';
+  const empName = document.getElementById('eval-modal-title')?.textContent.replace('Evaluate ', '') || 'Employee';
 
+  if (!empId) {
+    showNotification('Error', 'Employee ID is missing.', 'error');
+    return;
+  }
 
-
-  const confirmMsg = `Are you sure you want to ${decision.toLowerCase()} this employee?`;
-  if (!confirm(confirmMsg)) return;
-
-  console.log(`Submitting evaluation for ID ${empId}: Decision=${decision}, Notes=${notes}`);
-
-  alert(`Evaluation submitted: Employee marked for ${decision}.`);
+  // Close the evaluation modal first
   closeModal('modal-probation-eval');
 
-  if (typeof initServerPaginatedTable === 'function') {
-    const tableContainer = document.getElementById('tbl-probation');
-    if (tableContainer) {
-      location.reload();
-    }
+  if (decision === 'Extend') {
+    // For Extend, we need to know current end date – fetch it from the table row or API.
+    // We'll pass it via a data attribute or fetch from server.
+    // For simplicity, we'll store the employee ID and open the extension modal.
+    // The current end date can be fetched from the probation record via a quick API call.
+    openExtendProbationModal(empId, empName, csrfToken, notes);
+    return;
+  }
+
+  // For Hire and Terminate, use the themed confirmation modal
+  const actionText = decision === 'Hire' ? 'confirm this employee as permanent' : 'terminate this employee';
+  const confirmTitle = decision === 'Hire' ? 'Confirm Hire' : 'Confirm Termination';
+  const confirmBody = `Are you sure you want to ${actionText}?`;
+
+  openConfirm(confirmTitle, confirmBody);
+
+  document.getElementById('confirm-btn-yes').onclick = function() {
+    closeConfirm();
+    // Proceed with the API call
+    executeProbationDecision(empId, decision, notes, csrfToken);
+  };
+}
+
+// Execute the actual API call for Hire/Terminate
+function executeProbationDecision(empId, decision, notes, csrfToken) {
+  const btn = document.querySelector('#confirm-btn-yes');
+  const originalText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = `<i data-lucide="loader-2" class="spin" size="14"></i> Processing...`;
+  lcIcons(btn);
+
+  const data = {
+    employee_id: empId,
+    decision: decision, // 'Hire' or 'Reject'
+    notes: notes,
+    csrf_token: csrfToken
+  };
+
+  fetch('api/employees/submit_probation_eval.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams(data)
+  })
+    .then(response => response.json())
+    .then(result => {
+      if (result.success) {
+        showNotification('Success', result.message, 'success');
+        refreshProbationTable();
+      } else {
+        showNotification('Error', result.message, 'error');
+      }
+    })
+    .catch(error => {
+      showNotification('Network Error', error.message, 'error');
+    })
+    .finally(() => {
+      btn.disabled = false;
+      btn.innerHTML = originalText;
+      lcIcons(btn);
+    });
+}
+
+// Open the Extend Probation modal and populate current end date
+function openExtendProbationModal(empId, empName, csrfToken, existingNotes) {
+  // Set employee ID and CSRF token
+  document.getElementById('extend-emp-id').value = empId;
+  document.getElementById('extend-csrf-token').value = csrfToken;
+  document.getElementById('extend-notes').value = existingNotes || '';
+
+  // Fetch current probation end date from the table row or via API
+  // Since we don't have it readily in the modal, we can make a quick fetch
+  fetch(`api/employees/get_probation_end_date.php?employee_id=${empId}`)
+    .then(r => r.json())
+    .then(res => {
+      if (res.success) {
+        const endDate = res.data.end_date;
+        document.getElementById('current-end-date').textContent = endDate;
+        document.getElementById('new-end-date').value = endDate;
+        document.getElementById('new-end-date').min = endDate;
+      } else {
+        showNotification('Error', 'Could not fetch probation end date.', 'error');
+      }
+    })
+    .catch(err => {
+      showNotification('Error', 'Network error: ' + err.message, 'error');
+    });
+
+  openModal('modal-extend-probation');
+}
+
+// Submit the extension
+function submitExtendProbation() {
+  const empId = document.getElementById('extend-emp-id').value;
+  const csrfToken = document.getElementById('extend-csrf-token').value;
+  const newEndDate = document.getElementById('new-end-date').value;
+  const notes = document.getElementById('extend-notes').value.trim();
+  const currentEnd = document.getElementById('current-end-date').textContent;
+
+  if (!newEndDate) {
+    showNotification('Required', 'Please select a new end date.', 'warning');
+    return;
+  }
+  if (newEndDate < currentEnd) {
+    showNotification('Invalid Date', 'New end date must be on or after the current end date.', 'warning');
+    return;
+  }
+
+  const btn = document.querySelector('#modal-extend-probation .btn-primary');
+  const originalHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = `<i data-lucide="loader-2" class="spin" size="14"></i> Extending...`;
+  lcIcons(btn);
+
+  const data = {
+    employee_id: empId,
+    decision: 'Extend',
+    new_end_date: newEndDate,
+    notes: notes,
+    csrf_token: csrfToken
+  };
+
+  fetch('api/employees/submit_probation_eval.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams(data)
+  })
+    .then(response => response.json())
+    .then(result => {
+      if (result.success) {
+        showNotification('Success', result.message, 'success');
+        closeModal('modal-extend-probation');
+        refreshProbationTable();
+      } else {
+        showNotification('Error', result.message, 'error');
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+        lcIcons(btn);
+      }
+    })
+    .catch(error => {
+      showNotification('Network Error', error.message, 'error');
+      btn.disabled = false;
+      btn.innerHTML = originalHtml;
+      lcIcons(btn);
+    });
+}
+
+// Helper to refresh probation table
+function refreshProbationTable() {
+  const container = document.getElementById('tbl-probation');
+  if (container && typeof container._fetchData === 'function') {
+    container._fetchData();
+  } else {
+    if (typeof inited !== 'undefined') inited.delete('probation-tracker');
+    if (typeof initPage === 'function') initPage('probation-tracker');
+    else location.reload();
   }
 }
 

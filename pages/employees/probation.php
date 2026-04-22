@@ -16,6 +16,7 @@
     </div>
     <div class="modal-body">
       <input type="hidden" id="eval-emp-id">
+      <input type="hidden" id="probation_eval_csrf_token" name="csrf_token" value="<?php echo csrf_token(); ?>">
       <div class="form-group">
         <label style="font-weight: 700; font-size: 0.8rem; margin-bottom: 8px; display: block;">Evaluation Notes / Feedback</label>
         <textarea id="eval-notes" class="form-ctrl" rows="4" placeholder="Enter evaluation notes here..." style="width: 100%; border-radius: 8px; padding: 12px; font-size: 0.85rem; resize:none;" ></textarea>

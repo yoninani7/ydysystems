@@ -446,3 +446,38 @@
     </div>
   </div>
 </div>
+<!-- MODAL: EXTEND PROBATION -->
+<div class="modal-overlay" id="modal-extend-probation" onclick="closeModal('modal-extend-probation', event)">
+  <div class="modal-box" style="max-width: 460px;">
+    <div class="modal-header">
+      <div>
+        <div style="font-size:1.1rem; font-weight:800;">Extend Probation Period</div>
+        <div style="font-size:.75rem; color:var(--muted); margin-top:3px;">Set a new end date for the probation</div>
+      </div>
+      <button class="icon-btn" onclick="closeModal('modal-extend-probation')"><i data-lucide="x" size="18"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="extend-emp-id">
+      <input type="hidden" id="extend-csrf-token" value="<?php echo csrf_token(); ?>">
+      <div class="info-tile" style="margin-bottom:20px;">
+        <label class="tile-label">Current Probation End Date</label>
+        <div id="current-end-date" class="tile-val" style="font-family:'JetBrains Mono';">—</div>
+      </div>
+      <div class="form-group">
+        <label style="font-weight:700;">New End Date *</label>
+        <input type="date" id="new-end-date" class="form-ctrl" style="width:100%;">
+        <div style="font-size:0.7rem; color:var(--muted); margin-top:6px;">Must be on or after current end date.</div>
+      </div>
+      <div class="form-group">
+        <label>Reason / Notes</label>
+        <textarea id="extend-notes" class="form-ctrl" rows="3" placeholder="Optional notes..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-extend-probation')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitExtendProbation()">
+        <i data-lucide="calendar-plus" size="14"></i> Confirm Extension
+      </button>
+    </div>
+  </div>
+</div>
