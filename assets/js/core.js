@@ -346,7 +346,6 @@ function generateOrgChart() {
       emptyState.style.display = 'flex';
     })
     .finally(() => {
-      // Restore button state
       generateBtn.disabled = false;
       btnIconRight.innerHTML = originalIconHtml;
       lcIcons(btnIconRight);
@@ -846,13 +845,13 @@ function saveDepartment() {
       showNotification("Error", "Network error: " + error.message, "error");
     })
     .finally(() => {
-      // Only re-enable if the button is still in the DOM (i.e., not navigated away)
-      if (btn && btn.isConnected) {
-        btn.disabled = false;
-        btn.innerHTML = originalHtml;
-        lcIcons(btn);
-      }
-    });
+    // Check if button still exists before manipulating it
+        if (btn && btn.isConnected) {
+          btn.disabled = false;
+          btn.innerHTML = originalHtml;
+          lcIcons(btn);
+        }
+      });
 }
 // Open edit department modal
 async function openEditDeptModal(deptName, headName, deptId) {
@@ -1890,7 +1889,7 @@ function saveNewEmployee() {
       const btnTop = document.getElementById('btn-save-master');
       const btnBottom = document.getElementById('btn-save-master-bottom');
       [btnTop, btnBottom].forEach(btn => {
-        if (btn) {
+        if (btn && btn.isConnected) {
           btn.disabled = false;
           btn.innerHTML = btn.id === 'btn-save-master'
             ? `<i data-lucide="shield-check"></i> Commit Record`
@@ -3561,9 +3560,11 @@ function executeProbationDecision(empId, decision, notes, csrfToken) {
       showNotification('Network Error', error.message, 'error');
     })
     .finally(() => {
-      btn.disabled = false;
-      btn.innerHTML = originalText;
-      lcIcons(btn);
+      if (btn && btn.isConnected) {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+        lcIcons(btn);
+      }
     });
 }
 
@@ -3639,16 +3640,17 @@ function submitExtendProbation() {
         refreshProbationTable();
       } else {
         showNotification('Error', result.message, 'error');
-        btn.disabled = false;
-        btn.innerHTML = originalHtml;
-        lcIcons(btn);
       }
     })
     .catch(error => {
       showNotification('Network Error', error.message, 'error');
-      btn.disabled = false;
-      btn.innerHTML = originalHtml;
-      lcIcons(btn);
+    })
+    .finally(() => {
+      if (btn && btn.isConnected && btn.disabled) {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+        lcIcons(btn);
+      }
     });
 }
 
@@ -4428,5 +4430,11 @@ function reloadJobPositionsDropdown(departmentId) {
       }
     });
 }
-
+function restoreButton(btn, originalHtml) {
+  if (btn && btn.isConnected) {
+    btn.disabled = false;
+    btn.innerHTML = originalHtml;
+    lcIcons(btn);
+  }
+}
 

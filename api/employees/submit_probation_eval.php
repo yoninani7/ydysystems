@@ -140,33 +140,39 @@ try {
             ]);
             break;
             case 'Reject':
-            // Mark probation as Failed
-            $updateStmt = $pdo->prepare("
-                UPDATE probation_records 
-                SET status = 'Failed', 
-                    notes = CONCAT(COALESCE(notes, ''), '\n\n', ?),
-                    updated_by = ?,
-                    updated_at = NOW()
-                WHERE id = ?
-            ");
-            $updateStmt->execute([$notesAddition, $_SESSION['user_id'], $probation['id']]);
-            
-            // Update employee status to Terminated
-            $pdo->prepare("UPDATE employees SET status = 'Terminated', updated_by = ? WHERE id = ?")
-                ->execute([$_SESSION['user_id'], $employee_id]);
-            
-            // Optionally create a separation record
-            $sepStmt = $pdo->prepare("
-                INSERT INTO separations (employee_id, separation_type, notice_date, last_working_day, status, notes, processed_by, created_at)
-                VALUES (?, 'Involuntary', CURDATE(), CURDATE(), 'In Progress', ?, ?, NOW())
-            ");
-            $sepStmt->execute([
-                $employee_id,
-                "Terminated due to failed probation. " . $notesAddition,
-                $_SESSION['user_id']
-            ]);
-            break;
-    }
+                // Mark probation as Failed
+                $updateStmt = $pdo->prepare("
+                    UPDATE probation_records 
+                    SET status = 'Failed', 
+                        notes = CONCAT(COALESCE(notes, ''), '\n\n', ?),
+                        updated_by = ?,
+                        updated_at = NOW()
+                    WHERE id = ?
+                ");
+                $updateStmt->execute([$notesAddition, $_SESSION['user_id'], $probation['id']]);
+                
+                // Update employee status to Terminated
+                $pdo->prepare("UPDATE employees SET status = 'Terminated', updated_by = ? WHERE id = ?")
+                    ->execute([$_SESSION['user_id'], $employee_id]);
+                
+                // Get the employee ID associated with the logged-in user (if any)
+                $empStmt = $pdo->prepare("SELECT employee_id FROM users WHERE id = ?");
+                $empStmt->execute([$_SESSION['user_id']]);
+                $processedByEmpId = $empStmt->fetchColumn() ?: null;
+                
+                // Create separation record
+                $sepStmt = $pdo->prepare("
+                    INSERT INTO separations (employee_id, separation_type, notice_date, last_working_day, status, notes, processed_by, created_at)
+                    VALUES (?, 'Involuntary', CURDATE(), CURDATE(), 'In Progress', ?, ?, NOW())
+                ");
+                $sepStmt->execute([
+                    $employee_id,
+                    "Terminated due to failed probation. " . $notesAddition,
+                    $processedByEmpId
+                ]);
+                break;
+    
+                }
 
     // Audit Log
     $auditStmt = $pdo->prepare("
