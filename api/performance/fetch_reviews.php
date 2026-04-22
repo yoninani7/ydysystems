@@ -49,11 +49,13 @@ try {
             pr.review_period AS period,
             pr.overall_score AS score,
             pr.rating AS rank,
-            pr.status
+            pr.status,
+            COALESCE(u.username, 'System') AS updated_by_name
         FROM performance_reviews pr
         JOIN employees e ON pr.employee_id = e.id
         LEFT JOIN departments d ON e.department_id = d.id
         LEFT JOIN employees rev ON pr.reviewer_id = rev.id
+        LEFT JOIN users u ON pr.updated_by = u.id
         $searchCondition
         ORDER BY pr.created_at DESC
         LIMIT ? OFFSET ?
