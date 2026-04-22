@@ -40,22 +40,24 @@ try {
     $total = (int)$stmt->fetchColumn();
      
     $sql = "
-        SELECT 
-            oq.id,
-            CONCAT(e.first_name, ' ', e.last_name) AS emp,
-            COALESCE(d.name, 'N/A') AS dept,
-            oq.overtime_date AS date,
-            oq.hours,
-            oq.reason,
-            oq.submitted_date AS submitted,
-            oq.status
-        FROM overtime_requests oq
-        JOIN employees e ON oq.employee_id = e.id
-        LEFT JOIN departments d ON e.department_id = d.id
-        $searchCondition
-        ORDER BY oq.overtime_date DESC
-        LIMIT ? OFFSET ?
-    ";
+    SELECT 
+        oq.id,
+        CONCAT(e.first_name, ' ', e.last_name) AS emp,
+        COALESCE(d.name, 'N/A') AS dept,
+        oq.overtime_date AS date,
+        oq.hours,
+        oq.reason,
+        oq.submitted_date AS submitted,
+        oq.status,
+        COALESCE(u.username, 'System') AS updated_by_name
+    FROM overtime_requests oq
+    JOIN employees e ON oq.employee_id = e.id
+    LEFT JOIN departments d ON e.department_id = d.id
+    LEFT JOIN users u ON oq.updated_by = u.id
+    $searchCondition
+    ORDER BY oq.overtime_date DESC
+    LIMIT ? OFFSET ?
+";
     
     $stmt = $pdo->prepare($sql);
     $allParams = $params;
