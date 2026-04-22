@@ -17,8 +17,12 @@
     <div class="modal-body">
       <input type="hidden" id="eval-emp-id">
       <input type="hidden" id="probation_eval_csrf_token" name="csrf_token" value="<?php echo csrf_token(); ?>">
+      <div class="form-group">
+        <label style="font-weight: 700; font-size: 0.8rem; margin-bottom: 8px; display: block;">Evaluation Notes / Feedback</label>
+        <textarea id="eval-notes" class="form-ctrl" rows="4" placeholder="Enter evaluation notes here..." style="width: 100%; border-radius: 8px; padding: 12px; font-size: 0.85rem; resize:none;" ></textarea>
+      </div>
       
-      <div>
+      <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border);">
         <div style="font-size: 0.75rem; font-weight: 800; color: var(--muted); margin-bottom: 12px; letter-spacing: 0.05em; text-transform: uppercase;">Final Decision</div>
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
           <button class="btn" style="background: #ecfdf5; color: #059669; border: 1px solid #10b98120; padding: 15px 10px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; gap: 8px; transition: all 0.2s;" onclick="submitProbationEval('Hire')">

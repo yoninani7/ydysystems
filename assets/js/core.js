@@ -2182,10 +2182,13 @@ function initPage(id) {
             key: 'status',
             label: 'Probation Status',
             render: (v, row) => {
-              const days = parseInt(row.days);
+              if (v === 'Completed') return b('success', 'Completed');
+              if (v === 'Failed') return b('danger', 'Failed');
               if (v === 'Extended') return b('warning', 'Extended');
-              if (days <= 0) return b('danger', 'Ended');
-              if (days < 14) return b('warning', 'Ending Soon');
+              
+              const days = parseInt(row.days);
+              if (days < 0) return b('danger', 'Overdue');
+              if (days <= 14) return b('warning', 'Ending Soon');
               return b('info', 'Active');
             }
           },
@@ -3484,6 +3487,7 @@ function savePermissionChanges() {
 function openProbationEvalModal(empId, empName) {
   document.getElementById('eval-emp-id').value = empId;
   document.getElementById('eval-modal-title').textContent = `Evaluate ${empName}`;
+  document.getElementById('eval-notes').value = '';
   openModal('modal-probation-eval');
 }
 
@@ -3492,6 +3496,7 @@ let pendingEvalData = null;
 
 function submitProbationEval(decision) {
   const empId = document.getElementById('eval-emp-id').value;
+  const notes = document.getElementById('eval-notes').value.trim();
   const csrfToken = document.getElementById('probation_eval_csrf_token')?.value || '';
   const empName = document.getElementById('eval-modal-title')?.textContent.replace('Evaluate ', '') || 'Employee';
 
@@ -3504,7 +3509,7 @@ function submitProbationEval(decision) {
   closeModal('modal-probation-eval');
 
   if (decision === 'Extend') {
-    openExtendProbationModal(empId, empName, csrfToken);
+    openExtendProbationModal(empId, empName, csrfToken, notes);
     return;
   }
 
@@ -3519,7 +3524,7 @@ function submitProbationEval(decision) {
   document.getElementById('confirm-btn-yes').onclick = function() {
     closeConfirm();
     // Proceed with the API call
-    executeProbationDecision(empId, decision, '', csrfToken);
+    executeProbationDecision(empId, decision, notes, csrfToken);
   };
 }
 
@@ -3563,10 +3568,12 @@ function executeProbationDecision(empId, decision, notes, csrfToken) {
 }
 
 // Open the Extend Probation modal and populate current end date
-function openExtendProbationModal(empId, empName, csrfToken) {
+let pendingExtendNotes = '';
+function openExtendProbationModal(empId, empName, csrfToken, existingNotes) {
   // Set employee ID and CSRF token
   document.getElementById('extend-emp-id').value = empId;
   document.getElementById('extend-csrf-token').value = csrfToken;
+  pendingExtendNotes = existingNotes || '';
 
   // Fetch current probation end date from the table row or via API
   // Since we don't have it readily in the modal, we can make a quick fetch
@@ -3615,7 +3622,7 @@ function submitExtendProbation() {
     employee_id: empId,
     decision: 'Extend',
     new_end_date: newEndDate,
-    notes: '',
+    notes: pendingExtendNotes,
     csrf_token: csrfToken
   };
 

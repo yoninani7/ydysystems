@@ -36,6 +36,11 @@ try {
     $countSql = "
         SELECT COUNT(*)
         FROM probation_records pr
+        JOIN (
+            SELECT employee_id, MAX(id) AS latest_id
+            FROM probation_records
+            GROUP BY employee_id
+        ) latest_pr ON pr.id = latest_pr.latest_id
         JOIN employees e ON pr.employee_id = e.id
         LEFT JOIN departments d ON e.department_id = d.id
         $searchCondition
@@ -56,6 +61,11 @@ try {
         pr.status,
         COALESCE(u.username, 'System') AS updated_by_name
     FROM probation_records pr
+    JOIN (
+        SELECT employee_id, MAX(id) AS latest_id
+        FROM probation_records
+        GROUP BY employee_id
+    ) latest_pr ON pr.id = latest_pr.latest_id
     JOIN employees e ON pr.employee_id = e.id
     LEFT JOIN departments d ON e.department_id = d.id
     LEFT JOIN users u ON pr.updated_by = u.id

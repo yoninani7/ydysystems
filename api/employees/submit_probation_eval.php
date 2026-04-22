@@ -48,11 +48,11 @@ try {
     $pdo = get_pdo();
     $pdo->beginTransaction();
 
-    // Find active probation record for this employee
+    // Find the latest probation record for this employee
     $stmt = $pdo->prepare("
         SELECT id, employee_id, start_date, end_date, status 
         FROM probation_records 
-        WHERE employee_id = ? AND status = 'Active' 
+        WHERE employee_id = ? 
         ORDER BY end_date DESC 
         LIMIT 1
     ");
@@ -62,7 +62,7 @@ try {
     if (!$probation) {
         $pdo->rollBack();
         http_response_code(404);
-        echo json_encode(['success' => false, 'message' => 'No active probation record found for this employee.']);
+        echo json_encode(['success' => false, 'message' => 'No probation record found for this employee.']);
         exit;
     }
 
