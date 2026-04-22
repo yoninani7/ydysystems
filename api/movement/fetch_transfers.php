@@ -54,13 +54,15 @@ try {
             b2.name AS to_branch,
             t.request_date AS req_date,
             t.effective_date AS eff_date,
-            t.status
+            t.status,
+            COALESCE(u.username, 'System') AS updated_by_name
         FROM transfers t
         JOIN employees e ON t.employee_id = e.id
         LEFT JOIN departments d1 ON t.from_department_id = d1.id
         LEFT JOIN departments d2 ON t.to_department_id = d2.id
         LEFT JOIN branches b1 ON t.from_branch_id = b1.id
         LEFT JOIN branches b2 ON t.to_branch_id = b2.id
+        LEFT JOIN users u ON t.updated_by = u.id
         $searchCondition
         ORDER BY t.request_date DESC
         LIMIT ? OFFSET ?
