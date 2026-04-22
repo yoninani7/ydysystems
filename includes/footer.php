@@ -242,20 +242,27 @@
 </div> 
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <div class="modal-overlay" id="confirm-modal" onclick="if(event.target.id==='confirm-modal') closeConfirm()">
-  <div class="modal-box" style="max-width: 400px;">
-    <div class="modal-header">
-      <div>
-        <div id="confirm-title" style="font-weight: 800; font-size: 1.1rem;">Confirm Action</div>
+  <div class="modal-box" style="max-width: 420px; border-radius: 18px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);">
+    <div class="modal-header" style="padding: 20px 24px 16px; border-bottom: 1px solid var(--border);">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="width: 40px; height: 40px; border-radius: 12px; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center;" id="confirm-icon-container">
+          <i data-lucide="help-circle" size="20" id="confirm-icon"></i>
+        </div>
+        <div>
+          <div id="confirm-title" style="font-weight: 800; font-size: 1.1rem; letter-spacing: -0.02em; color: var(--text);">Confirm Action</div>
+          <div style="font-size: 0.7rem; color: var(--muted); margin-top: 2px;" id="confirm-subtitle">Please review your decision</div>
+        </div>
       </div>
-      <button class="icon-btn" onclick="closeConfirm()"><i data-lucide="x" size="18"></i></button>
+      <button class="icon-btn" onclick="closeConfirm()" style="width: 32px; height: 32px;"><i data-lucide="x" size="16"></i></button>
     </div>
-    <div class="modal-body" id="confirm-body" style="font-size: 0.85rem;">
-      Are you sure?
+    <div class="modal-body" id="confirm-body" style="padding: 24px; font-size: 0.9rem; line-height: 1.5; color: var(--text);">
+      Are you sure you want to proceed?
     </div>
-    <div class="modal-footer" style="background: #f8fafc; border-bottom-left-radius: 14px; border-bottom-right-radius: 14px;">
-      <button class="btn btn-secondary" onclick="closeConfirm()" style="font-size: 0.8rem; padding: 8px 20px;">Cancel</button>
-      <button class="btn btn-primary" id="confirm-btn-yes" style="font-size: 0.8rem; padding: 8px 20px;">Confirm</button>
+    <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px;">
+      <button class="btn btn-secondary" onclick="closeConfirm()" style="padding: 10px 20px; font-weight: 600;">Cancel</button>
+      <button class="btn" id="confirm-btn-yes" style="padding: 10px 24px; font-weight: 700;">Confirm</button>
     </div>
   </div>
 </div>
@@ -474,7 +481,7 @@
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('modal-extend-probation')">Cancel</button>
-      <button class="btn btn-primary" onclick="submitExtendProbation()">
+      <button class="btn btn-primary" style="background-color: #b45309;" onclick="submitExtendProbation()">
         <i data-lucide="calendar-plus" size="14"></i> Confirm Extension
       </button>
     </div>

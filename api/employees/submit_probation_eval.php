@@ -92,7 +92,7 @@ try {
 
             break;
 
-        case 'Extend':
+           case 'Extend':
             // Validate new end date
             $newEndDate = trim($_POST['new_end_date'] ?? '');
             if (!$newEndDate) {
@@ -137,8 +137,9 @@ try {
                 "Extended from previous probation. " . $notesAddition,
                 $_SESSION['user_id']
             ]);
+            $pdo->prepare("UPDATE employees SET status = 'Active', updated_by = ? WHERE id = ?")->execute([$_SESSION['user_id'], $employee_id]);
             break;
-            case 'Reject':
+        case 'Reject':
                 // Mark probation as Failed
                 $updateStmt = $pdo->prepare("
                     UPDATE probation_records 

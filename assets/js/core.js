@@ -3507,23 +3507,44 @@ function submitProbationEval(decision) {
   // Close the evaluation modal first
   closeModal('modal-probation-eval');
 
-  if (decision === 'Extend') {
-    openExtendProbationModal(empId, empName, csrfToken, notes);
-    return;
+  // Store data for all decision types
+  pendingEvalData = {
+    empId: empId,
+    empName: empName,
+    csrfToken: csrfToken,
+    notes: notes,
+    decision: decision
+  };
+
+  // Open appropriate confirmation modal
+  if (decision === 'Hire') {
+    openConfirm('Confirm Hire', 'Are you sure you want to confirm this employee as permanent?', 'Yes, Confirm Hire', 'success');
+  } else if (decision === 'Reject') {
+    openConfirm('Confirm Termination', 'Are you sure you want to terminate this employee? This action cannot be undone.', 'Yes, Terminate', 'danger');
+  } else if (decision === 'Extend') {
+    openConfirm('Extend Probation', 'Are you sure you want to extend the probation period? You will be asked to select a new end date.', 'Yes, Extend', 'warning');
   }
 
-  // For Hire and Terminate, use the themed confirmation modal
-  const actionText = decision === 'Hire' ? 'confirm this employee as permanent' : 'terminate this employee';
-  const confirmTitle = decision === 'Hire' ? 'Confirm Hire' : 'Confirm Termination';
-  const confirmBody = `Are you sure you want to ${actionText}?`;
-  const confirmBtnText = decision === 'Hire' ? 'Yes, Confirm Hire' : 'Yes, Terminate';
-
-  openConfirm(confirmTitle, confirmBody, confirmBtnText);
-
+  // Attach click handler for confirmation button (executes after modal opens)
   document.getElementById('confirm-btn-yes').onclick = function() {
     closeConfirm();
-    // Proceed with the API call
-    executeProbationDecision(empId, decision, notes, csrfToken);
+    
+    if (!pendingEvalData) return;
+    
+    if (pendingEvalData.decision === 'Hire') {
+      executeProbationDecision(pendingEvalData.empId, pendingEvalData.decision, pendingEvalData.notes, pendingEvalData.csrfToken);
+    } else if (pendingEvalData.decision === 'Reject') {
+      executeProbationDecision(pendingEvalData.empId, pendingEvalData.decision, pendingEvalData.notes, pendingEvalData.csrfToken);
+    } else if (pendingEvalData.decision === 'Extend') {
+      openExtendProbationModal(
+        pendingEvalData.empId,
+        pendingEvalData.empName,
+        pendingEvalData.csrfToken,
+        pendingEvalData.notes
+      );
+    }
+    
+    pendingEvalData = null;
   };
 }
 
@@ -3967,11 +3988,52 @@ function handleLogout() {
     closeConfirm(); // Close after finishing
   };
 }
-function openConfirm(title, message, btnText = "Confirm") {
+function openConfirm(title, message, btnText = "Confirm", type = "default") {
+  const modal = document.getElementById('confirm-modal');
   document.getElementById('confirm-title').innerText = title;
   document.getElementById('confirm-body').innerText = message;
-  document.getElementById('confirm-btn-yes').innerText = btnText;
-  document.getElementById('confirm-modal').classList.add('open');
+  const yesBtn = document.getElementById('confirm-btn-yes');
+  yesBtn.innerText = btnText;
+  
+  const iconEl = document.getElementById('confirm-icon');
+  const iconContainer = document.getElementById('confirm-icon-container');
+  
+  // Reset classes
+  yesBtn.className = 'btn';
+  iconContainer.className = '';
+  iconContainer.style.background = '';
+  iconContainer.style.color = '';
+  
+  // Apply type-specific classes
+  switch(type) {
+    case 'danger':
+      yesBtn.classList.add('btn-danger');
+      iconEl.setAttribute('data-lucide', 'alert-triangle');
+      iconContainer.style.background = 'var(--danger-bg)';
+      iconContainer.style.color = 'var(--danger)';
+      break;
+    case 'success':
+      yesBtn.classList.add('btn-success');
+      iconEl.setAttribute('data-lucide', 'check-circle');
+      iconContainer.style.background = 'var(--success-bg)';
+      iconContainer.style.color = 'var(--success)';
+      break;
+    case 'warning':
+      yesBtn.classList.add('btn-warning');
+      iconEl.setAttribute('data-lucide', 'alert-circle');
+      iconContainer.style.background = 'var(--warning-bg)';
+      iconContainer.style.color = 'var(--warning)';
+      break;
+    default:
+      yesBtn.classList.add('btn-primary');
+      iconEl.setAttribute('data-lucide', 'help-circle');
+      iconContainer.style.background = 'var(--primary-light)';
+      iconContainer.style.color = 'var(--primary)';
+  }
+  
+  // Re-render the icon with the new data-lucide attribute
+  lucide.createIcons({ icons: { [iconEl.getAttribute('data-lucide')]: iconEl } });
+  modal.classList.add('open');
 }
 
 function closeConfirm() {
