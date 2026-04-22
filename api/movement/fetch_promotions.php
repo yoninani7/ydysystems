@@ -44,7 +44,7 @@ try {
     $total = (int)$stmt->fetchColumn();
     
     // We join job_positions twice: once for the old role and once for the new role
-    $sql = "
+        $sql = "    
         SELECT 
             CONCAT(e.first_name, ' ', e.last_name) AS emp,
             p.change_type AS type,
@@ -54,12 +54,14 @@ try {
             p.old_salary AS sal_from,
             p.new_salary AS sal_to,
             p.effective_date AS eff_date,
-            p.status
+            p.status,
+            COALESCE(u.username, 'System') AS updated_by_name
         FROM promotions p
         JOIN employees e ON p.employee_id = e.id
         LEFT JOIN job_positions jp1 ON p.from_position_id = jp1.id
         LEFT JOIN job_positions jp2 ON p.to_position_id = jp2.id
         LEFT JOIN departments d ON p.to_department_id = d.id
+        LEFT JOIN users u ON p.updated_by = u.id
         $searchCondition
         ORDER BY p.created_at DESC
         LIMIT ? OFFSET ?
