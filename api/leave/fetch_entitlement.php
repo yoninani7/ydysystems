@@ -40,29 +40,29 @@ try {
     $total = (int)$stmt->fetchColumn();
      
     // This query pivots the data so Annual Leave and Sick Leave appear on the same row
-    $sql = "
-        SELECT 
-            e.employee_id AS id,
-            CONCAT(e.first_name, ' ', e.last_name) AS name,
-            COALESCE(d.name, 'N/A') AS dept,
-            -- Annual Leave Stats
-            MAX(CASE WHEN lt.name = 'Annual Leave' THEN le.total_days ELSE 0 END) AS al_total,
-            MAX(CASE WHEN lt.name = 'Annual Leave' THEN le.used_days ELSE 0 END) AS al_used,
-            MAX(CASE WHEN lt.name = 'Annual Leave' THEN le.balance_days ELSE 0 END) AS al_bal,
-            MAX(CASE WHEN lt.name = 'Annual Leave' THEN le.carried_over_days ELSE 0 END) AS carry,
-            -- Sick Leave Stats
-            MAX(CASE WHEN lt.name = 'Sick Leave' THEN le.used_days ELSE 0 END) AS sl_used,
-            MAX(CASE WHEN lt.name = 'Sick Leave' THEN le.balance_days ELSE 0 END) AS sl_bal
-        FROM employees e
-        LEFT JOIN departments d ON e.department_id = d.id
-        LEFT JOIN leave_entitlements le ON e.id = le.employee_id AND le.fiscal_year = YEAR(CURDATE())
-        LEFT JOIN leave_types lt ON le.leave_type_id = lt.id
-        WHERE e.status = 'Active'
-        $searchCondition
-        GROUP BY e.id
-        ORDER BY e.employee_id ASC
-        LIMIT ? OFFSET ?
-    ";
+   $sql = "
+    SELECT 
+        e.employee_id AS id,
+        CONCAT(e.first_name, ' ', e.last_name) AS name,
+        COALESCE(d.name, 'N/A') AS dept,
+        MAX(CASE WHEN lt.name = 'Annual Leave' THEN le.total_days ELSE 0 END) AS al_total,
+        MAX(CASE WHEN lt.name = 'Annual Leave' THEN le.used_days ELSE 0 END) AS al_used,
+        MAX(CASE WHEN lt.name = 'Annual Leave' THEN le.balance_days ELSE 0 END) AS al_bal,
+        MAX(CASE WHEN lt.name = 'Annual Leave' THEN le.carried_over_days ELSE 0 END) AS carry,
+        MAX(CASE WHEN lt.name = 'Sick Leave' THEN le.used_days ELSE 0 END) AS sl_used,
+        MAX(CASE WHEN lt.name = 'Sick Leave' THEN le.balance_days ELSE 0 END) AS sl_bal,
+        COALESCE(MAX(u.username), 'System') AS updated_by_name
+    FROM employees e
+    LEFT JOIN departments d ON e.department_id = d.id
+    LEFT JOIN leave_entitlements le ON e.id = le.employee_id AND le.fiscal_year = YEAR(CURDATE())
+    LEFT JOIN leave_types lt ON le.leave_type_id = lt.id
+    LEFT JOIN users u ON le.updated_by = u.id
+    WHERE e.status = 'Active'
+    $searchCondition
+    GROUP BY e.id
+    ORDER BY e.employee_id ASC
+    LIMIT ? OFFSET ?
+";
     
     $stmt = $pdo->prepare($sql);
     $allParams = $params;
