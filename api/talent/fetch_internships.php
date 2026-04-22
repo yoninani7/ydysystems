@@ -52,10 +52,12 @@ try {
             i.start_date AS start,
             i.end_date AS end,
             i.evaluation_score AS eval,
-            i.status
+            i.status,
+            COALESCE(u.username, 'System') AS updated_by_name
         FROM internships i
         LEFT JOIN departments d ON i.department_id = d.id
         LEFT JOIN employees e ON i.mentor_id = e.id
+        LEFT JOIN users u ON i.updated_by = u.id
         $searchCondition
         ORDER BY i.start_date DESC
         LIMIT ? OFFSET ?
