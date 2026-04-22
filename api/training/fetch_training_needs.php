@@ -46,9 +46,11 @@ try {
             tn.priority,
             tn.affected_employees AS emp_count,
             tn.proposed_training AS proposed,
-            tn.status
+            tn.status,
+            COALESCE(u.username, 'System') AS updated_by_name
         FROM training_needs tn
         LEFT JOIN departments d ON tn.department_id = d.id
+        LEFT JOIN users u ON tn.updated_by = u.id
         $searchCondition
         ORDER BY tn.created_at DESC
         LIMIT ? OFFSET ?
