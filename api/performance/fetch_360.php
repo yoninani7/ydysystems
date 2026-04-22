@@ -46,10 +46,12 @@ try {
             f.total_respondents AS total,
             f.completed_respondents AS complete,
             f.average_score AS avg,
-            f.status
+            f.status,
+            COALESCE(u.username, 'System') AS updated_by_name
         FROM feedback_360 f
         JOIN employees e ON f.subject_employee_id = e.id
         LEFT JOIN departments d ON e.department_id = d.id
+        LEFT JOIN users u ON f.updated_by = u.id
         $searchCondition
         ORDER BY f.created_at DESC
         LIMIT ? OFFSET ?
