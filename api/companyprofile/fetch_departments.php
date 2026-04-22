@@ -45,17 +45,20 @@ try {
 
     // Fetch paginated data
     $sql = "
-        SELECT
-            d.name,
-            COALESCE(v.head_of_dept, '—')   AS head,
-            COALESCE(v.active_headcount, 0) AS emp,
-            d.status
-        FROM departments d
-        LEFT JOIN v_dept_structure_stats v ON d.id = v.dept_id
-        $searchCondition
-        ORDER BY d.name ASC
-        LIMIT ? OFFSET ?
-    ";
+    SELECT
+        d.id,
+        d.name,
+        COALESCE(v.head_of_dept, '—')   AS head,
+        COALESCE(v.active_headcount, 0) AS emp,
+        d.status,
+        COALESCE(u.username, 'System')  AS updated_by_name
+    FROM departments d
+    LEFT JOIN v_dept_structure_stats v ON d.id = v.dept_id
+    LEFT JOIN users u ON d.updated_by = u.id
+    $searchCondition
+    ORDER BY d.name ASC
+    LIMIT ? OFFSET ?
+";
 
     $stmt = $pdo->prepare($sql);
     
