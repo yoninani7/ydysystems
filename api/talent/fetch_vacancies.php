@@ -40,26 +40,28 @@ try {
     $stmt->execute($params);
     $total = (int)$stmt->fetchColumn();
 
-    $sql = "
-        SELECT 
-            jv.id,
-            jv.title,
-            d.name AS dept,
-            b.name AS branch,
-            et.name AS type,
-            jv.posted_date AS posted,
-            jv.deadline_date AS deadline,
-            jv.description,
-            jv.requirements,
-            jv.status
-        FROM job_vacancies jv
-        LEFT JOIN departments d ON jv.department_id = d.id
-        LEFT JOIN branches b ON jv.branch_id = b.id
-        LEFT JOIN employment_types et ON jv.employment_type_id = et.id
-        $searchCondition
-        ORDER BY jv.posted_date DESC
-        LIMIT ? OFFSET ?
-    ";
+   $sql = "
+    SELECT 
+        jv.id,
+        jv.title,
+        d.name AS dept,
+        b.name AS branch,
+        et.name AS type,
+        jv.posted_date AS posted,
+        jv.deadline_date AS deadline,
+        jv.description,
+        jv.requirements,
+        jv.status,
+        COALESCE(u.username, 'System') AS updated_by_name
+    FROM job_vacancies jv
+    LEFT JOIN departments d ON jv.department_id = d.id
+    LEFT JOIN branches b ON jv.branch_id = b.id
+    LEFT JOIN employment_types et ON jv.employment_type_id = et.id
+    LEFT JOIN users u ON jv.updated_by = u.id
+    $searchCondition
+    ORDER BY jv.posted_date DESC
+    LIMIT ? OFFSET ?
+";
     
     $stmt = $pdo->prepare($sql);
     $allParams = $params;
