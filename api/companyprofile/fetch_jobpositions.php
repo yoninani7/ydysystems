@@ -44,14 +44,17 @@ try {
     $total = (int)$stmt->fetchColumn();
 
     // Fetch paginated data
-    $sql = "
-        SELECT 
-            jp.title,
-            COALESCE(d.name, 'Unassigned') AS dept,
-            jp.status,
-            (SELECT COUNT(*) FROM employees e WHERE e.job_position_id = jp.id AND e.status = 'Active') AS count
+     $sql = "
+    SELECT 
+        jp.id,
+        jp.title,
+        COALESCE(d.name, 'Unassigned') AS dept,
+        jp.status,
+        (SELECT COUNT(*) FROM employees e WHERE e.job_position_id = jp.id AND e.status = 'Active') AS count,
+        COALESCE(u.username, 'System') AS updated_by_name
         FROM job_positions jp
         LEFT JOIN departments d ON jp.department_id = d.id
+        LEFT JOIN users u ON jp.updated_by = u.id
         $searchCondition
         ORDER BY d.name ASC, jp.title ASC
         LIMIT ? OFFSET ?
