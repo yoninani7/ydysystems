@@ -46,21 +46,23 @@ try {
 
     // Fetch paginated data
     $sql = "
-        SELECT 
-            e.id AS employee_id,
-            CONCAT(e.first_name, ' ', e.last_name) AS name,
-            COALESCE(d.name, 'N/A') AS dept,
-            pr.start_date AS start,
-            pr.end_date AS end,
-            DATEDIFF(pr.end_date, CURDATE()) AS days,
-            pr.status
-        FROM probation_records pr
-        JOIN employees e ON pr.employee_id = e.id
-        LEFT JOIN departments d ON e.department_id = d.id
-        $searchCondition
-        ORDER BY pr.end_date ASC
-        LIMIT ? OFFSET ?
-    ";
+    SELECT 
+        e.id AS employee_id,
+        CONCAT(e.first_name, ' ', e.last_name) AS name,
+        COALESCE(d.name, 'N/A') AS dept,
+        pr.start_date AS start,
+        pr.end_date AS end,
+        DATEDIFF(pr.end_date, CURDATE()) AS days,
+        pr.status,
+        COALESCE(u.username, 'System') AS updated_by_name
+    FROM probation_records pr
+    JOIN employees e ON pr.employee_id = e.id
+    LEFT JOIN departments d ON e.department_id = d.id
+    LEFT JOIN users u ON pr.updated_by = u.id
+    $searchCondition
+    ORDER BY pr.end_date ASC
+    LIMIT ? OFFSET ?
+";
 
     $stmt = $pdo->prepare($sql);
     
