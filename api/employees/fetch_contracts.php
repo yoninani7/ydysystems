@@ -53,22 +53,24 @@ try {
 
     // Data query
     $sql = "
-        SELECT 
-            CONCAT(e.first_name, ' ', e.last_name) AS name,
-            COALESCE(d.name, 'Unassigned') AS dept,
-            ec.start_date AS start,
-            ec.end_date AS expiry,
-            DATEDIFF(ec.end_date, CURDATE()) AS days
-        FROM employee_contracts ec
-        JOIN employees e ON ec.employee_id = e.id
-        LEFT JOIN departments d ON e.department_id = d.id
-        WHERE e.status = 'Active' 
-          AND e.deleted_at IS NULL
-          AND ec.end_date IS NOT NULL
-        $searchCondition
-        ORDER BY ec.end_date ASC
-        LIMIT ? OFFSET ?
-    ";
+    SELECT 
+        CONCAT(e.first_name, ' ', e.last_name) AS name,
+        COALESCE(d.name, 'Unassigned') AS dept,
+        ec.start_date AS start,
+        ec.end_date AS expiry,
+        DATEDIFF(ec.end_date, CURDATE()) AS days,
+        COALESCE(u.username, 'System') AS updated_by_name
+    FROM employee_contracts ec
+    JOIN employees e ON ec.employee_id = e.id
+    LEFT JOIN departments d ON e.department_id = d.id
+    LEFT JOIN users u ON ec.updated_by = u.id
+    WHERE e.status = 'Active' 
+      AND e.deleted_at IS NULL
+      AND ec.end_date IS NOT NULL
+    $searchCondition
+    ORDER BY ec.end_date ASC
+    LIMIT ? OFFSET ?
+";
 
     $stmt = $pdo->prepare($sql);
     $allParams = array_merge($searchParams, [$limit, $offset]);
