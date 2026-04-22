@@ -481,7 +481,7 @@
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('modal-extend-probation')">Cancel</button>
-      <button class="btn btn-primary" style="background-color: #b45309;" onclick="submitExtendProbation()">
+      <button class="btn btn-primary" style="background-color: #b45309e0;" onclick="submitExtendProbation()">
         <i data-lucide="calendar-plus" size="14"></i> Confirm Extension
       </button>
     </div>
