@@ -660,6 +660,34 @@ th.sticky-emp.sticky-head { z-index: 50; top: 0; left: 0; background: #f8fafc !i
 .ydy-toast { margin-top: 50px; pointer-events: auto; width: 320px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-left: 4px solid var(--primary); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); border-radius: 12px; padding: 16px; display: flex; align-items: flex-start; gap: 12px; animation: toastSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; position: relative; overflow: hidden; }
 @keyframes toastSlideIn { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 .ydy-toast.exit { animation: toastSlideOut 0.3s ease forwards; }
+/* Toast close button */
+.toast-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+    opacity: 0.6;
+}
+
+.toast-close:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--text);
+    opacity: 1;
+}
+
+/* Adjust toast content to leave space for close button */
+.ydy-toast .toast-content {
+    padding-right: 24px;
+}
 @keyframes toastSlideOut { to { transform: translateX(120%); opacity: 0; } }
 .toast-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .toast-content { flex: 1; }
@@ -1344,4 +1372,71 @@ input:disabled, input[disabled] {
 .profile-card {
   background: var(--surface) !important;
   border: 1px solid var(--border) !important;
+}
+/* Premium Generate Button for Org Chart Empty State */
+.btn-generate-org {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 24px;
+    padding: 14px 32px;
+    background: var(--primary);
+    color: #ffffff;
+    border: none;
+    border-radius: 14px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    cursor: pointer;
+    box-shadow: 0 10px 25px -5px rgba(21, 178, 1, 0.35);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-generate-org::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.6s ease;
+}
+
+.btn-generate-org:hover {
+    background: var(--primary-dark);
+    transform: translateY(-3px);
+    box-shadow: 0 20px 30px -8px rgba(21, 178, 1, 0.45);
+}
+
+.btn-generate-org:hover::before {
+    left: 100%;
+}
+
+.btn-generate-org:active {
+    transform: translateY(0);
+    box-shadow: 0 8px 20px -5px rgba(21, 178, 1, 0.3);
+}
+
+.btn-generate-org .arrow-icon {
+    transition: transform 0.2s ease;
+}
+
+.btn-generate-org:hover .arrow-icon {
+    transform: translateX(4px);
+}
+
+.btn-generate-org:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 5px 15px -3px rgba(21, 178, 1, 0.2);
+}
+
+.btn-generate-org:disabled::before {
+    display: none;
 }
