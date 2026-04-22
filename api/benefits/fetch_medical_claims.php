@@ -49,10 +49,12 @@ try {
             mc.amount,
             mc.submitted_date AS submitted,
             mc.receipt_attached AS receipt,
-            mc.status
+            mc.status,
+            COALESCE(u.username, 'System') AS updated_by_name
         FROM medical_claims mc
         JOIN employees e ON mc.employee_id = e.id
         LEFT JOIN departments d ON e.department_id = d.id
+        LEFT JOIN users u ON mc.updated_by = u.id
         $searchCondition
         ORDER BY mc.submitted_date DESC
         LIMIT ? OFFSET ?
