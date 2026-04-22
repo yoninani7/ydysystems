@@ -49,10 +49,12 @@ try {
             s.last_working_day AS last_day,
             s.clearance_status AS clearance,
             s.final_settlement AS settlement,
-            s.status
+            s.status,
+            COALESCE(u.username, 'System') AS updated_by_name
         FROM separations s
         JOIN employees e ON s.employee_id = e.id
         LEFT JOIN departments d ON e.department_id = d.id
+        LEFT JOIN users u ON s.updated_by = u.id
         $searchCondition
         ORDER BY s.last_working_day DESC
         LIMIT ? OFFSET ?
