@@ -49,11 +49,13 @@ try {
             i.interview_date AS date,
             i.interview_time AS time,
             i.mode,
-            i.result
+            i.result,
+            COALESCE(u.username, 'System') AS updated_by_name
         FROM interviews i
         JOIN candidates c ON i.candidate_id = c.id
         LEFT JOIN job_vacancies jv ON i.vacancy_id = jv.id
         LEFT JOIN employees e ON i.interviewer_id = e.id
+        LEFT JOIN users u ON i.updated_by = u.id
         $searchCondition
         ORDER BY i.interview_date ASC, i.interview_time ASC
         LIMIT ? OFFSET ?
