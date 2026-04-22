@@ -53,12 +53,14 @@ try {
             lr.to_date AS `to`,
             lr.total_days AS days,
             lr.reason,
-            lr.status
+            lr.status,
+            COALESCE(u.username, 'System') AS updated_by_name
         FROM leave_requests lr
         JOIN employees e ON lr.employee_id = e.id
         LEFT JOIN departments d ON e.department_id = d.id
         JOIN leave_types lt ON lr.leave_type_id = lt.id
         LEFT JOIN employees appr ON lr.approved_by = appr.id
+        LEFT JOIN users u ON lr.updated_by = u.id
         $searchCondition
         ORDER BY lr.created_at DESC
         LIMIT ? OFFSET ?
