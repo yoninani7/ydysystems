@@ -426,13 +426,22 @@ CREATE TABLE transfers (
 CREATE TABLE attendance (
     id              INT            PRIMARY KEY AUTO_INCREMENT,
     employee_id     INT            NOT NULL,
+    shift_id        INT            NULL,
     attendance_date DATE           NOT NULL,
     status          ENUM('P','H','A','L','O') NOT NULL DEFAULT 'P',
     check_in        TIME           NULL,
     check_out       TIME           NULL,
-    hours_worked    DECIMAL(4,2)   NULL,
+    hours_worked    DECIMAL(4,2)   GENERATED ALWAYS AS (
+                        CASE 
+                            WHEN check_out IS NULL OR check_in IS NULL THEN NULL
+                            WHEN check_out > check_in THEN ROUND(TIME_TO_SEC(TIMEDIFF(check_out, check_in)) / 3600, 2)
+                            ELSE ROUND((TIME_TO_SEC(TIMEDIFF(check_out, check_in)) + 86400) / 3600, 2)
+                        END
+                    ) STORED,
     overtime_hours  DECIMAL(4,2)   DEFAULT 0.00,
     is_late         BOOLEAN        DEFAULT FALSE,
+    notes           TEXT           NULL,
+    source          ENUM('manual','import','system') DEFAULT 'manual',
     month           TINYINT        NOT NULL,
     year            SMALLINT       NOT NULL,
     recorded_by     INT            NULL,
@@ -440,8 +449,9 @@ CREATE TABLE attendance (
     updated_at      TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uq_emp_date (employee_id, attendance_date),
     FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
-    FOREIGN KEY (recorded_by) REFERENCES employees(id) ON DELETE SET NULL
-); 
+    FOREIGN KEY (recorded_by) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (shift_id)    REFERENCES shifts(id) ON DELETE SET NULL
+);
 
 -- ------------------------------------------------------------
 -- 6. LEAVE MANAGEMENT
@@ -527,16 +537,17 @@ CREATE TABLE overtime_requests (
     employee_id    INT         NOT NULL,
     overtime_date  DATE        NOT NULL,
     hours          DECIMAL(4,2) NOT NULL,
+    ot_rate        ENUM('1.0x','1.5x','2.0x','2.5x') DEFAULT '1.5x',
     reason         TEXT,
     submitted_date DATE,
     approved_by    INT         NULL,
     status         ENUM('Pending','Approved','Rejected') DEFAULT 'Pending',
     reviewed_at    TIMESTAMP   NULL,
     created_at     TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
-    updated_by      INT          NULL COMMENT 'User who submitted the request',
-FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL,
+    updated_by     INT         NULL COMMENT 'User who submitted the request',
+    FOREIGN KEY (updated_by)  REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
-    FOREIGN KEY (approved_by) REFERENCES employees(id) ON DELETE SET NULL
+    FOREIGN KEY (approved_by) REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- ------------------------------------------------------------
@@ -813,6 +824,126 @@ CREATE TABLE audit_logs (
     logged_at   TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
+
+-- ================================================================
+-- TABLE: shifts
+-- Stores shift definitions (Morning, Evening, Night, etc.)
+-- ================================================================
+CREATE TABLE IF NOT EXISTS shifts (
+    id              INT             PRIMARY KEY AUTO_INCREMENT,
+    name            VARCHAR(100)    NOT NULL,           -- e.g. "Morning Shift"
+    start_time      TIME            NOT NULL,           -- e.g. 08:00:00
+    end_time        TIME            NOT NULL,           -- e.g. 17:00:00
+    grace_minutes   INT             DEFAULT 15,         -- late threshold in minutes
+    working_hours   DECIMAL(4,2)    GENERATED ALWAYS AS (
+                        CASE
+                          WHEN end_time > start_time
+                            THEN TIME_TO_SEC(TIMEDIFF(end_time, start_time)) / 3600
+                          ELSE (TIME_TO_SEC(TIMEDIFF(end_time, start_time)) + 86400) / 3600
+                        END
+                    ) STORED,                           -- auto-calculated hours
+    is_overnight    BOOLEAN         DEFAULT FALSE,      -- cross-midnight shifts 
+    status          ENUM('Active','Inactive') DEFAULT 'Active',
+    created_by      INT             NULL,
+    created_at      TIMESTAMP       DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP       DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- ================================================================
+-- TABLE: employee_shifts
+-- Links employees to their assigned shift (can change over time)
+-- ================================================================
+CREATE TABLE IF NOT EXISTS employee_shifts (
+    id              INT             PRIMARY KEY AUTO_INCREMENT,
+    employee_id     INT             NOT NULL,
+    shift_id        INT             NOT NULL,
+    effective_from  DATE            NOT NULL,           -- when this shift starts
+    effective_to    DATE            NULL,               -- NULL = still active
+    assigned_by     INT             NULL,
+    created_at      TIMESTAMP       DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_emp_shift_date (employee_id, effective_from),
+    FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
+    FOREIGN KEY (shift_id)    REFERENCES shifts(id)    ON DELETE CASCADE,
+    FOREIGN KEY (assigned_by) REFERENCES users(id)     ON DELETE SET NULL
+);
+ 
+
+-- ================================================================
+-- TABLE: overtime_log
+-- More detailed OT tracking beyond the simple overtime_requests
+-- This table stores APPROVED OT that is committed to payroll
+-- ================================================================
+CREATE TABLE IF NOT EXISTS overtime_log (
+    id              INT             PRIMARY KEY AUTO_INCREMENT,
+    employee_id     INT             NOT NULL,
+    attendance_id   INT             NULL,               -- links to attendance row
+    ot_date         DATE            NOT NULL,
+    ot_hours        DECIMAL(4,2)    NOT NULL,
+    ot_rate         ENUM('1.0x','1.5x','2.0x','2.5x') DEFAULT '1.5x',
+    reason          TEXT,
+    approved_by     INT             NULL,
+    approved_at     TIMESTAMP       NULL,
+    status          ENUM('Pending','Approved','Rejected','Paid') DEFAULT 'Pending',
+    created_at      TIMESTAMP       DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (employee_id)  REFERENCES employees(id) ON DELETE CASCADE,
+    FOREIGN KEY (attendance_id) REFERENCES attendance(id) ON DELETE SET NULL,
+    FOREIGN KEY (approved_by)  REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- ================================================================
+-- VIEW: v_daily_attendance_summary
+-- Used by Daily Attendance page — avoids heavy JOIN on page load
+-- ================================================================
+CREATE OR REPLACE VIEW v_daily_attendance_summary AS
+SELECT
+    DATE(a.attendance_date)                         AS att_date,
+    COUNT(*)                                        AS total_records,
+    SUM(a.status = 'P')                             AS present_count,
+    SUM(a.status = 'A')                             AS absent_count,
+    SUM(a.status = 'L')                             AS leave_count,
+    SUM(a.status = 'H')                             AS half_day_count,
+    SUM(a.status = 'O')                             AS off_day_count,
+    SUM(a.is_late = 1)                              AS late_count,
+    ROUND(AVG(a.hours_worked), 2)                   AS avg_hours
+FROM attendance a
+GROUP BY DATE(a.attendance_date);
+
+-- ================================================================
+-- VIEW: v_attendance_monthly_summary
+-- Used by Attendance Reports — pre-aggregated per employee per month
+-- ================================================================
+CREATE OR REPLACE VIEW v_attendance_monthly_summary AS
+SELECT
+    a.employee_id,
+    CONCAT(e.first_name, ' ', e.last_name)          AS full_name,
+    e.employee_id                                   AS emp_code,
+    d.name                                          AS department,
+    a.month,
+    a.year,
+    SUM(a.status = 'P')                             AS days_present,
+    SUM(a.status = 'A')                             AS days_absent,
+    SUM(a.status = 'L')                             AS days_leave,
+    SUM(a.status = 'H')                             AS days_half,
+    SUM(a.status = 'O')                             AS days_off,
+    SUM(a.is_late = 1)                              AS late_days,
+    ROUND(SUM(a.hours_worked), 2)                   AS total_hours,
+    ROUND(SUM(a.overtime_hours), 2)                 AS total_overtime
+FROM attendance a
+JOIN employees e        ON e.id = a.employee_id
+LEFT JOIN departments d ON d.id = e.department_id
+WHERE e.status = 'Active' AND e.deleted_at IS NULL
+GROUP BY a.employee_id, a.month, a.year;
+
+-- ================================================================
+-- Seed: Default shifts
+-- ================================================================
+INSERT IGNORE INTO shifts (id, name, start_time, end_time, grace_minutes) VALUES
+(1, 'Morning Shift',   '08:00:00', '17:00:00', 15 ),
+(2, 'Afternoon Shift', '13:00:00', '22:00:00', 15 ),
+(3, 'Night Shift',     '22:00:00', '07:00:00', 15 ),
+(4, 'Half Day AM',     '08:00:00', '12:00:00', 10 ),
+(5, 'Half Day PM',     '13:00:00', '17:00:00', 10);
 
 -- ============================================================
 -- INDEXES (Performance Optimization)
