@@ -267,19 +267,9 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // ── PAGINATED TABLE BUILDER ──
-window.changePg = (id, dir) => { const c = document.getElementById(id); const np = c._page() + dir; const tp = Math.ceil(c._rows.length / c._perPage); if (np >= 1 && np <= tp) c._setPage(np); };
-window.setPg = (id, p) => document.getElementById(id)._setPage(p);
 
-// ── MOCK DATA ──
-const depts = ['Engineering', 'Sales', 'HR', 'Finance', 'Marketing', 'Operations', 'Legal', 'IT', 'Product', 'Customer Success'];
-const names = ['John Smith', 'Jane Doe', 'Carlos Martinez', 'Alice Kim', 'Michael Brown', 'Sarah Lee', 'David Park', 'Emily Wang', 'Robert Johnson', 'Lisa Chen', 'Tom Wilson', 'Maya Singh', 'James White', 'Anna Taylor', 'Kevin Moore', 'Sophie Turner', 'Chris Davis', 'Rachel Green', 'Daniel Hill', 'Olivia Harris'];
-const gen = (n, fn) => Array.from({ length: n }, (_, i) => fn(i));
-const rand = arr => arr[Math.floor(Math.random() * arr.length)];
-const randInt = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
-const fmtMoney = n => '$' + n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 const b = (cls, txt) => `<span class="badge badge-${cls}">${txt}</span>`;
-const actions = `<div class="flex-row"><button class="btn btn-xs btn-secondary"><i data-lucide="eye" size="10"></i></button><button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;"><i data-lucide="trash-2" size="10"></i></button></div>`;
-const ac = { key: '_', label: 'Actions', render: () => actions };
 const statusBadge = { active: b('success', 'Active'), inactive: b('neutral', 'Inactive'), pending: b('warning', 'Pending'), approved: b('success', 'Approved'), rejected: b('danger', 'Rejected') };
 
 // ── ORG CHART ──
@@ -643,58 +633,7 @@ function saveCompanyProfile() {
     });
 }
 
-// Helper to populate fields from existing page data (same as before)
-function populateCompanyFields() {
-  const getValue = (labelText) => {
-    const entries = document.querySelectorAll('.data-entry');
-    for (let entry of entries) {
-      const label = entry.querySelector('.de-label')?.textContent.trim();
-      if (label === labelText) {
-        // Try standard .de-value first, fall back to .badge, then any other span
-        const valueEl = entry.querySelector('.de-value')
-          || entry.querySelector('.badge')
-          || entry.querySelector('span:not(.de-label)');
-        return valueEl ? valueEl.textContent.trim() : '';
-      }
-    }
-    return '';
-  };
 
-  document.getElementById('edit_legal_name').value = getValue('Legal Name');
-  document.getElementById('edit_trading_name').value = getValue('Trading Name');
-  document.getElementById('edit_ceo_name').value = getValue('CEO');
-  document.getElementById('edit_head_office').value = getValue('Head office');
-  document.getElementById('edit_entity_type').value = getValue('Entity Type');
-
-  const estDateText = getValue('Establishment');
-  if (estDateText !== '-' && estDateText !== '—') {
-    const d = new Date(estDateText);
-    if (!isNaN(d)) {
-      document.getElementById('edit_establishment_date').value = d.toISOString().split('T')[0];
-    }
-  }
-
-  document.getElementById('edit_registration_no').value = getValue('Registration No.');
-  document.getElementById('edit_tin').value = getValue('Tax ID (TIN)');
-  document.getElementById('edit_vat_reg_number').value = getValue('VAT Reg Number');
-  document.getElementById('edit_trade_license_no').value = getValue('Trade License No.');
-
-  // Fixed: now correctly fetches the badge value
-  document.getElementById('edit_work_week_desc').value = getValue('Standard Work Week');
-
-  document.getElementById('edit_probation_days').value = getValue('Probation Period');
-  document.getElementById('edit_retirement_age').value = getValue('Retirement Policy');
-  document.getElementById('edit_main_bank').value = getValue('Main Bank');
-  document.getElementById('edit_bank_account_primary').value = getValue('Account (Primary)');
-  document.getElementById('edit_base_currency').value = getValue('Base Currency');
-  document.getElementById('edit_fiscal_start').value = getValue('Fiscal Start');
-  document.getElementById('edit_website').value = getValue('Official Website');
-  document.getElementById('edit_corporate_email').value = getValue('Corporate Email');
-  document.getElementById('edit_corporate_phone').value = getValue('Corporate Phone');
-  document.getElementById('edit_telegram').value = getValue('Telegram:') || getValue('Telegram');
-  document.getElementById('edit_whatsapp').value = getValue('WhatsApp:') || getValue('WhatsApp');
-  document.getElementById('edit_linkedin').value = getValue('LinkedIn:') || getValue('LinkedIn');
-}
 
 // Close modal function (unchanged)
 function closeCompanyModal(e) {
@@ -703,74 +642,7 @@ function closeCompanyModal(e) {
   }
 }
 
-function saveCompanyProfile() {
-  const btn = document.getElementById('btn-save-company');
-  const originalHtml = btn.innerHTML;
-  btn.disabled = true;
-  btn.innerHTML = `<i data-lucide="loader-2" class="spin" size="13"></i> Saving...`;
-  lcIcons(btn);
 
-  // Gather form data
-  const formData = new FormData();
-  formData.append('legal_name', document.getElementById('edit_legal_name').value.trim());
-  formData.append('trading_name', document.getElementById('edit_trading_name').value.trim());
-  formData.append('ceo_name', document.getElementById('edit_ceo_name').value.trim());
-  formData.append('head_office', document.getElementById('edit_head_office').value.trim());
-  formData.append('entity_type', document.getElementById('edit_entity_type').value.trim());
-  formData.append('establishment_date', document.getElementById('edit_establishment_date').value);
-  formData.append('registration_no', document.getElementById('edit_registration_no').value.trim());
-  formData.append('tin', document.getElementById('edit_tin').value.trim());
-  formData.append('vat_reg_number', document.getElementById('edit_vat_reg_number').value.trim());
-  formData.append('trade_license_no', document.getElementById('edit_trade_license_no').value.trim());
-  formData.append('work_week_desc', document.getElementById('edit_work_week_desc').value.trim());
-  formData.append('probation_days', document.getElementById('edit_probation_days').value);
-  formData.append('retirement_age', document.getElementById('edit_retirement_age').value);
-  formData.append('main_bank', document.getElementById('edit_main_bank').value.trim());
-  formData.append('bank_account_primary', document.getElementById('edit_bank_account_primary').value.trim());
-  formData.append('base_currency', document.getElementById('edit_base_currency').value.trim());
-  formData.append('fiscal_start', document.getElementById('edit_fiscal_start').value.trim());
-  formData.append('website', document.getElementById('edit_website').value.trim());
-  formData.append('corporate_email', document.getElementById('edit_corporate_email').value.trim());
-  formData.append('corporate_phone', document.getElementById('edit_corporate_phone').value.trim());
-  formData.append('telegram', document.getElementById('edit_telegram').value.trim());
-  formData.append('whatsapp', document.getElementById('edit_whatsapp').value.trim());
-  formData.append('linkedin', document.getElementById('edit_linkedin').value.trim());
-  formData.append('csrf_token', document.getElementById('edit_csrf_token').value);
-
-  // Basic validation
-  if (!formData.get('legal_name')) {
-    showNotification('Validation Error', 'Legal Name is required.', 'error');
-    btn.disabled = false;
-    btn.innerHTML = originalHtml;
-    lcIcons(btn);
-    return;
-  }
-
-  // Placeholder API endpoint (you can replace with actual endpoint later)
-  fetch('api/companyprofile/update_company_profile.php', {
-    method: 'POST',
-    body: formData
-  })
-    .then(response => response.json())
-    .then(result => {
-      if (result.success) {
-        showNotification('Success', result.message || 'Company profile updated.', 'success');
-        closeCompanyModal();
-        // Reload the page to reflect changes (or you could update DOM directly)
-        setTimeout(() => location.reload(), 1000);
-      } else {
-        showNotification('Error', result.message || 'Update failed.', 'error');
-      }
-    })
-    .catch(error => {
-      showNotification('Network Error', error.message, 'error');
-    })
-    .finally(() => {
-      btn.disabled = false;
-      btn.innerHTML = originalHtml;
-      lcIcons(btn);
-    });
-}
 
 // Hook the "Update records" button to open modal
 document.addEventListener('DOMContentLoaded', function () {
@@ -3152,21 +3024,7 @@ function goToServerPage(containerId, page) {
   const fn = window[`goToServerPage_${containerId}`];
   if (fn) fn(page);
 }
-window.addEventListener('DOMContentLoaded', () => {
-  lcIcons();
-  // Set page title based on current page parameter
-  const urlParams = new URLSearchParams(window.location.search);
-  const currentPage = urlParams.get('page') || 'dashboard';
-  const titleEl = document.getElementById('page-title');
-  if (titleEl) {
-    const activeLink = document.querySelector(`.sub-link[onclick*="'${currentPage}'"], .dash-link[onclick*="'${currentPage}'"]`);
-    titleEl.textContent = activeLink ? activeLink.textContent.trim() : currentPage.replace(/-/g, ' ');
-  }
-  // Initialize the current page
-  if (typeof initPage === 'function') {
-    initPage(currentPage);
-  }
-});
+
 window.addEventListener('hashchange', () => {
   const currentHash = window.location.hash.replace('#', '');
   if (currentHash) {
@@ -3174,94 +3032,10 @@ window.addEventListener('hashchange', () => {
   }
 });
 //sorting algorithm for all tables 
-function buildTable(containerId, { columns, rows, perPage = 8 }) {
-  const container = document.getElementById(containerId);
-  if (!container || container.dataset.built) return;
-  container.dataset.built = '1';
 
-  container._rows = [...rows];
-  container._cols = columns;
-  container._perPage = perPage;
-  container._currPg = 1;
-  container._sort = { key: null, dir: 'desc' };
-
-  container._render = function () {
-    const start = (this._currPg - 1) * this._perPage;
-    const end = Math.min(start + this._perPage, this._rows.length);
-    const slice = this._rows.slice(start, end);
-
-    // Header Logic: Check for action key '_'
-    const colHeaders = this._cols.map(c => {
-      if (c.key === '_') return `<th>${c.label}</th>`; // No sort for Actions
-
-      const isSorted = this._sort.key === c.key;
-      const arrow = isSorted ? (this._sort.dir === 'asc' ? ' ↑' : ' ↓') : ' ↕';
-      return `<th onclick="sortTbl('${containerId}','${c.key}')">${c.label}<span class="sort-indicator">${arrow}</span></th>`;
-    }).join('');
-
-    const bodyRows = slice.map(row =>
-      `<tr>${this._cols.map(c => {
-        let v = row[c.key] !== undefined ? row[c.key] : '—';
-        if (c.render) v = c.render(v, row);
-        return `<td>${v}</td>`;
-      }).join('')}</tr>`
-    ).join('');
-
-    const tp = Math.ceil(this._rows.length / this._perPage);
-    let pgBtns = `<button class="pg-btn" onclick="changePg('${containerId}',-1)" ${this._currPg <= 1 ? 'disabled' : ''}>‹</button>`;
-    for (let i = 1; i <= tp; i++) {
-      if (tp <= 7 || i === 1 || i === tp || Math.abs(i - this._currPg) <= 1)
-        pgBtns += `<button class="pg-btn ${i === this._currPg ? 'active' : ''}" onclick="setPg('${containerId}',${i})">${i}</button>`;
-      else if (Math.abs(i - this._currPg) === 2) pgBtns += `<button class="pg-btn" disabled>…</button>`;
-    }
-    pgBtns += `<button class="pg-btn" onclick="changePg('${containerId}',1)" ${this._currPg >= tp ? 'disabled' : ''}>›</button>`;
-
-    this.innerHTML = `
-      <div class="filter-bar">
-        <div class="search-container"><div class="search-inner">
-          <i data-lucide="search" class="search-lead-icon"></i>
-          <input type="text" placeholder="Search..." oninput="filterTbl('${containerId}', this.value)">
-        </div></div>
-      </div>
-      <div class="table-wrap"><table class="tbl"><thead><tr>${colHeaders}</tr></thead><tbody>${bodyRows}</tbody></table></div>
-      <div class="pagination"><span class="pagination-info">Showing ${this._rows.length ? start + 1 : 0}–${end} of ${this._rows.length}</span><div class="pagination-btns">${pgBtns}</div></div>`;
-    lcIcons(this);
-  };
-
-  container._render();
-}
 
 // ── GLOBAL SORT HANDLER (DESC-FIRST) ──
-window.sortTbl = (id, key) => {
-  const c = document.getElementById(id);
-  if (c._sort.key === key) {
-    c._sort.dir = c._sort.dir === 'asc' ? 'desc' : 'asc';
-  } else {
-    c._sort.key = key;
-    c._sort.dir = 'desc';
-  }
 
-  c._rows.sort((a, b) => {
-    let vA = a[key], vB = b[key];
-    const isNum = !isNaN(parseFloat(vA)) && isFinite(vA) && !isNaN(parseFloat(vB)) && isFinite(vB);
-    let res = isNum ? (vA - vB) : String(vA).replace(/<[^>]*>/g, '').localeCompare(String(vB).replace(/<[^>]*>/g, ''), undefined, { numeric: true, sensitivity: 'base' });
-    return c._sort.dir === 'asc' ? res : -res;
-  });
-
-  c._currPg = 1;
-  c._render();
-};
-
-window.changePg = (id, dir) => { const c = document.getElementById(id); c._currPg += dir; c._render(); };
-window.setPg = (id, p) => { const c = document.getElementById(id); c._currPg = p; c._render(); };
-window.filterTbl = (id, val) => {
-  const c = document.getElementById(id);
-  if (!c._rawRows) c._rawRows = [...c._rows];
-  const q = val.toLowerCase();
-  c._rows = c._rawRows.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(q)));
-  c._currPg = 1;
-  c._render();
-};
 const mods = [
 
   {
