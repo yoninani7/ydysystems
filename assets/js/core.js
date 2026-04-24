@@ -1,5 +1,29 @@
-// ── ICON HELPER: targeted scan when possible, full scan as fallback ──
-const lcIcons = (el) => el ? lucide.createIcons({ nodes: [el] }) : lucide.createIcons();
+// ── CORE UI STATE & CACHE ────────────────────────────────────────────────
+const UI = {
+  sidebar: document.getElementById('sidebar'),
+  mainContent: document.getElementById('main-content'),
+  contentArea: document.getElementById('content-area'),
+  overlay: document.getElementById('sidebar-overlay'),
+  pageTitle: document.getElementById('page-title')
+};
+
+// ── ICON AUTOMATION (MutationObserver) ───────────────────────────────────
+// Automatically initializes Lucide icons whenever the DOM changes.
+// This removes the need for manual lcIcons() calls throughout the code.
+const iconObserver = new MutationObserver((mutations) => {
+  mutations.forEach((mutation) => {
+    mutation.addedNodes.forEach((node) => {
+      if (node.nodeType === 1) { // Element node
+        if (node.hasAttribute('data-lucide')) lucide.createIcons({ nodes: [node] });
+        lucide.createIcons({ nodes: node.querySelectorAll('[data-lucide]') });
+      }
+    });
+  });
+});
+iconObserver.observe(document.body, { childList: true, subtree: true });
+
+// Targeted helper for immediate initialization if needed
+const lcIcons = (el) => lucide.createIcons(el ? { nodes: [el] } : {});
 // ── VALIDATION HELPERS ──────────────────────────────────────────────────
 // ─────────────────────────────────────────────────────────────────────────────
 // FIELD VALIDATION RULES (mirror server‑side add_employee.php)
@@ -56,41 +80,36 @@ function validateField(fieldId) {
   return result;
 }
 // ── SIDEBAR ──
-let sidebarCollapsed = false;
-const isMobile = () => window.innerWidth <= 768;
-const sidebar = document.getElementById('sidebar');
-const mainContent = document.getElementById('main-content');
-const overlay = document.getElementById('sidebar-overlay');
+
 
 function toggleSidebar() {
   if (isMobile()) {
-    const isOpen = sidebar.classList.contains('mobile-open');
+    const isOpen = UI.sidebar.classList.contains('mobile-open');
     if (isOpen) {
-      sidebar.classList.remove('mobile-open');
-      overlay.classList.remove('visible');
+      UI.sidebar.classList.remove('mobile-open');
+      UI.overlay.classList.remove('visible');
     } else {
-      sidebar.classList.remove('collapsed');
-      mainContent.classList.remove('sidebar-collapsed');
-      sidebar.classList.add('mobile-open');
-      overlay.classList.add('visible');
+      UI.sidebar.classList.remove('collapsed');
+      UI.mainContent.classList.remove('sidebar-collapsed');
+      UI.sidebar.classList.add('mobile-open');
+      UI.overlay.classList.add('visible');
     }
   } else {
     sidebarCollapsed = !sidebarCollapsed;
-    sidebar.classList.toggle('collapsed', sidebarCollapsed);
-    mainContent.classList.toggle('sidebar-collapsed', sidebarCollapsed);
+    UI.sidebar.classList.toggle('collapsed', sidebarCollapsed);
+    UI.mainContent.classList.toggle('sidebar-collapsed', sidebarCollapsed);
     const icon = document.getElementById('toggle-icon');
-    icon.setAttribute('data-lucide', sidebarCollapsed ? 'panel-left-open' : 'menu');
+    if (icon) icon.setAttribute('data-lucide', sidebarCollapsed ? 'panel-left-open' : 'menu');
     if (sidebarCollapsed) {
       document.querySelectorAll('.submenu').forEach(s => s.classList.remove('open'));
       document.querySelectorAll('.nav-trigger').forEach(t => t.classList.remove('open'));
     }
-    lcIcons(document.getElementById('sidebar-toggle-btn'));
   }
 }
 
 function closeMobileSidebar() {
-  sidebar.classList.remove('mobile-open');
-  overlay.classList.remove('visible');
+  UI.sidebar.classList.remove('mobile-open');
+  UI.overlay.classList.remove('visible');
 }
 function syncSidebarWithPage(pageId) {
   // 🔁 Map pages without sidebar links to their parent page
@@ -117,8 +136,8 @@ function syncSidebarWithPage(pageId) {
 }
 window.addEventListener('resize', () => {
   if (!isMobile()) {
-    sidebar.classList.remove('mobile-open');
-    overlay.classList.remove('visible');
+    UI.sidebar.classList.remove('mobile-open');
+    UI.overlay.classList.remove('visible');
   }
 }, { passive: true });
 
@@ -158,11 +177,11 @@ function hideFlyout() {
 
 document.querySelectorAll('.nav-group').forEach(group => {
   group.addEventListener('mouseenter', () => {
-    if (!sidebar.classList.contains('collapsed') || isMobile()) return;
+    if (!UI.sidebar.classList.contains('collapsed') || isMobile()) return;
     showFlyout(group);
   });
   group.addEventListener('mouseleave', () => {
-    if (!sidebar.classList.contains('collapsed') || isMobile()) return;
+    if (!UI.sidebar.classList.contains('collapsed') || isMobile()) return;
     hideFlyout();
   });
 });
@@ -198,25 +217,24 @@ function goPage(id, el) {
   fetch('dashboard.php?page=' + encodeURIComponent(id) + '&ajax=1')
     .then(r => r.text())
     .then(html => {
-      contentArea.innerHTML = html;
-      contentArea.style.opacity = '1';
-      lcIcons(contentArea);
+      UI.contentArea.innerHTML = html;
+      UI.contentArea.style.opacity = '1';
       syncSidebarWithPage(id);
+      
       // 🔁 REMOVE "data-built" FROM ALL ELEMENTS INSIDE THE NEW CONTENT
-      contentArea.querySelectorAll('[data-built]').forEach(el => {
+      UI.contentArea.querySelectorAll('[data-built]').forEach(el => {
         delete el.dataset.built;
       });
 
       // Update page title
-      const titleEl = document.getElementById('page-title');
-      if (titleEl) {
+      if (UI.pageTitle) {
         let rawText = el ? el.textContent.trim() : id.replace(/-/g, ' ');
         const capitalizedText = rawText.charAt(0).toUpperCase() + rawText.slice(1);
-        titleEl.textContent = capitalizedText;
+        UI.pageTitle.textContent = capitalizedText;
       }
 
       // Re‑execute any <script> tags injected via innerHTML
-      contentArea.querySelectorAll('script').forEach(oldScript => {
+      UI.contentArea.querySelectorAll('script').forEach(oldScript => {
         const newScript = document.createElement('script');
         [...oldScript.attributes].forEach(attr => newScript.setAttribute(attr.name, attr.value));
         newScript.textContent = oldScript.textContent;
@@ -1781,7 +1799,6 @@ function fetchOrgChartData() {
   if (!container) return Promise.reject('Container not found');
 
   container.innerHTML = '<div style="padding:40px; text-align:center;"><i data-lucide="loader-2" class="spin"></i> Loading structure...</div>';
-  lcIcons(container);
 
   return fetch('api/companyprofile/fetch_org_chart.php')
     .then(r => r.json())
@@ -1851,24 +1868,18 @@ function renderOrgChartFromData(data) {
 
   const deptCountFooter = document.getElementById('oc-dept-count');
   if (deptCountFooter) deptCountFooter.textContent = `${departments.length} Departments`;
-
-  lcIcons(container);
 }
 
-function initPage(id) {
-  if (inited.has(id)) return;
-  inited.add(id);
-  switch (id) {
-    case 'dashboard': initDashboard(); break;
-    case 'org-chart': initOrgChart(); break;
-    case 'departments':
-   initServerPaginatedTable('tbl-departments', 'api/companyprofile/fetch_departments.php', {
+const TABLE_CONFIG = {
+  'departments': {
+    container: 'tbl-departments',
+    url: 'api/companyprofile/fetch_departments.php',
     columns: [
       { key: 'name', label: 'Department Name' },
       { key: 'head', label: 'Head of Department' },
       { key: 'emp', label: 'Employees' },
       { key: 'status', label: 'Status' },
-      { key: 'updated_by_name', label: 'Last Updated By' },   // ← NEW
+      { key: 'updated_by_name', label: 'Last Updated By' },
       {
         key: '_',
         label: 'Actions',
@@ -1882,19 +1893,17 @@ function initPage(id) {
             </button>
           </div>`
       }
-    ],
-    perPage: 15,
-    searchPlaceholder: 'Search department or head...'
-  });
-    break;
-   case 'job-positions':
-    initServerPaginatedTable('tbl-job-positions', 'api/companyprofile/fetch_jobpositions.php', {
+    ]
+  },
+  'job-positions': {
+    container: 'tbl-job-positions',
+    url: 'api/companyprofile/fetch_jobpositions.php',
     columns: [
       { key: 'title', label: 'Job Title' },
       { key: 'dept', label: 'Department' },
       { key: 'count', label: 'Employees' },
       { key: 'status', label: 'Status' },
-      { key: 'updated_by_name', label: 'Last Updated By' },   // ← NEW
+      { key: 'updated_by_name', label: 'Last Updated By' },
       {
         key: '_',
         label: 'Actions',
@@ -1908,13 +1917,11 @@ function initPage(id) {
             </button>
           </div>`
       }
-    ],
-    perPage: 15,
-    searchPlaceholder: 'Search job title or department...'
-  });
-  break;
-   case 'branch-offices':
-  initServerPaginatedTable('tbl-branch-offices', 'api/companyprofile/fetch_branchoffices.php', {
+    ]
+  },
+  'branch-offices': {
+    container: 'tbl-branch-offices',
+    url: 'api/companyprofile/fetch_branchoffices.php',
     columns: [
       { key: 'name', label: 'Branch Name' },
       { key: 'manager', label: 'Branch Manager' },
@@ -1922,12 +1929,8 @@ function initPage(id) {
       { key: 'email', label: 'Email' },
       { key: 'location', label: 'Location' },
       { key: 'emp', label: 'Staff' },
-      {
-        key: 'status',
-        label: 'Status',
-        render: (v) => v === 'Active' ? statusBadge.active : statusBadge.inactive
-      },
-      { key: 'updated_by_name', label: 'Last Updated By' },   // ← NEW
+      { key: 'status', label: 'Status', render: (v) => v === 'Active' ? statusBadge.active : statusBadge.inactive },
+      { key: 'updated_by_name', label: 'Last Updated By' },
       {
         key: '_',
         label: 'Actions',
@@ -1941,326 +1944,174 @@ function initPage(id) {
             </button>
           </div>`
       }
-    ],
-    perPage: 15,
-    searchPlaceholder: 'Search branch name or manager...'
-  });
-  break;
-   case 'employee-directory':
-      initServerPaginatedTable('tbl-employees', 'api/employees/fetch_empprofiles.php', {
-        columns: [
-          { key: 'id', label: 'Emp ID' },
-          { key: 'fname', label: 'First Name' },
-          { key: 'mname', label: 'Middle Name' },
-          { key: 'lname', label: 'Last Name' },
-          { key: 'uname', label: 'Username' },
-          { key: 'gender', label: 'Gender' },
-          { key: 'dob', label: 'Date of Birth' },
-          { key: 'hire', label: 'Hire Date' },
-          {
-            key: 'status',
-            label: 'Status',
-            render: (v) => {
-              const s = v.toLowerCase();
-              if (s === 'active') return statusBadge.active;
-              if (s === 'inactive' || s === 'terminated') return statusBadge.inactive;
-              return b('warning', v);
-            }
-          },
-          { key: 'marital', label: 'Marital Status' },
-          { key: 'phone', label: 'Phone' },
-          { key: 'email', label: 'Email' },
-          { key: 'dept', label: 'Department' },
-          { key: 'position', label: 'Job Position' },
-          { key: 'branch', label: 'Branch name' },
-          { key: 'type', label: 'Emp Type' },
-          { key: 'bankname', label: 'Bank name' },
-          { key: 'bankacc', label: 'Bank Account' },
-          { key: 'tin', label: 'Tin number' },
-          { key: 'updated_by_name', label: 'Last Updated By' },
-          { key: 'created', label: 'Created At' },
-          {
-            key: '_',
-            label: 'Actions',
-            render: () => `
-          <div class="flex-row">
-            <button class="btn btn-xs btn-secondary"><i data-lucide="eye" size="10"></i></button>
-            <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;">
-              <i data-lucide="trash-2" size="10"></i>
-            </button>
-          </div>`
-          }
-        ],
-        searchPlaceholder: 'Search full name, job title, department...',
-        perPage: 15
-      });
-      break;
-    case 'add-employee':
-      currentObStep = 1; // Reset to first step
-      jumpToStep(1);    // Ensure UI is synced
-      // Attach blur validation for all fields with special rules
-      const fieldsToWatch = ['o-dob', 'o-email', 'o-sal', 'o-tin', 'o-acc', 'o-ephone'];
-      fieldsToWatch.forEach(id => {
-        const field = document.getElementById(id);
-        if (field) {
-          field.addEventListener('blur', function () {
-            validateField(this.id);
-          });
-        }
-      });
-      // Also watch dynamic fields (they may appear later, so use event delegation)
-      const pAddEmp = document.getElementById('p-add-employee');
-      if (pAddEmp) {
-        pAddEmp.addEventListener('blur', function (e) {
-          const target = e.target;
-          if (target.id === 'o-hire' || target.id === 'o-end-date' || target.id === 'o-hours') {
-            validateField(target.id);
-          }
-        }, true);
+    ]
+  },
+  'employee-directory': {
+    container: 'tbl-employees',
+    url: 'api/employees/fetch_empprofiles.php',
+    columns: [
+      { key: 'id', label: 'Emp ID' },
+      { key: 'fname', label: 'First Name' }, { key: 'mname', label: 'Middle Name' }, { key: 'lname', label: 'Last Name' },
+      { key: 'uname', label: 'Username' }, { key: 'gender', label: 'Gender' }, { key: 'dob', label: 'Date of Birth' }, { key: 'hire', label: 'Hire Date' },
+      { key: 'status', label: 'Status', render: (v) => { const s = v.toLowerCase(); if (s === 'active') return statusBadge.active; if (s === 'inactive' || s === 'terminated') return statusBadge.inactive; return b('warning', v); } },
+      { key: 'marital', label: 'Marital Status' }, { key: 'phone', label: 'Phone' }, { key: 'email', label: 'Email' },
+      { key: 'dept', label: 'Department' }, { key: 'position', label: 'Job Position' }, { key: 'branch', label: 'Branch name' },
+      { key: 'type', label: 'Emp Type' }, { key: 'bankname', label: 'Bank name' }, { key: 'bankacc', label: 'Bank Account' }, { key: 'tin', label: 'Tin number' },
+      { key: 'updated_by_name', label: 'Last Updated By' }, { key: 'created', label: 'Created At' },
+      {
+        key: '_', label: 'Actions', render: () => `
+        <div class="flex-row">
+          <button class="btn btn-xs btn-secondary"><i data-lucide="eye" size="10"></i></button>
+          <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;"><i data-lucide="trash-2" size="10"></i></button>
+        </div>`
       }
-      ['o-dob', 'o-hire', 'o-end-date'].forEach(id => {
-        const field = document.getElementById(id);
-        if (field) {
-          field.removeAttribute('readonly');
-          field.addEventListener('keydown', (e) => {
-            e.stopPropagation();
-          });
-        }
+    ]
+  },
+  'probation-tracker': {
+    container: 'tbl-probation',
+    url: 'api/employees/fetch_probation.php',
+    columns: [
+      { key: 'name', label: 'Employee' }, { key: 'dept', label: 'Department' }, { key: 'start', label: 'Probation Start' }, { key: 'end', label: 'Probation End' },
+      { key: 'days', label: 'Days Left', render: (v) => { const days = parseInt(v); if (days < 0) return `<span style="color:var(--danger); font-weight:bold;">Overdue (${Math.abs(days)})</span>`; if (days <= 30) return `<span style="color:var(--warning); font-weight:bold;">${days} Days</span>`; return `${days} Days`; } },
+      { key: 'status', label: 'Probation Status', render: (v, row) => { if (v === 'Completed') return b('success', 'Completed'); if (v === 'Failed') return b('danger', 'Failed'); if (v === 'Extended') return b('warning', 'Extended'); const days = parseInt(row.days); if (days < 0) return b('danger', 'Overdue'); if (days <= 14) return b('warning', 'Ending Soon'); return b('info', 'Active'); } },
+      { key: 'updated_by_name', label: 'Last Updated By' },
+      {
+        key: '_', label: 'Actions', render: (v, row) => `
+        <div style="display: flex; align-items: center; gap: 10px; justify-content: center;">
+          <button class="btn btn-xs" style="background: #f1f5f9; color: var(--primary); border: 1px solid #e2e8f0; display: inline-flex; align-items: center; justify-content: center; padding: 5px; border-radius: 6px;" title="Evaluate Employee" onclick="openProbationEvalModal('${row.employee_id}', '${row.name.replace(/'/g, "\\'")}')">
+            <i data-lucide="clipboard-check" size="13"></i>
+          </button>
+          <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;display:inline-flex;align-items:center;justify-content:center;padding: 5px; border-radius: 6px; cursor:pointer;"><i data-lucide="trash-2" size="13"></i></button>
+        </div>`
+      }
+    ]
+  },
+  'contract-renewals': {
+    container: 'tbl-contract-renewals',
+    url: 'api/employees/fetch_contracts.php',
+    columns: [
+      { key: 'name', label: 'Employee' }, { key: 'dept', label: 'Department' }, { key: 'start', label: 'Start Date' },
+      { key: 'expiry', label: 'Contract Expiry Date', render: (v) => { if (v === 'Permanent') return '<span style="color:var(--success); font-weight:600;">Permanent</span>'; const d = new Date(v); return isNaN(d.getTime()) ? v : d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }); } },
+      { key: 'days', label: 'Status', render: (v, row) => { if (row.expiry === 'Permanent') return b('success', 'Permanent'); const days = parseInt(v); if (days < 0) return b('danger', 'Expired'); if (days <= 15) return b('danger', 'Critical'); if (days <= 30) return b('warning', 'Due Soon'); return b('success', 'Active'); } },
+      { key: 'updated_by_name', label: 'Last Updated By' },
+      { key: '_', label: 'Actions', render: () => `<div class="flex-row"><button class="btn btn-xs btn-secondary" title="Renew Contract"><i data-lucide="refresh-cw" size="10"></i></button><button class="btn btn-xs btn-secondary"><i data-lucide="eye" size="10"></i></button></div>` }
+    ]
+  },
+  'asset-tracking': {
+    container: 'tbl-assets',
+    url: 'api/employees/fetch_assets.php',
+    columns: [
+      { key: 'id', label: 'Item Code' }, { key: 'name', label: 'Asset Name' }, { key: 'cat', label: 'Category' }, { key: 'serial', label: 'Serial number' },
+      { key: 'val', label: 'Asset Value', render: (v) => v ? 'ETB ' + parseFloat(v).toLocaleString() : '—' },
+      { key: 'user_prev', label: 'Previous custodian' }, { key: 'user', label: 'Current custodian' }, { key: 'loc', label: 'Location' }, { key: 'war', label: 'Warranty' }, { key: 'updated_by_name', label: 'Last Updated By' },
+      { key: '_', label: 'Actions', render: (v, row) => `<div style="display: flex; gap: 8px; justify-content: center;"><button class="btn btn-xs btn-secondary" title="View Details"><i data-lucide="eye" size="10"></i></button><button class="btn btn-xs btn-secondary" onclick="openReassignModal('${row.name}','${row.user}')" title="Reassign"><i data-lucide="shuffle" size="10"></i></button></div>` }
+    ]
+  },
+  'user-management': {
+    container: 'tbl-users',
+    url: 'api/system/fetch_users.php',
+    columns: [
+      { key: 'id', label: 'User ID', render: (v) => `<span style="font-family:'JetBrains Mono'; font-size:10px;">USR-${String(v).padStart(3, '0')}</span>` },
+      { key: 'name', label: 'Full Name' }, { key: 'email', label: 'Email Address' }, { key: 'role', label: 'Role', render: (v) => b('primary', v) }, { key: 'dept', label: 'Dept' },
+      { key: 'last_login', label: 'Last Login', render: (v) => v ? v : '<span style="color:var(--muted)">Never</span>' }, { key: 'status', label: 'Status', render: (v) => v === 'Active' ? statusBadge.active : statusBadge.inactive },
+      { key: 'updated_by_name', label: 'Last Updated By' },
+      { key: '_', label: 'Actions', render: () => `<div class="flex-row"><button class="btn btn-xs btn-secondary" title="Edit Permissions"><i data-lucide="shield-check" size="10"></i></button><button class="btn btn-xs btn-secondary" title="Reset Password"><i data-lucide="key" size="10"></i></button></div>` }
+    ]
+  }
+};
+
+function initPage(id) {
+  if (inited.has(id)) return;
+  inited.add(id);
+
+  // 1. Handle pages that use the table registry
+  if (TABLE_CONFIG[id]) {
+    const cfg = TABLE_CONFIG[id];
+    initServerPaginatedTable(cfg.container, cfg.url, {
+      columns: cfg.columns,
+      perPage: cfg.perPage || 15,
+      searchPlaceholder: cfg.searchPlaceholder || 'Search...'
+    });
+    return;
+  }
+
+  // 2. Handle pages with custom initialization
+  switch (id) {
+    case 'dashboard': initDashboard(); break;
+    case 'org-chart': initOrgChart(); break;
+    case 'employment-types': initEmploymentTypesCards(); break;
+    case 'leave-types': initLeaveTypesCards(); break;
+    case 'document-vault': initVaultMatrix(); break;
+    case 'roles-permissions': initRoles(); break;
+    case 'hr-analytics': initAnalytics(); break;
+    case 'attendance': buildMatrix(); break;
+    case 'add-employee':
+      currentObStep = 1; jumpToStep(1);
+      ['o-dob', 'o-email', 'o-sal', 'o-tin', 'o-acc', 'o-ephone'].forEach(id => {
+        const f = document.getElementById(id);
+        if (f) f.addEventListener('blur', () => validateField(id));
       });
+      const pAddEmp = document.getElementById('p-add-employee');
+      if (pAddEmp) pAddEmp.addEventListener('blur', (e) => { if (['o-hire', 'o-end-date', 'o-hours'].includes(e.target.id)) validateField(e.target.id); }, true);
+      ['o-dob', 'o-hire', 'o-end-date'].forEach(id => { const f = document.getElementById(id); if (f) f.removeAttribute('readonly'); });
       setTimeout(() => validateMasterRecord(), 50);
       break;
-    case 'employment-types':
-      initEmploymentTypesCards();
-      break;
-    case 'probation-tracker':
-      initServerPaginatedTable('tbl-probation', 'api/employees/fetch_probation.php', {
-        columns: [
-          { key: 'name', label: 'Employee' },
-          { key: 'dept', label: 'Department' },
-          { key: 'start', label: 'Probation Start' },
-          { key: 'end', label: 'Probation End' },
-          {
-            key: 'days',
-            label: 'Days Left',
-            render: (v) => {
-              const days = parseInt(v);
-              if (days < 0) return `<span style="color:var(--danger); font-weight:bold;">Overdue (${Math.abs(days)})</span>`;
-              if (days <= 30) return `<span style="color:var(--warning); font-weight:bold;">${days} Days</span>`;
-              return `${days} Days`;
-            }
-          },
-          {
-            key: 'status',
-            label: 'Probation Status',
-            render: (v, row) => {
-              if (v === 'Completed') return b('success', 'Completed');
-              if (v === 'Failed') return b('danger', 'Failed');
-              if (v === 'Extended') return b('warning', 'Extended');
-              
-              const days = parseInt(row.days);
-              if (days < 0) return b('danger', 'Overdue');
-              if (days <= 14) return b('warning', 'Ending Soon');
-              return b('info', 'Active');
-            }
-          },
-          { key: 'updated_by_name', label: 'Last Updated By' },
-          {
-            key: '_',
-            label: 'Actions',
-            render: (v, row) => `
-    <div style="display: flex; align-items: center; gap: 10px; justify-content: center;">
-        <button class="btn btn-xs" style="background: #f1f5f9; color: var(--primary); border: 1px solid #e2e8f0; display: inline-flex; align-items: center; justify-content: center; padding: 5px; border-radius: 6px;" title="Evaluate Employee" onclick="openProbationEvalModal('${row.employee_id}', '${row.name.replace(/'/g, "\\'")}')">
-            <i data-lucide="clipboard-check" size="13"></i>
-        </button>
-        <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;display:inline-flex;align-items:center;justify-content:center;padding: 5px; border-radius: 6px; cursor:pointer;">
-            <i data-lucide="trash-2" size="13"></i>
-        </button>
-    </div>`
-
-          }
-        ],
-        perPage: 15,
-        searchPlaceholder: 'Search employee name or department...'
-      });
-      break;
-    case 'contract-renewals':
-      initServerPaginatedTable('tbl-contract-renewals', 'api/employees/fetch_contracts.php', {
-        columns: [
-          { key: 'name', label: 'Employee' },
-          { key: 'dept', label: 'Department' },
-          { key: 'start', label: 'Start Date' },
-          {
-            key: 'expiry',
-            label: 'Contract Expiry Date',
-            render: (v) => {
-              if (v === 'Permanent') return '<span style="color:var(--success); font-weight:600;">Permanent</span>';
-              // Format date as DD MMM YYYY (e.g., 15 Apr 2026)
-              const d = new Date(v);
-              if (isNaN(d.getTime())) return v;
-              return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-            }
-          },
-          {
-            key: 'days',
-            label: 'Status',
-            render: (v, row) => {
-              if (row.expiry === 'Permanent') return b('success', 'Permanent');
-              const days = parseInt(v);
-              if (days < 0) return b('danger', 'Expired');
-              if (days <= 15) return b('danger', 'Critical');
-              if (days <= 30) return b('warning', 'Due Soon');
-              return b('success', 'Active');
-            }
-          },
-          { key: 'updated_by_name', label: 'Last Updated By' },
-          {
-            key: '_',
-            label: 'Actions',
-            render: () => `
-                    <div class="flex-row">
-                        <button class="btn btn-xs btn-secondary" title="Renew Contract"><i data-lucide="refresh-cw" size="10"></i></button>
-                        <button class="btn btn-xs btn-secondary"><i data-lucide="eye" size="10"></i></button>
-                    </div>`
-          }
-        ],
-        perPage: 15,
-        searchPlaceholder: 'Search employee name or department...'
-      });
-      break;
-    case 'retirement-planner':
-      initServerPaginatedTable('tbl-retirement', 'api/employees/fetch_retirement.php', {
-        columns: [
-          { key: 'name', label: 'Employee' }, { key: 'dept', label: 'Department' }, { key: 'age', label: 'Age' },
-          { key: 'tenure', label: 'Service Period' }, { key: 'date', label: 'Retirement Date' },
-          { key: 'days', label: 'Status', render: (v) => { const d = parseInt(v); return d < 0 ? b('neutral', 'Retired') : d <= 90 ? b('danger', `Upcoming (${d}D)`) : d <= 365 ? b('warning', 'Within Year') : b('info', 'Active'); } },
-          { key: 'pension', label: 'Pension Status', render: () => b('warning', 'In Progress') },
-          { key: '_', label: 'Actions', render: () => `<div class="flex-row"><button class="btn btn-xs btn-secondary" title="Succession Plan"><i data-lucide="user-plus" size="10"></i></button><button class="btn btn-xs btn-primary" title="Clearance"><i data-lucide="clipboard-check" size="10"></i></button></div>` }
-        ],
-        perPage: 15,
-        searchPlaceholder: 'Search retirement forecast...'
-      });
-      break;
-    case 'former-employees':
-      initServerPaginatedTable('tbl-former-employees', 'api/employees/fetch_former_employees.php', {
-        columns: [
-          { key: 'name', label: 'Employee' }, { key: 'dept', label: 'Last Department' }, { key: 'role', label: 'Last Role' }, { key: 'exitDate', label: 'Exit Date' },
-          { key: 'type', label: 'Reason', render: (v) => v === 'Terminated' ? b('danger', v) : b('neutral', v) }, { key: 'duration', label: 'Duration' },
-          { key: 'rehire', label: 'Rehire possibility', render: (v) => v === 'No' ? b('danger', 'No') : b('success', 'Yes') },
-          { key: '_', label: 'Actions', render: () => `<div class="flex-row"><button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;"><i data-lucide="trash-2" size="10"></i></button></div>` }
-        ],
-        perPage: 15,
-        searchPlaceholder: 'Search former employees...'
-      });
-      break;
-    case 'asset-tracking':
-      initServerPaginatedTable('tbl-assets', 'api/employees/fetch_assets.php', {
-        columns: [
-          { key: 'id', label: 'Item Code' }, { key: 'name', label: 'Asset Name' }, { key: 'cat', label: 'Category' }, { key: 'serial', label: 'Serial number' },
-          { key: 'val', label: 'Asset Value', render: (v) => v ? 'ETB ' + parseFloat(v).toLocaleString() : '—' },
-          { key: 'user_prev', label: 'Previous custodian' }, { key: 'user', label: 'Current custodian' }, { key: 'loc', label: 'Location' }, { key: 'war', label: 'Warranty' },{ key: 'updated_by_name', label: 'Last Updated By' },
-          { key: '_', label: 'Actions', render: (v, row) => `<div style="display: flex; gap: 8px; justify-content: center;"><button class="btn btn-xs btn-secondary" title="View Details"><i data-lucide="eye" size="10"></i></button><button class="btn btn-xs btn-secondary" onclick="openReassignModal('${row.name}','${row.user}')" title="Reassign"><i data-lucide="shuffle" size="10"></i></button></div>` }
-        ],
-        perPage: 15,
-        searchPlaceholder: 'Search assets...'
-      });
-      break;
-    case 'document-vault': initVaultMatrix(); break;
     case 'employee-vault':
-      if (pendingEmployeeVaultData) {
+      if (typeof pendingEmployeeVaultData !== 'undefined' && pendingEmployeeVaultData) {
         const { name, id } = pendingEmployeeVaultData;
-        document.getElementById('v-emp-name').textContent = name;
-        document.getElementById('v-emp-id').textContent = id + " • Personnel Archive";
+        const nameEl = document.getElementById('v-emp-name');
+        const idEl = document.getElementById('v-emp-id');
+        if (nameEl) nameEl.textContent = name;
+        if (idEl) idEl.textContent = id + " • Personnel Archive";
 
         const listContainer = document.getElementById('vault-docs-list');
-        listContainer.innerHTML = '';
-        let uploadCount = 0;
-
-        VAULT_SCHEMA.forEach(doc => {
-          const isUploaded = Math.random() > 0.4; // Replace with real API call later
-          if (isUploaded) uploadCount++;
-
-          const row = document.createElement('div');
-          row.className = 'doc-row';
-          row.innerHTML = `
-                <div class="doc-icon-box ${isUploaded ? 'uploaded' : 'missing'}">
-                    <i data-lucide="${isUploaded ? 'file-check' : 'file-question-mark'}" size="18"></i>
-                </div>
-                <div class="doc-meta">
-                    <div class="doc-name">${doc.name}</div>
-                    <div class="doc-cat">${doc.cat}</div>
-                </div>
-                <div class="doc-status">
-                    ${isUploaded ?
-              '<span class="badge badge-success" style="font-size:10px">Verified</span>' :
-              '<span class="badge badge-neutral" style="font-size:10px; opacity:0.7;">Pending</span>'}
-                </div>
-                <div class="doc-actions">
-                    ${isUploaded ? `
-                        <button class="btn btn-secondary btn-xs" title="View" onclick="showNotification('Vault','Opening file...','info')">
-                            <i data-lucide="eye" size="14"></i> View
-                        </button>
-                        <button class="btn btn-secondary btn-xs" title="Update" style="min-width:34px;">
-                            <i data-lucide="refresh-cw" size="14"></i>
-                        </button>
-                    ` : `
-                        <button class="btn btn-primary btn-xs btn-upload-pro" onclick="showNotification('Vault','Ready for upload','info')">
-                            <i data-lucide="plus" size="14"></i> Add Document
-                        </button>
-                    `}
-                </div>
-            `;
-          listContainer.appendChild(row);
-        });
-
-        const total = VAULT_SCHEMA.length;
-        document.getElementById('v-count-upload').textContent = uploadCount;
-        document.getElementById('v-count-missing').textContent = total - uploadCount;
-        document.getElementById('v-compliance-percent').textContent = Math.round((uploadCount / total) * 100) + "%";
-
-        lcIcons(listContainer);
+        if (listContainer) {
+          listContainer.innerHTML = '';
+          let uploadCount = 0;
+          VAULT_SCHEMA.forEach(doc => {
+            const isUploaded = Math.random() > 0.4;
+            if (isUploaded) uploadCount++;
+            const row = document.createElement('div');
+            row.className = 'doc-row';
+            row.innerHTML = `
+              <div class="doc-icon-box ${isUploaded ? 'uploaded' : 'missing'}"><i data-lucide="${isUploaded ? 'file-check' : 'file-question-mark'}" size="18"></i></div>
+              <div class="doc-meta"><div class="doc-name">${doc.name}</div><div class="doc-cat">${doc.cat}</div></div>
+              <div class="doc-status">${isUploaded ? '<span class="badge badge-success" style="font-size:10px">Verified</span>' : '<span class="badge badge-neutral" style="font-size:10px; opacity:0.7;">Pending</span>'}</div>
+              <div class="doc-actions">
+                  ${isUploaded ? `
+                      <button class="btn btn-secondary btn-xs" title="View" onclick="showNotification('Vault','Opening file...','info')"><i data-lucide="eye" size="14"></i> View</button>
+                      <button class="btn btn-secondary btn-xs" title="Update" style="min-width:34px;"><i data-lucide="refresh-cw" size="14"></i></button>
+                  ` : `
+                      <button class="btn btn-primary btn-xs btn-upload-pro" onclick="showNotification('Vault','Ready for upload','info')"><i data-lucide="plus" size="14"></i> Add Document</button>
+                  `}
+              </div>`;
+            listContainer.appendChild(row);
+          });
+          const total = VAULT_SCHEMA.length;
+          const upCountEl = document.getElementById('v-count-upload');
+          const missCountEl = document.getElementById('v-count-missing');
+          const compPercentEl = document.getElementById('v-compliance-percent');
+          if (upCountEl) upCountEl.textContent = uploadCount;
+          if (missCountEl) missCountEl.textContent = total - uploadCount;
+          if (compPercentEl) compPercentEl.textContent = Math.round((uploadCount / total) * 100) + "%";
+        }
         pendingEmployeeVaultData = null;
       }
       break;
     case 'job-vacancies':
       initServerPaginatedTable('tbl-vacancies', 'api/talent/fetch_vacancies.php', {
         columns: [
-          { key: 'title', label: 'Position' },
-          { key: 'dept', label: 'Department' },
-          { key: 'branch', label: 'Branch' },
-          { key: 'type', label: 'Type' },
-          { key: 'posted', label: 'Posted' },
-          { key: 'deadline', label: 'Deadline' },
-          {
-            key: 'status',
-            label: 'Status',
-            render: (v) => {
-              const s = v.toLowerCase();
-              if (s === 'open') return b('success', 'Open');
-              if (s === 'closed') return b('danger', 'Closed');
-              if (s === 'filled') return b('neutral', 'Filled');
-              if (s === 'on hold') return b('warning', 'On Hold');
-              return b('info', v);
-            }
-          },
+          { key: 'title', label: 'Position' }, { key: 'dept', label: 'Department' }, { key: 'branch', label: 'Branch' }, { key: 'type', label: 'Type' },
+          { key: 'posted', label: 'Posted' }, { key: 'deadline', label: 'Deadline' },
+          { key: 'status', label: 'Status', render: (v) => { const s = v.toLowerCase(); if (s === 'open') return b('success', 'Open'); if (s === 'closed') return b('danger', 'Closed'); if (s === 'filled') return b('neutral', 'Filled'); if (s === 'on hold') return b('warning', 'On Hold'); return b('info', v); } },
           { key: 'updated_by_name', label: 'Last Updated By' },
-          {
-            key: '_',
-            label: 'Actions',
-            render: () => `
-              <div class="flex-row">
-                <button class="btn btn-xs btn-secondary" title="View Details"><i data-lucide="eye" size="10"></i></button>
-                <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;">
-                  <i data-lucide="trash-2" size="10"></i>
-                </button>
-              </div>`
-          }
+          { key: '_', label: 'Actions', render: () => `<div class="flex-row"><button class="btn btn-xs btn-secondary" title="View Details"><i data-lucide="eye" size="10"></i></button><button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;"><i data-lucide="trash-2" size="10"></i></button></div>` }
         ],
         perPage: 15,
         searchPlaceholder: 'Search positions, departments...'
       });
       break;
-   
-      case 'candidates':
+    case 'candidates':
       initServerPaginatedTable('tbl-candidates', 'api/talent/fetch_candidates.php', {
         columns: [
           { key: 'name', label: 'Candidate' }, { key: 'position', label: 'Applied For' }, { key: 'applied', label: 'Applied Date' },
