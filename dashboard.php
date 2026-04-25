@@ -25,6 +25,7 @@ $allowed_pages = [
     'internship'          => 'pages/talent_acquisition/internship_mgt.php',
     'Promote/Demote'      => 'pages/employee_movement/promote_demote.php',
     'transfers'           => 'pages/employee_movement/department_transfers.php',
+    'shift-management'     => 'pages/attendance/shift_management.php',
     'attendance'          => 'pages/attendance/record_attendance.php',
     'daily-attendance'    => 'pages/attendance/daily_attendance.php',
     'attendance-reports'  => 'pages/attendance/attendance_reports.php',
