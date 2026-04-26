@@ -1624,6 +1624,12 @@ function initPage(id) {
   inited.add(id);
 
   switch (id) {
+    case 'attendance-reports':
+    // Initially empty or can call generateAttendanceReport() if you want it pre-loaded
+    break;
+    case 'shift-management':
+    renderShifts(); // Default view
+    break;
     case 'dashboard': initDashboard(); break;
     case 'org-chart': initOrgChart(); break;
     case 'departments':
@@ -3823,3 +3829,293 @@ window.addEventListener('hashchange', () => {
   const currentHash = window.location.hash.replace('#', '');
   if (currentHash) goPage(currentHash);
 });
+   
+// --- SHIFT DEFINITIONS (Instant) ---
+function renderShifts() {
+    const container = document.getElementById('shift-dynamic-container');
+    if (!container) return;
+    
+    container.className = "bento-grid"; // 12-column layout
+    
+    // Update Tab UI
+    document.getElementById('btn-tab-def').className = 'btn btn-primary btn-sm';
+    document.getElementById('btn-tab-assign').className = 'btn btn-secondary btn-sm';
+    document.getElementById('btn-tab-assign').style.border = 'none';
+
+    const mockShifts = [
+        { name: 'Morning Shift', start: '08:00', end: '17:00', dur: '9h/day', grace: '15min grace', emp: '12 employees' },
+        { name: 'Afternoon Shift', start: '13:00', end: '22:00', dur: '9h/day', grace: '15min grace', emp: '8 employees' },
+        { name: 'Night Shift', start: '22:00', end: '07:00', dur: '9h/day', grace: '15min grace', emp: '5 employees' }
+    ];
+
+    container.innerHTML = mockShifts.map(s => `
+        <div class="card" style="grid-column: span 4; border-top: 4px solid var(--primary); display: flex; flex-direction: column;">
+            <div class="card-body">
+                <h3 class="card-title" style="margin-bottom: 4px;">${s.name}</h3>
+                <p style="font-family: 'JetBrains Mono'; color: var(--muted); font-size: 0.85rem; margin-bottom: 16px;">${s.start} &rarr; ${s.end}</p>
+                <div class="flex-row" style="gap: 8px; flex-wrap: wrap;">
+                    <span class="badge badge-primary" style="background: var(--primary-light); color: var(--primary);">${s.dur}</span>
+                    <span class="badge badge-primary" style="background: var(--primary-light); color: var(--primary);">${s.grace}</span>
+                    <span class="badge badge-primary" style="background: var(--primary-light); color: var(--primary);">${s.emp}</span>
+                </div>
+            </div>
+            <div class="card-footer" style="padding: 12px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; background: #fafafa; border-radius: 0 0 12px 12px;">
+                <button class="btn btn-secondary btn-xs" style="background:#fff">Edit</button>
+                <button class="btn btn-primary btn-xs">Assign</button>
+            </div>
+        </div>
+    `).join('');
+    
+    lcIcons(container);
+}
+
+// --- EMPLOYEE ASSIGNMENTS (Instant) ---
+function renderShiftAssignments() {
+    const container = document.getElementById('shift-dynamic-container');
+    if (!container) return;
+    
+    container.className = ""; // Table layout
+    
+    document.getElementById('btn-tab-assign').className = 'btn btn-primary btn-sm';
+    document.getElementById('btn-tab-def').className = 'btn btn-secondary btn-sm';
+    document.getElementById('btn-tab-def').style.border = 'none';
+
+    const mockData = [
+        { code: '—', name: 'Abebe Kebede', dept: '—', shift: 'Morning Shift', start: '08:00', end: '17:00', date: '2026-01-01' },
+        { code: '—', name: 'Tigist Haile', dept: '—', shift: 'Afternoon Shift', start: '13:00', end: '22:00', date: '2026-02-15' }
+    ];
+
+    container.innerHTML = `
+        <div class="card mb-3" style="border-radius: 12px; overflow: visible;">
+            <div class="card-body" style="padding: 16px 24px;">
+                <div class="flex-row" style="gap: 16px; align-items: flex-end;">
+                    <div style="flex: 1;">
+                        <label style="font-size: 10px; font-weight: 800; color: var(--muted); margin-bottom: 6px; display: block;">DEPARTMENT</label>
+                        <div class="as-combo-container">
+                            <input type="text" id="shift-dept-filter" class="sel" style="width: 100%;" value="All Departments" onfocus="showAsDrop('as-drop-shift-dept')" readonly>
+                            <div class="as-combo-results" id="as-drop-shift-dept">
+                                <div class="as-res-item selected" onclick="selectThemedItem(this, 'shift-dept-filter')">All Departments</div>
+                                <div class="as-res-item" onclick="selectThemedItem(this, 'shift-dept-filter')">Engineering</div>
+                                <div class="as-res-item" onclick="selectThemedItem(this, 'shift-dept-filter')">Operations</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-size: 10px; font-weight: 800; color: var(--muted); margin-bottom: 6px; display: block;">SHIFT FILTER</label>
+                        <div class="as-combo-container">
+                            <input type="text" id="shift-type-filter" class="sel" style="width: 100%;" value="All Shifts" onfocus="showAsDrop('as-drop-shift-type')" readonly>
+                            <div class="as-combo-results" id="as-drop-shift-type">
+                                <div class="as-res-item selected" onclick="selectThemedItem(this, 'shift-type-filter')">All Shifts</div>
+                                <div class="as-res-item" onclick="selectThemedItem(this, 'shift-type-filter')">Morning Shift</div>
+                                <div class="as-res-item" onclick="selectThemedItem(this, 'shift-type-filter')">Afternoon Shift</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="flex: 1.5;">
+                        <label style="font-size: 10px; font-weight: 800; color: var(--muted); margin-bottom: 6px; display: block;">SEARCH EMPLOYEE</label>
+                        <div class="search-inner" style="height: 38px; box-shadow: none; border: 1px solid var(--border);">
+                            <i data-lucide="search" size="14" style="color: var(--muted)"></i>
+                            <input type="text" placeholder="Type name or code..." style="font-size: 13px;">
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary" style="height: 38px; background: #eff4f9; border: none;" onclick="renderShiftAssignments()">
+                        <i data-lucide="refresh-cw" size="14"></i> Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">Employee Shift Assignments</span>
+                <button class="btn btn-secondary btn-sm"><i data-lucide="layers" size="14"></i> Bulk Assign</button>
+            </div>
+            <div class="table-wrap">
+                <table class="tbl">
+                    <thead>
+                        <tr>
+                            <th>EMP. CODE</th><th>NAME</th><th>DEPARTMENT</th><th>CURRENT SHIFT</th><th>START TIME</th><th>END TIME</th><th>EFFECTIVE FROM</th><th style="text-align:center">ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${mockData.map(row => `
+                            <tr>
+                                <td style="font-family: 'JetBrains Mono'; font-size: 11px; color: var(--muted);">${row.code}</td>
+                                <td style="font-weight: 700;">${row.name}</td>
+                                <td style="color: var(--muted);">${row.dept}</td>
+                                <td style="font-weight: 600;">${row.shift}</td>
+                                <td>${row.start}</td><td>${row.end}</td><td>${row.date}</td>
+                                <td>
+                                    <div class="flex-row" style="gap:4px; justify-content: center;">
+                                        <button class="btn btn-xs btn-secondary" style="font-size: 10px; padding: 2px 8px; background: #fff;">Edit</button>
+                                        <button class="btn btn-xs btn-danger" style="font-size: 10px; padding: 2px 8px;">End</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+
+    lcIcons(container);
+}
+
+// --- SAVE SHIFT (Instant) ---
+function saveNewShift() {
+    // Perform instant reset
+    showNotification('Shift Created', 'The new shift schedule has been defined successfully.', 'success');
+    closeModal('modal-add-shift');
+    renderShifts(); // Re-render instantly
+}
+
+function generateAttendanceReport() {
+    const container = document.getElementById('report-results-container');
+    const reportType = document.getElementById('rep-type').value;
+    
+    let html = '';
+
+    if (reportType === 'Late Comers') {
+        // --- LATE COMERS REPORT DATA ---
+        const lateData = [
+            { code: 'EMP-101', name: 'Abebe Kebede', dept: 'Engineering', date: '2026-03-05', in: '08:25', start: '08:00', late: 25 },
+            { code: 'EMP-102', name: 'Tigist Haile', dept: 'HR', date: '2026-03-05', in: '13:40', start: '13:00', late: 40 },
+            { code: 'EMP-104', name: 'Selam Tesfaye', dept: 'Engineering', date: '2026-03-07', in: '08:15', start: '08:00', late: 15 },
+            { code: 'EMP-103', name: 'Dawit Mengistu', dept: 'Operations', date: '2026-03-10', in: '08:10', start: '08:00', late: 10 },
+            { code: 'EMP-101', name: 'Abebe Kebede', dept: 'Engineering', date: '2026-03-12', in: '09:05', start: '08:00', late: 65 }
+        ];
+
+        html = `
+            <div class="card" style="animation: modalIn 0.3s ease;">
+                <div class="card-header">
+                    <span class="card-title">Monthly Attendance Summary</span>
+                    <span style="font-size: 11px; color: var(--muted); font-weight: 600;">5 records</span>
+                </div>
+                <div class="table-wrap">
+                    <table class="tbl">
+                        <thead>
+                            <tr>
+                                <th>EMP. CODE</th>
+                                <th>NAME</th>
+                                <th>DEPARTMENT</th>
+                                <th>DATE</th>
+                                <th>CHECK-IN</th>
+                                <th>SHIFT START</th>
+                                <th style="text-align:right">MINUTES LATE</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${lateData.map(row => `
+                                <tr>
+                                    <td style="font-family: 'JetBrains Mono'; font-size: 11px; color: var(--muted);">${row.code}</td>
+                                    <td style="font-weight: 700;">${row.name}</td>
+                                    <td>${row.dept}</td>
+                                    <td>${row.date}</td>
+                                    <td>${row.in}</td>
+                                    <td>${row.start}</td>
+                                    <td style="text-align:right; font-weight: 700;">${row.late}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>`;
+    } else {
+        // --- SUMMARY REPORT DATA (Original) ---
+        const summaryData = [
+            { dept: 'Engineering', total: 45, absent: 8, leave: 12, late: 15, ot: 32.5, rate: 92.5 },
+            { dept: 'HR', total: 12, absent: 1, leave: 3, late: 2, ot: 5, rate: 97.2 },
+            { dept: 'Operations', total: 28, absent: 5, leave: 6, late: 8, ot: 18, rate: 89.3 },
+            { dept: 'Finance', total: 8, absent: 0, leave: 1, late: 1, ot: 2.5, rate: 98.8 },
+            { dept: 'Marketing', total: 10, absent: 2, leave: 2, late: 3, ot: 6, rate: 90.0 }
+        ];
+
+        html = `
+            <div class="card" style="animation: modalIn 0.3s ease;">
+                <div class="card-header">
+                    <span class="card-title">Monthly Attendance Summary</span>
+                    <span style="font-size: 11px; color: var(--muted); font-weight: 600;">5 records</span>
+                </div>
+                <div class="table-wrap">
+                    <table class="tbl">
+                        <thead>
+                            <tr>
+                                <th>DEPARTMENT</th><th>TOTAL EMP</th><th>ABSENT DAYS</th><th>LEAVE DAYS</th><th>LATE ARRIVALS</th><th>TOTAL OT HRS</th><th style="text-align:right">ATTENDANCE RATE</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${summaryData.map(row => {
+                                let rateColor = row.rate < 90 ? 'var(--danger)' : (row.rate <= 95 ? 'var(--warning)' : 'var(--success)');
+                                return `
+                                <tr>
+                                    <td>${row.dept}</td><td>${row.total}</td><td>${row.absent}</td><td>${row.leave}</td><td>${row.late}</td><td>${row.ot}</td>
+                                    <td style="text-align:right; font-weight: 800; color: ${rateColor};">${row.rate}%</td>
+                                </tr>`;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>`;
+    }
+
+    container.innerHTML = html;
+    lcIcons(container);
+}
+function runInstantReport() {
+    const container = document.getElementById('report-results-target');
+    const type = document.getElementById('rep-type-val').value;
+    
+    let html = '';
+    let title = 'Monthly Attendance Summary';
+    let count = '0 records';
+
+    if (type === 'Summary') {
+        count = '5 records';
+        const data = [
+            { d: 'Engineering', e: 45, a: 8, l: 12, arr: 15, ot: 32.5, r: 92.5 },
+            { d: 'HR', e: 12, a: 1, l: 3, arr: 2, ot: 5, r: 97.2 },
+            { d: 'Operations', e: 28, a: 5, l: 6, arr: 8, ot: 18, r: 89.3 },
+            { d: 'Finance', e: 8, a: 0, l: 1, arr: 1, ot: 2.5, r: 98.8 },
+            { d: 'Marketing', e: 10, a: 2, l: 2, arr: 3, ot: 6, r: 90.0 }
+        ];
+        html = `<table class="tbl">
+            <thead><tr><th>DEPARTMENT</th><th>TOTAL EMP</th><th>ABSENT DAYS</th><th>LEAVE DAYS</th><th>LATE ARRIVALS</th><th>TOTAL OT HRS</th><th style="text-align:right">RATE</th></tr></thead>
+            <tbody>${data.map(i => {
+                let col = i.r < 90 ? 'var(--danger)' : (i.r <= 95 ? 'var(--warning)' : 'var(--success)');
+                return `<tr><td>${i.d}</td><td>${i.e}</td><td>${i.a}</td><td>${i.l}</td><td>${i.arr}</td><td>${i.ot}</td><td style="text-align:right; font-weight:800; color:${col}">${i.r}%</td></tr>`
+            }).join('')}</tbody></table>`;
+
+    } else if (type === 'Late Comers') {
+        count = '5 records';
+        const data = [
+            { c: 'EMP-101', n: 'Abebe Kebede', d: 'Engineering', dt: '2026-03-05', in: '08:25', s: '08:00', m: 25 },
+            { c: 'EMP-102', n: 'Tigist Haile', d: 'HR', dt: '2026-03-05', in: '13:40', s: '13:00', m: 40 },
+            { c: 'EMP-104', n: 'Selam Tesfaye', d: 'Engineering', dt: '2026-03-07', in: '08:15', s: '08:00', m: 15 },
+            { c: 'EMP-103', n: 'Dawit Mengistu', d: 'Operations', dt: '2026-03-10', in: '08:10', s: '08:00', m: 10 },
+            { c: 'EMP-101', n: 'Abebe Kebede', d: 'Engineering', dt: '2026-03-12', in: '09:05', s: '08:00', m: 65 }
+        ];
+        html = `<table class="tbl">
+            <thead><tr><th>EMP. CODE</th><th>NAME</th><th>DEPARTMENT</th><th>DATE</th><th>CHECK-IN</th><th>SHIFT START</th><th style="text-align:right">MINUTES LATE</th></tr></thead>
+            <tbody>${data.map(i => `<tr><td style="font-family:JetBrains Mono; font-size:11px">${i.c}</td><td style="font-weight:700">${i.n}</td><td>${i.d}</td><td>${i.dt}</td><td>${i.in}</td><td>${i.s}</td><td style="text-align:right; font-weight:700">${i.m}</td></tr>`).join('')}</tbody></table>`;
+
+    } else if (type === 'Absentee List') {
+        count = '4 records';
+        const data = [
+            { c: 'EMP-101', n: 'Abebe Kebede', d: 'Engineering', days: 3, dates: '5, 12, 19' },
+            { c: 'EMP-105', n: 'Henok Assefa', d: 'Finance', days: 2, dates: '8, 22' },
+            { c: 'EMP-103', n: 'Dawit Mengistu', d: 'Operations', days: 1, dates: '15' },
+            { c: 'EMP-106', n: 'Meron Alemu', d: 'HR', days: 4, dates: '2, 3, 10, 28' }
+        ];
+        html = `<table class="tbl">
+            <thead><tr><th>EMP. CODE</th><th>NAME</th><th>DEPARTMENT</th><th>ABSENT DAYS</th><th style="text-align:right">ABSENT DATES</th></tr></thead>
+            <tbody>${data.map(i => `<tr><td style="font-family:JetBrains Mono; font-size:11px">${i.c}</td><td style="font-weight:700">${i.n}</td><td>${i.d}</td><td>${i.days}</td><td style="text-align:right; color:var(--muted); font-size:11px">${i.dates}</td></tr>`).join('')}</tbody></table>`;
+    }
+
+    container.innerHTML = `
+        <div class="card" style="animation: modalIn 0.3s ease;">
+            <div class="card-header"><span class="card-title">${title}</span><span style="font-size:11px; font-weight:600; color:var(--muted)">${count}</span></div>
+            <div class="table-wrap">${html}</div>
+        </div>`;
+    
+    lcIcons(container);
+}

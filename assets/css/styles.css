@@ -1461,3 +1461,17 @@ input:disabled, input[disabled] {
 .btn-danger:hover {
   background: #b91c1c;
 }
+.modal-overlay {
+  display: none; /* Hidden by default */
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5); /* Darker backdrop for focus */
+  backdrop-filter: blur(4px);
+  z-index: 2000;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-overlay.open {
+  display: flex; /* Shown when 'open' class is added */
+}

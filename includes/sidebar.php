@@ -12,6 +12,7 @@
         </div>
       </div>
     </div>
+
     <div class="nav-label">Organization</div>
     <div class="nav-group">
       <div class="nav-trigger" onclick="toggleNav(this,'m-org')">
@@ -26,6 +27,7 @@
         <div class="sub-link" onclick="goPage('branch-offices',this)"><span class="sub-dot"></span><span>Branch Offices</span></div>
       </div>
     </div>
+
     <div class="nav-group">
       <div class="nav-trigger" onclick="toggleNav(this,'m-emp')">
         <div class="nav-trigger-left"><div class="nav-icon"><i data-lucide="users" size="15"></i></div><span>Employees</span></div>
@@ -42,6 +44,7 @@
         <div class="sub-link" onclick="goPage('asset-tracking',this)"><span class="sub-dot"></span><span>Asset Tracking</span></div>
       </div>
     </div>
+
     <div class="nav-group">
       <div class="nav-trigger" onclick="toggleNav(this,'m-move')">
         <div class="nav-trigger-left"><div class="nav-icon"><i data-lucide="arrow-right-left" size="15"></i></div><span>Employee Movement</span></div>
@@ -52,6 +55,7 @@
         <div class="sub-link" onclick="goPage('transfers',this)"><span class="sub-dot"></span><span>Department Transfers</span></div>
       </div>
     </div>
+
     <div class="nav-group">
       <div class="nav-trigger" onclick="toggleNav(this,'m-rec')">
         <div class="nav-trigger-left"><div class="nav-icon"><i data-lucide="user-plus" size="15"></i></div><span>Talent Acquisition</span></div>
@@ -64,6 +68,7 @@
         <div class="sub-link" onclick="goPage('internship',this)"><span class="sub-dot"></span><span>Internship Management</span></div>
       </div>
     </div>
+
     <div class="nav-label">Operations</div>
     <div class="nav-group">
       <div class="nav-trigger" onclick="toggleNav(this,'m-att')">
@@ -71,14 +76,16 @@
         <i data-lucide="chevron-right" size="13" class="chevron"></i>
       </div>
       <div class="submenu" id="m-att">
-          <div class="sub-link" onclick="goPage('shift-management',this)"><span class="sub-dot"></span><span>Shift Management</span></div>
-          <div class="sub-link" onclick="goPage('attendance',this)"><span class="sub-dot"></span><span>Record Attendance</span></div>
-          <div class="sub-link" onclick="goPage('daily-attendance',this)"><span class="sub-dot"></span><span>Daily Attendance</span></div>
-          <div class="sub-link" onclick="goPage('overtime-management',this)"><span class="sub-dot"></span><span>Overtime Management</span></div>
-          <div class="sub-link" onclick="goPage('attendance-reports',this)"><span class="sub-dot"></span><span>Attendance Reports</span></div>
-          <div class="sub-link" onclick="goPage('import-attendance',this)"><span class="sub-dot"></span><span>Import from Excel</span></div>
-        </div>
+        <!-- Sub-modules as seen in the image -->
+        <div class="sub-link" onclick="goPage('shift-management',this)"><span class="sub-dot"></span><span>Shift Management</span></div>
+        <div class="sub-link" onclick="goPage('attendance',this)"><span class="sub-dot"></span><span>Record Attendance</span></div>
+        <div class="sub-link" onclick="goPage('daily-attendance',this)"><span class="sub-dot"></span><span>Daily Attendance</span></div>
+        <div class="sub-link" onclick="goPage('overtime-management',this)"><span class="sub-dot"></span><span>Overtime Management</span></div>
+        <div class="sub-link" onclick="goPage('attendance-reports',this)"><span class="sub-dot"></span><span>Attendance Reports</span></div>
+        <div class="sub-link" onclick="goPage('import-attendance',this)"><span class="sub-dot"></span><span>Import from Excel</span></div>
+      </div>
     </div>
+
     <div class="nav-group">
       <div class="nav-trigger" onclick="toggleNav(this,'m-leave')">
         <div class="nav-trigger-left"><div class="nav-icon"><i data-lucide="calendar-days" size="15"></i></div><span>Leave Management</span></div>
@@ -90,6 +97,7 @@
         <div class="sub-link" onclick="goPage('leave-entitlement',this)"><span class="sub-dot"></span><span>Leave Entitlement</span></div>
       </div>
     </div>
+
     <div class="nav-group">
       <div class="nav-trigger" onclick="toggleNav(this,'m-ben')">
         <div class="nav-trigger-left"><div class="nav-icon"><i data-lucide="heart-pulse" size="15"></i></div><span>Benefits</span></div>
@@ -100,6 +108,7 @@
         <div class="sub-link" onclick="goPage('overtime-requests',this)"><span class="sub-dot"></span><span>Overtime Requests</span></div>
       </div>
     </div>
+
     <div class="nav-group">
       <div class="nav-trigger" onclick="toggleNav(this,'m-comp')">
         <div class="nav-trigger-left"><div class="nav-icon"><i data-lucide="shield-alert" size="15"></i></div><span>Compliance & Exit</span></div>
@@ -112,6 +121,7 @@
         <div class="sub-link" onclick="goPage('exit-clearance',this)"><span class="sub-dot"></span><span>Exit Clearance</span></div>
       </div>
     </div>
+
     <div class="nav-label">Growth & Data</div>
     <div class="nav-group">
       <div class="nav-trigger" onclick="toggleNav(this,'m-train')">
@@ -123,6 +133,7 @@
         <div class="sub-link" onclick="goPage('training-schedule',this)"><span class="sub-dot"></span><span>Training Schedule</span></div> 
       </div>
     </div>
+
     <div class="nav-group">
       <div class="nav-trigger" onclick="toggleNav(this,'m-perf')">
         <div class="nav-trigger-left"><div class="nav-icon"><i data-lucide="trending-up" size="15"></i></div><span>Performance</span></div>
@@ -133,6 +144,7 @@
         <div class="sub-link" onclick="goPage('360-feedback',this)"><span class="sub-dot"></span><span>360° Feedback</span></div>  
       </div>
     </div>
+
     <div class="nav-label">Analytics & System</div>
     <div class="nav-group">
       <div class="nav-trigger" onclick="toggleNav(this,'m-rep')">
@@ -144,6 +156,7 @@
         <div class="sub-link" onclick="goPage('custom-reports',this)"><span class="sub-dot"></span><span>Custom Reports</span></div>
       </div>
     </div>
+
     <div class="nav-group">
       <div class="nav-trigger" onclick="toggleNav(this,'m-sys')">
         <div class="nav-trigger-left"><div class="nav-icon"><i data-lucide="settings-2" size="15"></i></div><span>System Admin</span></div>
@@ -155,8 +168,9 @@
         <div class="sub-link" onclick="goPage('audit-logs',this)"><span class="sub-dot"></span><span>Audit Logs</span></div>
       </div>
     </div>
+
     <div class="nav-group">
-      <div class="nav-trigger"  >
+      <div class="nav-trigger">
         <div class="nav-trigger-left"><div class="nav-icon"><i data-lucide="settings" size="15"></i></div><span>Settings</span></div> 
       </div> 
     </div>
