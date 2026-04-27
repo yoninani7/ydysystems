@@ -75,20 +75,20 @@
         <div class="card-body" style="height: 300px; position: relative; padding: 24px;">
             <canvas id="chart-leave-trend"></canvas>
         </div>
+    </div> 
+    <!-- Leaderboard Card -->
+<div class="card" style="grid-column: span 4;">
+    <div class="card-header" style="background: #fcfdfe; border-bottom: 1px solid #f1f5f9; padding: 16px 20px;">
+        <span class="card-title" style="display:flex; align-items:center; gap:8px; font-size:11px; color:#64748b; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">
+            <i data-lucide="list-ordered" size="14"></i> TOP LEAVE TAKERS
+        </span>
     </div>
-    <!-- Leaderboard -->
-    <div class="card" style="grid-column: span 4;">
-        <div class="card-header" style="background: #fcfdfe; border-bottom: 1px solid #f1f5f9;">
-            <span class="card-title" style="display:flex; align-items:center; gap:8px; font-size:11px; color:#64748b;">
-                <i data-lucide="list-ordered" size="14"></i> TOP LEAVE TAKERS
-            </span>
-        </div>
-        <div class="card-body" style="padding: 0;">
-            <div id="leaderboard-area" style="max-height: 300px; overflow-y: auto;">
-                <!-- Injected via core.js -->
-            </div>
+    <div class="card-body" style="padding: 0;">
+        <div id="leaderboard-area" style="max-height: 310px; overflow-y: auto;">
+            <!-- Injected via core.js -->
         </div>
     </div>
+</div>
 </div>
 
 <script> 

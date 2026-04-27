@@ -4964,3 +4964,41 @@ function initLeaveAnalytics() {
     renderLeaveLeaderboard();
     lcIcons(); 
 }
+/**
+ * Renders the leaderboard for top leave takers with premium styling.
+ */
+function renderLeaveLeaderboard() {
+    const leaderboard = document.getElementById('leaderboard-area');
+    if (!leaderboard) return;
+
+    const topTakers = [
+        { n: 'Abebe Kebede', d: 'Engineering', v: '28d' },
+        { n: 'Tigist Haile', d: 'Finance', v: '24d' },
+        { n: 'Yonas Tadesse', d: 'Marketing', v: '20d' },
+        { n: 'Meron Assefa', d: 'Sales', v: '18d' },
+        { n: 'Dawit Mengistu', d: 'HR', v: '15d' }
+    ];
+
+    leaderboard.innerHTML = topTakers.map((p, i) => `
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 24px; border-bottom:1px solid #f1f5f9; transition: background 0.2s;" 
+             onmouseover="this.style.background='#fcfdfe'" onmouseout="this.style.background='transparent'">
+            
+            <div style="display:flex; align-items:center; gap:16px;">
+                <!-- Rank Number -->
+                <span style="font-size:11px; font-weight:800; color:#94a3b8; width:15px; font-family:'JetBrains Mono'">${i + 1}</span>
+                
+                <!-- Identity -->
+                <div>
+                    <div style="font-size:13px; font-weight:800; color:#1e293b;">${p.n}</div>
+                    <div style="font-size:11px; font-weight:600; color:#94a3b8; text-transform: uppercase; letter-spacing:0.02em;">${p.d}</div>
+                </div>
+            </div>
+
+            <!-- Value Badge -->
+            <div style="font-size:15px; font-weight:800; color:#15b201; background: #f0fdf4; padding: 4px 12px; border-radius: 8px; border: 1px solid #dcfce7;">
+                ${p.v}
+            </div>
+        </div>
+    `).join('');
+}
+ 
