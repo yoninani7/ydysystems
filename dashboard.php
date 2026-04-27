@@ -29,6 +29,9 @@ $allowed_pages = [
     'attendance'          => 'pages/attendance/record_attendance.php',
     'daily-attendance'    => 'pages/attendance/daily_attendance.php',
     'attendance-reports'  => 'pages/attendance/attendance_reports.php',
+    'import-attendance'  => 'pages/attendance/import_attendance.php',
+    'leave-policy'      => 'pages/leave_management/leave_policy.php',
+    
     'leave-types'         => 'pages/leave_management/leave_types.php',
     'leave-requests'      => 'pages/leave_management/leave_requests.php',
     'leave-entitlement'   => 'pages/leave_management/leave_entitlement.php',

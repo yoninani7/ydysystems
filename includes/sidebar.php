@@ -79,8 +79,7 @@
         <!-- Sub-modules as seen in the image -->
         <div class="sub-link" onclick="goPage('shift-management',this)"><span class="sub-dot"></span><span>Shift Management</span></div>
         <div class="sub-link" onclick="goPage('attendance',this)"><span class="sub-dot"></span><span>Record Attendance</span></div>
-        <div class="sub-link" onclick="goPage('daily-attendance',this)"><span class="sub-dot"></span><span>Daily Attendance</span></div>
-        <div class="sub-link" onclick="goPage('overtime-management',this)"><span class="sub-dot"></span><span>Overtime Management</span></div>
+        <div class="sub-link" onclick="goPage('daily-attendance',this)"><span class="sub-dot"></span><span>Daily Attendance</span></div> 
         <div class="sub-link" onclick="goPage('attendance-reports',this)"><span class="sub-dot"></span><span>Attendance Reports</span></div>
         <div class="sub-link" onclick="goPage('import-attendance',this)"><span class="sub-dot"></span><span>Import from Excel</span></div>
       </div>
@@ -92,6 +91,7 @@
         <i data-lucide="chevron-right" size="13" class="chevron"></i>
       </div>
       <div class="submenu" id="m-leave">
+        <div class="sub-link" onclick="goPage('leave-policy',this)"><span class="sub-dot"></span><span>Leave Policy</span></div>
         <div class="sub-link" onclick="goPage('leave-types',this)"><span class="sub-dot"></span><span>Leave Types</span></div>
         <div class="sub-link" onclick="goPage('leave-requests',this)"><span class="sub-dot"></span><span>Leave Requests</span></div>
         <div class="sub-link" onclick="goPage('leave-entitlement',this)"><span class="sub-dot"></span><span>Leave Entitlement</span></div>

@@ -2153,6 +2153,9 @@ function initPage(id) {
         perPage: 15, searchPlaceholder: 'Search reports by department...'
       });
       break;
+   case 'leave-policy':
+    renderLeaveTypes();
+    break;
     case 'leave-types': initLeaveTypesCards(); break;
     case 'leave-requests':
       initServerPaginatedTable('tbl-leave-requests', 'api/leave/fetch_leaverequests.php', {
@@ -2878,6 +2881,23 @@ function refreshProbationTable() {
 
 // Attendance Matrix
 const ATT_CODES = ['P', 'H', 'A', 'L', 'O'];
+
+// Mock data for attendance matrix
+const names = [
+  'John Smith', 'Emily Johnson', 'Michael Williams', 'Sarah Brown', 'David Jones',
+  'Lisa Garcia', 'Robert Miller', 'Maria Davis', 'James Rodriguez', 'Jennifer Martinez',
+  'William Hernandez', 'Linda Lopez', 'Richard Gonzalez', 'Patricia Wilson', 'Charles Anderson',
+  'Barbara Thomas', 'Joseph Taylor', 'Nancy Moore', 'Thomas Jackson', 'Betty Martin',
+  'Christopher Lee', 'Helen Perez', 'Daniel Thompson', 'Sandra White', 'Matthew Harris',
+  'Donna Clark', 'Anthony Lewis', 'Carol Robinson', 'Mark Walker', 'Michelle Hall',
+  'Steven Allen', 'Laura Young', 'Paul King', 'Sharon Wright', 'Andrew Scott',
+  'Kimberly Green', 'Joshua Baker', 'Deborah Adams', 'Kevin Nelson', 'Dorothy Carter'
+];
+
+const depts = [
+  'Engineering', 'Sales', 'HR', 'Finance', 'Marketing', 'Operations'
+];
+
 function buildMatrix() {
   const m = document.getElementById('att-m-select').value;
   const y = document.getElementById('att-y-select').value;
@@ -4061,61 +4081,406 @@ function generateAttendanceReport() {
     container.innerHTML = html;
     lcIcons(container);
 }
+/**
+ * Generates the specific report based on the selected 'Report Type' filter.
+ * Executed instantly on button click.
+ */
 function runInstantReport() {
-    const container = document.getElementById('report-results-target');
-    const type = document.getElementById('rep-type-val').value;
+    const target = document.getElementById('report-results-target');
+    const reportType = document.getElementById('rep-type-val').value.trim();
     
-    let html = '';
+    // Check if target exists
+    if (!target) return;
+
+    let tableHtml = '';
+    let recordCount = 0;
     let title = 'Monthly Attendance Summary';
-    let count = '0 records';
 
-    if (type === 'Summary') {
-        count = '5 records';
-        const data = [
-            { d: 'Engineering', e: 45, a: 8, l: 12, arr: 15, ot: 32.5, r: 92.5 },
-            { d: 'HR', e: 12, a: 1, l: 3, arr: 2, ot: 5, r: 97.2 },
-            { d: 'Operations', e: 28, a: 5, l: 6, arr: 8, ot: 18, r: 89.3 },
-            { d: 'Finance', e: 8, a: 0, l: 1, arr: 1, ot: 2.5, r: 98.8 },
-            { d: 'Marketing', e: 10, a: 2, l: 2, arr: 3, ot: 6, r: 90.0 }
-        ];
-        html = `<table class="tbl">
-            <thead><tr><th>DEPARTMENT</th><th>TOTAL EMP</th><th>ABSENT DAYS</th><th>LEAVE DAYS</th><th>LATE ARRIVALS</th><th>TOTAL OT HRS</th><th style="text-align:right">RATE</th></tr></thead>
-            <tbody>${data.map(i => {
-                let col = i.r < 90 ? 'var(--danger)' : (i.r <= 95 ? 'var(--warning)' : 'var(--success)');
-                return `<tr><td>${i.d}</td><td>${i.e}</td><td>${i.a}</td><td>${i.l}</td><td>${i.arr}</td><td>${i.ot}</td><td style="text-align:right; font-weight:800; color:${col}">${i.r}%</td></tr>`
-            }).join('')}</tbody></table>`;
+    // Switch data and columns based on the filter
+    switch (reportType) {
+        case 'Late Comers':
+            const lateData = [
+                { c: 'EMP-101', n: 'Abebe Kebede', d: 'Engineering', dt: '2026-03-05', in: '08:25', s: '08:00', m: 25 },
+                { c: 'EMP-102', n: 'Tigist Haile', d: 'HR', dt: '2026-03-05', in: '13:40', s: '13:00', m: 40 },
+                { c: 'EMP-104', n: 'Selam Tesfaye', d: 'Engineering', dt: '2026-03-07', in: '08:15', s: '08:00', m: 15 },
+                { c: 'EMP-103', n: 'Dawit Mengistu', d: 'Operations', dt: '2026-03-10', in: '08:10', s: '08:00', m: 10 },
+                { c: 'EMP-101', n: 'Abebe Kebede', d: 'Engineering', dt: '2026-03-12', in: '09:05', s: '08:00', m: 65 }
+            ];
+            recordCount = lateData.length;
+            tableHtml = `
+                <table class="tbl">
+                    <thead>
+                        <tr>
+                            <th>EMP. CODE</th><th>NAME</th><th>DEPARTMENT</th><th>DATE</th><th>CHECK-IN</th><th>SHIFT START</th><th style="text-align:right">MINUTES LATE</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${lateData.map(i => `
+                            <tr>
+                                <td style="font-family:'JetBrains Mono'; font-size:11px">${i.c}</td>
+                                <td style="font-weight:700">${i.n}</td>
+                                <td>${i.d}</td><td>${i.dt}</td><td>${i.in}</td><td>${i.s}</td>
+                                <td style="text-align:right; font-weight:700">${i.m}</td>
+                            </tr>`).join('')}
+                    </tbody>
+                </table>`;
+            break;
 
-    } else if (type === 'Late Comers') {
-        count = '5 records';
-        const data = [
-            { c: 'EMP-101', n: 'Abebe Kebede', d: 'Engineering', dt: '2026-03-05', in: '08:25', s: '08:00', m: 25 },
-            { c: 'EMP-102', n: 'Tigist Haile', d: 'HR', dt: '2026-03-05', in: '13:40', s: '13:00', m: 40 },
-            { c: 'EMP-104', n: 'Selam Tesfaye', d: 'Engineering', dt: '2026-03-07', in: '08:15', s: '08:00', m: 15 },
-            { c: 'EMP-103', n: 'Dawit Mengistu', d: 'Operations', dt: '2026-03-10', in: '08:10', s: '08:00', m: 10 },
-            { c: 'EMP-101', n: 'Abebe Kebede', d: 'Engineering', dt: '2026-03-12', in: '09:05', s: '08:00', m: 65 }
-        ];
-        html = `<table class="tbl">
-            <thead><tr><th>EMP. CODE</th><th>NAME</th><th>DEPARTMENT</th><th>DATE</th><th>CHECK-IN</th><th>SHIFT START</th><th style="text-align:right">MINUTES LATE</th></tr></thead>
-            <tbody>${data.map(i => `<tr><td style="font-family:JetBrains Mono; font-size:11px">${i.c}</td><td style="font-weight:700">${i.n}</td><td>${i.d}</td><td>${i.dt}</td><td>${i.in}</td><td>${i.s}</td><td style="text-align:right; font-weight:700">${i.m}</td></tr>`).join('')}</tbody></table>`;
+        case 'Absentee List':
+            const absenteeData = [
+                { c: 'EMP-101', n: 'Abebe Kebede', d: 'Engineering', days: 3, dates: '5, 12, 19' },
+                { c: 'EMP-105', n: 'Henok Assefa', d: 'Finance', days: 2, dates: '8, 22' },
+                { c: 'EMP-103', n: 'Dawit Mengistu', d: 'Operations', days: 1, dates: '15' },
+                { c: 'EMP-106', n: 'Meron Alemu', d: 'HR', days: 4, dates: '2, 3, 10, 28' }
+            ];
+            recordCount = absenteeData.length;
+            tableHtml = `
+                <table class="tbl">
+                    <thead>
+                        <tr>
+                            <th>EMP. CODE</th><th>NAME</th><th>DEPARTMENT</th><th>ABSENT DAYS</th><th style="text-align:right">ABSENT DATES</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${absenteeData.map(i => `
+                            <tr>
+                                <td style="font-family:'JetBrains Mono'; font-size:11px">${i.c}</td>
+                                <td style="font-weight:700">${i.n}</td>
+                                <td>${i.d}</td><td>${i.days}</td>
+                                <td style="text-align:right; color:var(--muted); font-size:11px">${i.dates}</td>
+                            </tr>`).join('')}
+                    </tbody>
+                </table>`;
+            break;
 
-    } else if (type === 'Absentee List') {
-        count = '4 records';
-        const data = [
-            { c: 'EMP-101', n: 'Abebe Kebede', d: 'Engineering', days: 3, dates: '5, 12, 19' },
-            { c: 'EMP-105', n: 'Henok Assefa', d: 'Finance', days: 2, dates: '8, 22' },
-            { c: 'EMP-103', n: 'Dawit Mengistu', d: 'Operations', days: 1, dates: '15' },
-            { c: 'EMP-106', n: 'Meron Alemu', d: 'HR', days: 4, dates: '2, 3, 10, 28' }
-        ];
-        html = `<table class="tbl">
-            <thead><tr><th>EMP. CODE</th><th>NAME</th><th>DEPARTMENT</th><th>ABSENT DAYS</th><th style="text-align:right">ABSENT DATES</th></tr></thead>
-            <tbody>${data.map(i => `<tr><td style="font-family:JetBrains Mono; font-size:11px">${i.c}</td><td style="font-weight:700">${i.n}</td><td>${i.d}</td><td>${i.days}</td><td style="text-align:right; color:var(--muted); font-size:11px">${i.dates}</td></tr>`).join('')}</tbody></table>`;
+        default: // Summary
+            const summaryData = [
+                { d: 'Engineering', e: 45, a: 8, l: 12, arr: 15, ot: 32.5, r: 92.5 },
+                { d: 'HR', e: 12, a: 1, l: 3, arr: 2, ot: 5, r: 97.2 },
+                { d: 'Operations', e: 28, a: 5, l: 6, arr: 8, ot: 18, r: 89.3 },
+                { d: 'Finance', e: 8, a: 0, l: 1, arr: 1, ot: 2.5, r: 98.8 },
+                { d: 'Marketing', e: 10, a: 2, l: 2, arr: 3, ot: 6, r: 90.0 }
+            ];
+            recordCount = summaryData.length;
+            tableHtml = `
+                <table class="tbl">
+                    <thead>
+                        <tr>
+                            <th>DEPARTMENT</th><th>TOTAL EMP</th><th>ABSENT DAYS</th><th>LEAVE DAYS</th><th>LATE ARRIVALS</th><th>TOTAL OT HRS</th><th style="text-align:right">ATTENDANCE RATE</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${summaryData.map(i => {
+                            let col = i.r < 90 ? 'var(--danger)' : (i.r <= 95 ? 'var(--warning)' : 'var(--success)');
+                            return `
+                            <tr>
+                                <td>${i.d}</td><td>${i.e}</td><td>${i.a}</td><td>${i.l}</td><td>${i.arr}</td><td>${i.ot}</td>
+                                <td style="text-align:right; font-weight:800; color:${col}">${i.r}%</td>
+                            </tr>`}).join('')}
+                    </tbody>
+                </table>`;
+            break;
     }
 
-    container.innerHTML = `
+    // Inject the Card and Table instantly
+    target.innerHTML = `
         <div class="card" style="animation: modalIn 0.3s ease;">
-            <div class="card-header"><span class="card-title">${title}</span><span style="font-size:11px; font-weight:600; color:var(--muted)">${count}</span></div>
-            <div class="table-wrap">${html}</div>
+            <div class="card-header">
+                <span class="card-title">${title}</span>
+                <span style="font-size:11px; font-weight:600; color:var(--muted)">${recordCount} records</span>
+            </div>
+            <div class="table-wrap">
+                ${tableHtml}
+            </div>
         </div>`;
     
-    lcIcons(container);
+    // Re-run Lucide icons if any were added
+    if (typeof lcIcons === 'function') lcIcons(target);
 }
+//import selection
+/**
+ * Visual feedback when dragging over
+ */
+function handleDragOver(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const zone = document.getElementById('drop-zone');
+    zone.style.borderColor = 'var(--primary)';
+    zone.style.background = '#f1fcf0';
+    document.getElementById('drop-zone-icon').style.transform = 'scale(1.1)';
+}
+
+/**
+ * Reset visual feedback when leaving zone
+ */
+function handleDragLeave(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const zone = document.getElementById('drop-zone');
+    zone.style.borderColor = '#e2e8f0';
+    zone.style.background = '#fafafa';
+    document.getElementById('drop-zone-icon').style.transform = 'scale(1)';
+}
+
+/**
+ * Handle the dropped file
+ */
+function handleDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    handleDragLeave(e); // Reset styles
+
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        processImportFile(files[0]);
+    }
+}
+
+/**
+ * Process and display preview instantly
+ */
+function processImportFile(file) {
+    if (!file) return;
+    
+    // Check extension
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (ext !== 'csv' && ext !== 'xlsx') {
+        showNotification('Invalid File', 'Please upload a CSV or Excel file.', 'error');
+        return;
+    }
+
+    const uploadArea = document.getElementById('attendance-upload-container');
+    const previewArea = document.getElementById('attendance-preview-container');
+    const tbody = document.getElementById('preview-tbody');
+
+    // Instant switch to preview
+    uploadArea.style.display = 'none';
+    previewArea.style.display = 'block';
+
+    // Mock data for instant preview
+    const mockData = [
+        { code: 'EMP-101', date: '2026-03-25', status: 'P', in: '08:05', out: '17:10', valid: true },
+        { code: 'EMP-102', date: '2026-03-25', status: 'P', in: '07:55', out: '17:00', valid: true },
+        { code: 'EMP-999', date: '2026-03-25', status: 'P', in: '09:00', out: '18:00', valid: false, err: 'User Not Found' }
+    ];
+
+    tbody.innerHTML = mockData.map(row => `
+        <tr>
+            <td style="font-family: 'JetBrains Mono'; font-size: 11px;">${row.code}</td>
+            <td style="font-weight: 600;">${row.date}</td>
+            <td><span class="badge ${row.status === 'P' ? 'badge-success' : 'badge-danger'}">${row.status}</span></td>
+            <td>${row.in}</td>
+            <td>${row.out}</td>
+            <td style="text-align:right">
+                ${row.valid 
+                    ? '<span class="badge badge-primary" style="background:#e0f2fe; color:#0369a1">Ready</span>' 
+                    : `<span class="badge badge-danger" title="${row.err}">Error</span>`}
+            </td>
+        </tr>
+    `).join('');
+
+    lcIcons(previewArea);
+    showNotification('Success', `${file.name} uploaded and validated.`, 'success');
+}
+
+/**
+ * Finalize the import
+ */
+function finalizeImport(btn) {
+    const originalHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<i data-lucide="loader-2" class="spin" size="14"></i> Syncing...`;
+    lcIcons(btn);
+
+    setTimeout(() => {
+        showNotification('Import Complete', 'Records have been added to the logs.', 'success');
+        goPage('daily-attendance');
+    }, 1000);
+}
+
+// leavepolicy 
+function renderLeaveTypes() {
+    const stack = document.getElementById('leave-policy-ledger-stack');
+    if (!stack) return;
+
+    // 1. Update Tabs Visuals
+    document.querySelectorAll('.policy-tab').forEach(btn => {
+        btn.className = 'btn btn-secondary btn-sm policy-tab';
+        btn.style.background = 'transparent';
+        btn.style.border = 'none';
+    });
+    const activeBtn = document.getElementById('tab-lt');
+    activeBtn.className = 'btn btn-primary btn-sm policy-tab';
+    activeBtn.style.background = ''; activeBtn.style.border = '1.5px solid var(--primary)';
+
+    // 2. Updated Data including new types from screenshot
+    const leaveData = [
+        { name: 'Annual Leave', type: 'Paid', target: 'Approval Required', days: 20, carry: 5, color: '#15b201', icon: 'sun', active: true },
+        { name: 'Sick Leave', type: 'Paid', target: 'No Approval', days: 10, carry: 0, color: '#0891b2', icon: 'stethoscope', active: true },
+        { name: 'Maternity Leave', type: 'Paid', target: 'Approval Required', days: 90, carry: 0, color: '#8b5cf6', icon: 'baby', active: true },
+        { name: 'Paternity Leave', type: 'Paid', target: 'Approval Required', days: 14, carry: 0, color: '#f59e0b', icon: 'heart-handshake', active: true },
+        { name: 'Bereavement Leave', type: 'Paid', target: 'Approval Required', days: 5, carry: 0, color: '#ef4444', icon: 'calendar', active: true },
+        { name: 'Unpaid Leave', type: 'Unpaid', target: 'Approval Required', days: 0, carry: 0, color: '#94a3b8', icon: 'calendar-days', active: true },
+        { name: 'Study / Exam Leave', type: 'Unpaid', target: 'Approval Required', days: 5, carry: 0, color: '#0ea5e9', icon: 'book-open', active: true }
+    ];
+
+    // 3. Render with refined spacing
+stack.innerHTML = leaveData.map(l => `
+    <div class="etype-master-row" style="--accent-color: ${l.color}; height: 88px; padding: 0; margin-bottom: 12px; grid-template-columns: 80px 1.8fr 2fr 140px 200px; box-shadow: var(--shadow); border: 1px solid #f1f5f9;">
+        
+        <!-- 1. Visual Icon -->
+        <div class="etype-visual">
+            <div class="etype-icon-box" style="width: 44px; height: 44px; background: color-mix(in srgb, ${l.color} 8%, #fff);">
+                <i data-lucide="${l.icon}" size="20" style="color: ${l.color}"></i>
+            </div>
+        </div>
+
+        <!-- 2. Identity -->
+        <div class="etype-identity">
+            <span class="etype-label" style="font-size: 0.95rem; font-weight: 800; color: #1e293b;">${l.name}</span>
+            <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px; color: #94a3b8;">
+                <i data-lucide="calendar-days" size="12"></i>
+                <span style="font-size: 0.72rem; font-weight: 600;">Policy cycle: <b>Yearly</b></span>
+            </div>
+        </div>
+
+        <!-- 3. Policy Meta Badges (Refined Design) -->
+        <div style="display: flex; align-items: center; gap: 8px;">
+            
+            <!-- PAID / UNPAID TAG -->
+            <span style="
+                background: ${l.type === 'Paid' ? '#f0fdf4' : '#fff7ed'}; 
+                color: ${l.type === 'Paid' ? '#15b201' : '#f97316'}; 
+                border: 1px solid ${l.type === 'Paid' ? '#dcfce7' : '#ffedd5'};
+                padding: 3px 10px; border-radius: 6px; font-size: 10px; font-weight: 700; letter-spacing: 0.02em;
+            ">
+                ${l.type.toUpperCase()}
+            </span>
+
+            <!-- APPROVAL TAG -->
+            <span style="
+                background: #eff6ff; 
+                color: #3b82f6; 
+                border: 1px solid #dbeafe;
+                padding: 3px 10px; border-radius: 6px; font-size: 10px; font-weight: 700; letter-spacing: 0.02em;
+            ">
+                ${l.target.toUpperCase()}
+            </span>
+
+            <!-- CARRYOVER TAG -->
+            <span style="
+                background: #f8fafc; 
+                color: #64748b; 
+                border: 1px solid #e2e8f0;
+                padding: 3px 10px; border-radius: 6px; font-size: 10px; font-weight: 700; letter-spacing: 0.02em;
+            ">
+                CARRYOVER ${l.carry} DAYS
+            </span>
+
+        </div>
+
+        <!-- 4. Allocation Metrics (Simplified) -->
+        <div class="etype-data" style="display: flex; flex-direction: column; justify-content: center; text-align: right; padding-right: 20px;">
+            <div style="font-size: 1.2rem; color: #15b201; font-weight: 800; line-height: 1;">
+                ${l.days}
+            </div>
+            <div style="font-size: 0.65rem; color: #94a3b8; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px;">
+                Days / Year
+            </div>
+        </div>
+
+        <!-- 5. Actions -->
+        <div style="display: flex; justify-content: flex-end; align-items: center; gap: 8px; padding-right: 24px;">
+            <button class="btn btn-secondary btn-xs" style="background: #fff; font-weight: 700; border-radius: 6px;">Edit</button>
+            <button class="btn btn-xs ${l.active ? 'btn-danger' : 'btn-success'}" style="font-weight: 700; border-radius: 6px; padding: 4px 14px; min-width: 95px; justify-content: center;">
+                ${l.active ? 'Deactivate' : 'Activate'}
+            </button>
+        </div>
+    </div>
+`).join('');
+
+    lcIcons(stack);
+}
+function switchPolicyTab(type) {
+    const target = document.getElementById('leave-policy-dynamic-area');
+    // Visual Tab Switch
+    document.querySelectorAll('.policy-tab').forEach(btn => {
+        btn.className = 'btn btn-secondary btn-sm policy-tab';
+        btn.style.background = 'transparent';
+    });
+    event.currentTarget.className = 'btn btn-primary btn-sm policy-tab';
+    event.currentTarget.style.background = '';
+
+    target.innerHTML = `<div style="grid-column: 1/-1; padding: 80px; text-align: center;">
+        <i data-lucide="construction" size="48" style="color: var(--muted); opacity: 0.2; margin-bottom: 16px;"></i>
+        <p style="color: var(--muted); font-weight: 600;">Module coming soon.</p>
+    </div>`;
+    lcIcons(target);
+}
+/**
+ * Renders the Public Holidays table view matching the screenshot
+ */
+function renderPublicHolidays() {
+    const stack = document.getElementById('leave-policy-ledger-stack');
+    if (!stack) return;
+
+    // 1. Update Tabs Visuals
+    document.querySelectorAll('.policy-tab').forEach(btn => {
+        btn.className = 'btn btn-secondary btn-sm policy-tab';
+        btn.style.background = 'transparent';
+        btn.style.border = 'none';
+    });
+    const activeBtn = document.getElementById('tab-ph');
+    activeBtn.className = 'btn btn-primary btn-sm policy-tab';
+    activeBtn.style.background = ''; activeBtn.style.border = '1.5px solid var(--primary)';
+
+    // 2. Mock Holiday Data
+    const holidayData = [
+        { name: "New Year's Day", date: '2025-01-01', day: 'Wed', recurring: 'Yes' },
+        { name: "Ethiopian Epiphany", date: '2025-01-19', day: 'Sun', recurring: 'Yes' },
+        { name: "Adwa Victory Day", date: '2025-03-02', day: 'Sun', recurring: 'Yes' },
+        { name: "Labour Day", date: '2025-05-01', day: 'Thu', recurring: 'Yes' }
+    ];
+
+    // 3. Render Table Structure and Add Button
+    stack.innerHTML = `
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 12px; animation: modalIn 0.3s ease;">
+            <button class="btn btn-primary btn-sm" style="background: #15b201; border-radius: 8px; padding: 8px 16px;">
+                <i data-lucide="plus" size="14" style="margin-right:6px"></i> Add Holiday
+            </button>
+        </div>
+
+        <div class="card" style="animation: modalIn 0.4s ease; border-radius: 12px; overflow: hidden;">
+            <div class="table-wrap">
+                <table class="tbl">
+                    <thead>
+                        <tr>
+                            <th>HOLIDAY NAME</th>
+                            <th>DATE</th>
+                            <th>DAY</th>
+                            <th>RECURRING ANNUALLY</th>
+                            <th style="text-align:right">ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${holidayData.map(h => `
+                            <tr>
+                                <td style="font-weight: 700; color: #1e293b;">${h.name}</td>
+                                <td style="color: #64748b; font-family: 'JetBrains Mono'; font-size: 12px;">${h.date}</td>
+                                <td style="color: #64748b;">${h.day}</td>
+                                <td>
+                                    <span class="badge badge-success" style="background: #f0fdf4; color: #15b201; font-size: 9px; font-weight: 800; padding: 2px 8px;">${h.recurring.toUpperCase()}</span>
+                                </td>
+                                <td style="text-align:right">
+                                    <button class="btn btn-xs btn-danger" style="font-size: 10px; font-weight: 700; padding: 3px 12px; border-radius: 6px;">Remove</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+
+    lcIcons(stack);
+} 

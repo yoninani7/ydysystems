@@ -16,7 +16,7 @@
       <div class="qa-button-row">
         <button class="btn-glass-pro-slim" onclick="goPage('employee-directory',this)"><i data-lucide="user-plus" size="14"></i><span>New Hire</span></button>
         <button class="btn-glass-pro-slim" onclick="goPage('leave-requests',this)"><i data-lucide="calendar" size="14"></i><span>Leaves</span></button>
-        <button class="btn-glass-pro-slim" onclick="goPage('hr-analytics',this)"><i data-lucide="bar-chart-3" size="14"></i><span>Analytics</span></button>
+        <button class="btn-glass-pro-slim" onclick="goPage('hr-analytics',this)"><i data-lucide="bar-chart-3" size="14"></i><span>More analytics</span></button>
       </div>
     </div>
   </header>
