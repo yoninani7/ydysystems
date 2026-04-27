@@ -91,10 +91,12 @@
         <i data-lucide="chevron-right" size="13" class="chevron"></i>
       </div>
       <div class="submenu" id="m-leave">
-        <div class="sub-link" onclick="goPage('leave-policy',this)"><span class="sub-dot"></span><span>Leave Policy</span></div>
-        <div class="sub-link" onclick="goPage('leave-types',this)"><span class="sub-dot"></span><span>Leave Types</span></div>
+        <div class="sub-link" onclick="goPage('leave-policy',this)"><span class="sub-dot"></span><span>Leave Policy</span></div>  
         <div class="sub-link" onclick="goPage('leave-requests',this)"><span class="sub-dot"></span><span>Leave Requests</span></div>
         <div class="sub-link" onclick="goPage('leave-entitlement',this)"><span class="sub-dot"></span><span>Leave Entitlement</span></div>
+        <div class="sub-link" onclick="goPage('leave-calendar',this)"><span class="sub-dot"></span><span>Leave Calendar</span></div>
+        <div class="sub-link" onclick="goPage('leave-analytics',this)"><span class="sub-dot"></span><span>Leave Analytics</span></div>
+
       </div>
     </div>
 

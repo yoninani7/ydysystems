@@ -1620,6 +1620,10 @@ function renderOrgChartFromData(data) {
 }
 
 function initPage(id) {
+  if (id === 'leave-analytics') {
+        initLeaveAnalytics();
+        return; 
+    }
   if (inited.has(id)) return;
   inited.add(id);
 
@@ -2158,56 +2162,18 @@ function initPage(id) {
     break;
     case 'leave-types': initLeaveTypesCards(); break;
     case 'leave-requests':
-      initServerPaginatedTable('tbl-leave-requests', 'api/leave/fetch_leaverequests.php', {
-        columns: [
-          { key: 'emp', label: 'Employee' },
-          { key: 'dept', label: 'Department' },
-          { key: 'type', label: 'Leave Type' },
-          { key: 'approver', label: 'Approver', render: (v) => v ? v : '<span style="color:var(--muted)">—</span>' },
-          { key: 'from', label: 'From' },
-          { key: 'to', label: 'To' },
-          { key: 'days', label: 'Days' },
-          { key: 'reason', label: 'Reason', render: (v) => `<span title="${v}" style="display:block; max-width:120px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${v}</span>` },
-          {
-            key: 'status', label: 'Status',
-            render: (v) => {
-              if (v === 'Approved') return b('success', 'Approved');
-              if (v === 'Rejected') return b('danger', 'Rejected');
-              if (v === 'Pending') return b('warning', 'Pending');
-              return b('neutral', v);
-            }
-          },
-          { key: 'updated_by_name', label: 'Last Updated By' },
-          {
-            key: '_', label: 'Actions',
-            render: (v, row) => `<div class="flex-row">${row.status === 'Pending' ? `<button class="btn btn-xs btn-primary" title="Process Request"><i data-lucide="check-square" size="10"></i> Review</button>` : `<button class="btn btn-xs btn-secondary" title="View Details"><i data-lucide="eye" size="10"></i></button>`}</div>`
-          }
-        ],
-        perPage: 15, searchPlaceholder: 'Search leave requests...'
-      });
-      break;
+    renderLeaveRequests('All');
+    break;
     case 'leave-entitlement':
-      initServerPaginatedTable('tbl-leave-entitlement', 'api/leave/fetch_entitlement.php', {
-        columns: [
-          { key: 'id', label: 'Emp ID' },
-          { key: 'name', label: 'Employee' },
-          { key: 'dept', label: 'Department' },
-          { key: 'al_total', label: 'AL Total' },
-          { key: 'al_used', label: 'AL Used' },
-          { key: 'al_bal', label: 'AL Balance', render: (v) => `<b style="color:var(--primary)">${v}</b>` },
-          { key: 'sl_used', label: 'SL Used' },
-          { key: 'sl_bal', label: 'SL Balance' },
-          { key: 'carry', label: 'Carried Over', render: (v) => v > 0 ? b('info', v + ' Days') : '0' },
-          { key: 'updated_by_name', label: 'Last Updated By' },
-          {
-            key: '_', label: 'Actions',
-            render: () => `<button class="btn btn-xs btn-secondary" title="Update Entitlement"><i data-lucide="edit-3" size="10"></i></button>`
-          }
-        ],
-        perPage: 15, searchPlaceholder: 'Search entitlement...'
-      });
-      break;
-    case 'medical-claims':
+    renderLeaveEntitlements();
+    break;
+    case 'leave-calendar': 
+    document.getElementById('cal-splash-screen').style.display = 'block';
+    document.getElementById('cal-real-content').style.display = 'none';
+    document.getElementById('calendar-main-card').style.alignItems = 'center';
+    lcIcons(document.getElementById('cal-splash-screen'));
+    break;
+      case 'medical-claims':
       initServerPaginatedTable('tbl-medical', 'api/benefits/fetch_medical_claims.php', {
         columns: [
           { key: 'id', label: 'Claim ID' },
@@ -4484,3 +4450,517 @@ function renderPublicHolidays() {
 
     lcIcons(stack);
 } 
+
+function renderLeaveEntitlements() {
+    const target = document.getElementById('entitlement-results-target');
+    if (!target) return;
+
+    const mockData = [
+        { code: 'EMP-2025-0001', name: 'Abebe Kebede', dept: 'Engineering', type: 'Annual Leave', typeCol: '#15b201', alloc: 20, carry: 5, used: 8, pend: 2, bal: 15 },
+        { code: 'EMP-2025-0001', name: 'Abebe Kebede', dept: 'Engineering', type: 'Sick Leave', typeCol: '#0ea5e9', alloc: 10, carry: 0, used: 3, pend: 0, bal: 7 },
+        { code: 'EMP-2025-0010', name: 'Tigist Haile', dept: 'Finance', type: 'Annual Leave', typeCol: '#15b201', alloc: 20, carry: 0, used: 15, pend: 1, bal: 4 },
+        { code: 'EMP-2025-0010', name: 'Tigist Haile', dept: 'Finance', type: 'Sick Leave', typeCol: '#0ea5e9', alloc: 10, carry: 0, used: 0, pend: 0, bal: 10 },
+        { code: 'EMP-2025-0022', name: 'Yonas Tadesse', dept: 'Marketing', type: 'Maternity Leave', typeCol: '#8b5cf6', alloc: 90, carry: 0, used: 90, pend: 0, bal: 0 }
+    ];
+
+    target.innerHTML = `
+        <div class="card" style="animation: modalIn 0.3s ease;">
+            <div class="card-header">
+                <span class="card-title">Leave Entitlements</span>
+                <span style="font-size: 11px; font-weight: 600; color: var(--muted)">5 records</span>
+            </div>
+            <div class="table-wrap">
+                <table class="tbl">
+                    <thead>
+                        <tr>
+                            <th>EMP. CODE</th><th>EMPLOYEE NAME</th><th>DEPARTMENT</th><th>LEAVE TYPE</th>
+                            <th>ALLOCATED</th><th>CARRIED OVER</th><th>USED</th><th>PENDING</th><th>BALANCE</th>
+                            <th style="text-align:center">ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${mockData.map(r => {
+                            // Calculate Bar %
+                            const total = r.alloc + r.carry;
+                            const pct = total > 0 ? (r.bal / total) * 100 : 0;
+                            let balCol = 'var(--primary)';
+                            if(r.bal === 0) balCol = 'var(--danger)';
+                            else if(r.bal < 5) balCol = 'var(--warning)';
+
+                            return `
+                            <tr>
+                                <td style="font-family: 'JetBrains Mono'; font-size: 11px; color: var(--muted);">${r.code}</td>
+                                <td style="font-weight: 700;">${r.name}</td>
+                                <td>${r.dept}</td>
+                                <td>
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <span style="width:8px; height:8px; border-radius:50%; background:${r.typeCol}"></span>
+                                        ${r.type}
+                                    </div>
+                                </td>
+                                <td style="font-weight:700">${r.alloc}</td>
+                                <td style="color:var(--muted)">${r.carry}</td>
+                                <td style="color:${r.used > 0 ? 'var(--danger)' : 'inherit'}">${r.used}</td>
+                                <td style="color:${r.pend > 0 ? 'var(--warning)' : 'inherit'}">${r.pend}</td>
+                                <td>
+                                    <div style="display:flex; align-items:center; gap:10px;">
+                                        <b style="color:${balCol}; min-width:15px">${r.bal}</b>
+                                        <div style="flex:1; height:4px; background:#f1f5f9; border-radius:10px; width:40px; overflow:hidden;">
+                                            <div style="width:${pct}%; height:100%; background:${balCol}; border-radius:10px;"></div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td style="text-align:center">
+                                    <button class="btn btn-xs btn-secondary" style="background:#fff; font-size:10px; padding:2px 10px;">Edit</button>
+                                </td>
+                            </tr>`;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+    lcIcons(target);
+}
+
+/**
+ * Processes the bulk assignment instantly.
+ */
+function processBulkAssign(btn) {
+    const originalHtml = btn.innerHTML;
+    
+    // UI Loading feedback
+    btn.disabled = true;
+    btn.innerHTML = `<i data-lucide="loader-2" class="spin" size="18"></i> Assigning...`;
+    lcIcons(btn);
+
+    // Instant success simulation
+    setTimeout(() => {
+        showNotification('Bulk Assignment Success', 'Entitlements have been created for the selected department.', 'success');
+        closeModal('modal-bulk-assign');
+        
+        // Reset button
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+        lcIcons(btn);
+
+        // Refresh the results table
+        if (typeof renderLeaveEntitlements === 'function') {
+            renderLeaveEntitlements();
+        }
+    }, 1000);
+}
+/**
+ * Saves an individual entitlement record instantly.
+ */
+function saveIndividualEntitlement(btn) {
+    const originalHtml = btn.innerHTML;
+    
+    // Immediate visual feedback
+    btn.disabled = true;
+    btn.innerHTML = `<i data-lucide="loader-2" class="spin" size="18"></i> Saving...`;
+    lcIcons(btn);
+
+    // Simulated instant success
+    setTimeout(() => {
+        showNotification('Allocation Saved', 'The employee leave balance has been updated.', 'success');
+        closeModal('modal-add-entitlement');
+        
+        // Reset button state
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+        lcIcons(btn);
+
+        // Refresh the table view instantly
+        if (typeof renderLeaveEntitlements === 'function') {
+            renderLeaveEntitlements();
+        }
+    }, 800);
+}
+
+
+function renderLeaveRequests(filter) {
+    const target = document.getElementById('leave-requests-target');
+    if (!target) return;
+
+    // --- INSTANT TAB SWITCH LOGIC ---
+    document.querySelectorAll('.lr-tab').forEach(t => {
+        // Reset all to secondary/transparent
+        t.className = 'btn btn-secondary btn-sm lr-tab';
+        t.style.background = 'transparent';
+        t.style.border = 'none';
+        t.style.color = '#64748b'; // Muted text for inactive
+    });
+
+    const activeBtn = document.getElementById(`lr-tab-${filter.toLowerCase()}`);
+    if(activeBtn) {
+        // Set active to primary green
+        activeBtn.className = 'btn btn-primary btn-sm lr-tab';
+        activeBtn.style.background = '#15b201';
+        activeBtn.style.border = ''; // Restore default primary border
+        activeBtn.style.color = '#fff';
+    }
+
+    // --- DATA HANDLING ---
+    const mockData = [
+        { ref: '#0001', name: 'Abebe Kebede', eid: 'EMP-2025-0001', dept: 'Engineering', type: 'Annual Leave', dot: '#15b201', from: '2026-04-15', to: '2026-04-20', days: 4, reason: 'Family vacation', sub: '2026-04-01', status: 'Approved' },
+        { ref: '#0002', name: 'Tigist Haile', eid: 'EMP-2025-0010', dept: 'Finance', type: 'Sick Leave', dot: '#0ea5e9', from: '2026-04-18', to: '2026-04-19', days: 2, reason: 'Medical appointment', sub: '2026-04-05', status: 'Pending' }
+    ];
+
+    const data = filter === 'All' ? mockData : mockData.filter(d => d.status === filter);
+
+    // --- RENDER TABLE ---
+    target.innerHTML = `
+        <div class="card" style="border-radius: 16px; border: 1px solid #f1f5f9; box-shadow: var(--shadow);">
+            <div class="table-wrap">
+                <table class="tbl">
+                    <thead style="background: #f8fafc;">
+                        <tr>
+                            <th style="padding: 18px 24px;">REF #</th><th>EMPLOYEE</th><th>DEPARTMENT</th><th>LEAVE TYPE</th>
+                            <th>FROM</th><th>TO</th><th style="text-align:center">DAYS</th>
+                            <th>REASON</th><th>SUBMITTED</th><th>STATUS</th><th style="text-align:center">ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.length > 0 ? data.map(r => `
+                        <tr>
+                            <td style="padding: 18px 24px; color: #94a3b8; font-size: 11px; font-family: 'JetBrains Mono';">${r.ref}</td>
+                            <td>
+                                <div style="line-height: 1.4">
+                                    <div style="font-weight: 800; color: #1e293b;">${r.name}</div>
+                                    <div style="font-size: 10px; color: #94a3b8; font-family: 'JetBrains Mono';">${r.eid}</div>
+                                </div>
+                            </td>
+                            <td style="color: #64748b; font-weight: 500;">${r.dept}</td>
+                            <td>
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <span style="width:7px; height:7px; border-radius:50%; background:${r.dot}"></span>
+                                    <span style="font-weight:700; font-size: 13px; color: #334155;">${r.type}</span>
+                                </div>
+                            </td>
+                            <td style="color: #475569; font-weight: 600;">${r.from}</td>
+                            <td style="color: #475569; font-weight: 600;">${r.to}</td>
+                            <td style="text-align:center"><b style="font-size: 15px; color: #1e293b;">${r.days}</b></td>
+                            <td style="color: #94a3b8; font-size: 12px; font-style: italic;">${r.reason}</td>
+                            <td style="color: #64748b;">${r.sub}</td>
+                            <td>
+                                <span style="
+                                    background: ${r.status === 'Approved' ? '#f0fdf4' : '#fffbeb'}; 
+                                    color: ${r.status === 'Approved' ? '#15b201' : '#f59e0b'};
+                                    border: 1px solid ${r.status === 'Approved' ? '#dcfce7' : '#fef3c7'};
+                                    padding: 4px 14px; border-radius: 20px; font-size: 10px; font-weight: 800;
+                                ">${r.status}</span>
+                            </td>
+                            <td style="text-align:right; padding-right: 24px;">
+                                ${r.status === 'Approved' ? `
+                                    <button class="btn btn-xs btn-secondary" style="background:#f8fafc; border: 1px solid #e2e8f0; padding:4px 16px; border-radius:8px; font-weight:700">Cancel</button>
+                                ` : `
+                                    <div class="flex-row" style="gap:6px; justify-content: flex-end;">
+                                        <button class="btn btn-xs btn-success" style="background:#15b201; border-radius:8px; padding:4px 16px; font-weight:700">Approve</button>
+                                        <button class="btn btn-xs btn-danger" style="background:#ef4444; border-radius:8px; padding:4px 16px; font-weight:700">Reject</button>
+                                    </div>
+                                `}
+                            </td>
+                        </tr>`).join('') : `<tr><td colspan="11" style="text-align:center; padding: 60px; color: var(--muted);">No matching leave requests found in this category.</td></tr>`}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+    lcIcons(target);
+}
+/**
+ * Processes the new leave request submission instantly.
+ */
+function submitNewLeaveRequest(btn) {
+    const originalHtml = btn.innerHTML;
+    
+    // Immediate loading state
+    btn.disabled = true;
+    btn.innerHTML = `<i data-lucide="loader-2" class="spin" size="18"></i> Submitting...`;
+    lcIcons(btn);
+
+    // Instant success simulation (remove artificial delays)
+    setTimeout(() => {
+        showNotification('Request Submitted', 'Your leave application has been sent for approval.', 'success');
+        closeModal('modal-new-leave-request');
+        
+        // Reset button for next time
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+        lcIcons(btn);
+
+        // Instant table refresh
+        if (typeof renderLeaveRequests === 'function') {
+            renderLeaveRequests('All');
+        }
+    }, 800);
+}
+/**
+ * Calculates the difference between two dates and updates the UI instantly.
+ */
+function calculateLeaveDays() {
+    const fromVal = document.getElementById('lr-date-from').value;
+    const toVal = document.getElementById('lr-date-to').value;
+    const isHalfDay = document.getElementById('lr-half-day-toggle').checked;
+    
+    const box = document.getElementById('lr-calc-box');
+    const text = document.getElementById('lr-calc-text');
+    const iconDiv = document.getElementById('lr-calc-icon');
+
+    if (fromVal && toVal) {
+        const start = new Date(fromVal);
+        const end = new Date(toVal);
+
+        // Date Validation
+        if (end < start) {
+            box.style.background = "#fef2f2";
+            box.style.borderColor = "#fecaca";
+            text.style.color = "#ef4444";
+            text.innerHTML = "Error: End date is before start date";
+            iconDiv.style.color = "#ef4444";
+            iconDiv.innerHTML = '<i data-lucide="alert-circle" size="20"></i>';
+            lcIcons(iconDiv);
+            return;
+        }
+
+        // Calculate Difference (Inclusive of both days)
+        const diffTime = Math.abs(end - start);
+        let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+        // Apply Half Day logic
+        if (isHalfDay) {
+            diffDays = diffDays > 1 ? diffDays - 0.5 : 0.5;
+        }
+
+        // Success Styling
+        box.style.background = "#f0fdf4";
+        box.style.borderColor = "#bbf7d0";
+        text.style.color = "#15b201";
+        text.innerHTML = `Total Duration: <b style="font-size: 1rem; margin-left: 4px;">${diffDays} Working Day${diffDays !== 1 ? 's' : ''}</b>`;
+        iconDiv.style.color = "#15b201";
+        iconDiv.innerHTML = '<i data-lucide="calendar-check" size="20"></i>';
+        lcIcons(iconDiv);
+
+    } else {
+        // Reset to default state
+        box.style.background = "#f8fafc";
+        box.style.borderColor = "#e2e8f0";
+        text.style.color = "#64748b";
+        text.innerHTML = "Select dates to calculate duration";
+        iconDiv.style.color = "#94a3b8";
+        iconDiv.innerHTML = '<i data-lucide="calculator" size="20"></i>';
+        lcIcons(iconDiv);
+    }
+}
+ // --- LEAVE CALENDAR STATE ---
+let calDate = new Date(); 
+
+// Mock Data Store
+const leaveStore = {
+    '2026-03-05': [{name: 'J. Smith', type: 'Annual Leave'}],
+    '2026-03-08': [{name: 'A. Kim', type: 'Sick Leave'}],
+    '2026-03-12': [{name: 'S. Lee', type: 'Annual Leave'}],
+    '2026-03-19': [{name: 'E. Wang', type: 'Maternity Leave'}],
+    '2026-04-25': [{name: 'Meron Assefa', type: 'Annual Leave'}]
+};
+
+/**
+ * Main function to generate the grid.  
+ */
+function renderCalendar() {
+    const grid = document.getElementById('calendar-body');
+    const label = document.getElementById('cal-month-display');
+    if (!grid) return;
+
+    const year = calDate.getFullYear();
+    const month = calDate.getMonth();
+    label.textContent = calDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const today = new Date();
+    const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    
+    let html = '';
+    // 1. Empty padding for start of month
+    for (let i = 0; i < firstDay; i++) {
+        html += `<div style="min-height:72px; opacity:0.1; border: 1px dashed #e2e8f0; border-radius: 10px;"></div>`;
+    }
+
+    // 2. Map actual days
+    for (let d = 1; d <= daysInMonth; d++) {
+        const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const hasLeave = leaveStore[dateKey] || null;
+        const isToday = (dateKey === todayKey);
+        
+        html += `
+            <div class="cal-day-cell" data-date="${dateKey}" onclick="updateCalendarSidebar('${dateKey}')" style="
+                min-height: 72px;
+                background: ${hasLeave ? '#f1fcf0' : '#fff'};
+                border: 1px solid ${isToday ? '#3b82f6' : (hasLeave ? '#dcfce7' : '#f1f5f9')};
+                border-radius: 10px; padding: 10px; cursor: pointer; position: relative; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                ${isToday ? 'box-shadow: inset 0 0 0 1px #3b82f6, 0 4px 12px rgba(59, 130, 246, 0.1);' : ''}
+            ">
+                <span style="font-size: 0.85rem; font-weight: 700; color: ${isToday ? '#2563eb' : '#1e293b'};">${d}</span>
+                ${hasLeave ? `<div style="position:absolute; bottom:10px; left:10px; width:6px; height:6px; background:#15b201; border-radius:50%;"></div>` : ''}
+            </div>`;
+    }
+    grid.innerHTML = html;
+    lcIcons(grid);
+
+    // Default sidebar to today (if in current month) or first of month
+    const defaultKey = (month === today.getMonth() && year === today.getFullYear()) ? todayKey : `${year}-${String(month + 1).padStart(2, '0')}-01`;
+    updateCalendarSidebar(defaultKey);
+}
+
+/**
+ * Updates the Right Sidebar with Employee Cards
+ */
+function updateCalendarSidebar(dateStr) {
+    // 1. Manage Visual "Active" selection in Grid
+    document.querySelectorAll('.cal-day-cell').forEach(c => {
+        c.style.transform = "scale(1)";
+        c.style.zIndex = "1";
+        c.style.boxShadow = c.dataset.date.includes('-' + (new Date().getDate())) ? 'inset 0 0 0 1px #3b82f6' : 'none';
+    });
+
+    const clicked = document.querySelector(`[data-date="${dateStr}"]`);
+    if(clicked) {
+        clicked.style.borderColor = 'var(--primary)';
+        clicked.style.transform = "scale(1.08)";
+        clicked.style.zIndex = "10";
+        clicked.style.boxShadow = "0 10px 15px -3px rgba(0, 0, 0, 0.05)";
+    }
+
+    // 2. Update Content Area
+    const label = document.getElementById('detail-date-label');
+    const listArea = document.getElementById('detail-list-area');
+    if (!label || !listArea) return;
+
+    const data = leaveStore[dateStr] || [];
+    const dObj = new Date(dateStr);
+    label.textContent = dObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+    if (data.length > 0) {
+        listArea.innerHTML = data.map(p => `
+            <div style="background:#fff; border:1px solid #f1f5f9; padding:14px; border-radius:14px; margin-bottom:12px; display:flex; align-items:center; gap:14px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                <div style="width:36px; height:36px; border-radius:10px; background:#f0fdf4; color:#15b201; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; border: 1px solid #dcfce7;">
+                    ${p.name.charAt(0)}
+                </div>
+                <div>
+                    <div style="font-weight: 800; font-size: 0.9rem; color: #1e293b;">${p.name}</div>
+                    <div style="font-size: 0.65rem; color: #94a3b8; font-weight: 800; text-transform:uppercase; letter-spacing:0.02em; margin-top:2px;">${p.type}</div>
+                </div>
+            </div>`).join('');
+    } else {
+        listArea.innerHTML = `
+            <div style="text-align:center; padding: 60px 20px; opacity:0.4;">
+                <i data-lucide="calendar-check" size="40" style="margin-bottom:12px; color: var(--muted);"></i>
+                <p style="font-size:0.8rem; font-weight:700; color: var(--muted);">Full attendance today</p>
+            </div>`;
+    }
+    lcIcons(listArea);
+}
+
+// --- HELPER NAVIGATION FUNCTIONS ---
+
+function changeMonth(delta) {
+    calDate.setMonth(calDate.getMonth() + delta);
+    renderCalendar();
+}
+
+function resetToToday() {
+    calDate = new Date();
+    renderCalendar();
+}
+ function generateVisualCalendar() {
+    const splash = document.getElementById('cal-splash-screen');
+    const content = document.getElementById('cal-real-content');
+    const card = document.getElementById('calendar-main-card');
+
+    if (!splash || !content) return;
+
+    // 1. Swap visibility instantly
+    splash.style.display = 'none';
+    content.style.display = 'block';
+    
+    // 2. Reset card alignment for the split view
+    card.style.alignItems = 'stretch';
+
+    // 3. Trigger the actual render logic
+    renderCalendar();
+    
+    showNotification('Intelligence', 'Visual overview generated.', 'success');
+}
+// Global tracker to store Chart.js instances
+let analyticsCharts = {};
+
+function initLeaveAnalytics() {
+    // 1. Clean up existing charts before re-drawing
+    Object.values(analyticsCharts).forEach(chart => chart.destroy());
+    analyticsCharts = {};
+
+    const commonOpts = { 
+        maintainAspectRatio: false, 
+        responsive: true,
+        plugins: { legend: { display: false } },
+        animation: { duration: 600 }
+    };
+
+    // 2. Bar Chart: Leave Days by Dept
+    const ctxBar = document.getElementById('chart-leave-dept');
+    if (ctxBar) {
+        analyticsCharts.bar = new Chart(ctxBar, {
+            type: 'bar',
+            data: {
+                labels: ['Engineering', 'Finance', 'Marketing', 'Sales', 'HR', 'IT'],
+                datasets: [{
+                    data: [85, 42, 38, 35, 28, 20],
+                    backgroundColor: '#f1fcf0',
+                    borderColor: '#15b201',
+                    borderWidth: 1.5,
+                    borderRadius: 6
+                }]
+            },
+            options: { ...commonOpts, scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } } }
+        });
+    }
+
+    // 3. Doughnut Chart: Distribution
+    const ctxPie = document.getElementById('chart-leave-type');
+    if (ctxPie) {
+        analyticsCharts.pie = new Chart(ctxPie, {
+            type: 'doughnut',
+            data: {
+                labels: ['Annual', 'Sick', 'Maternity', 'Paternity', 'Unpaid'],
+                datasets: [{
+                    data: [45, 25, 15, 10, 5],
+                    backgroundColor: ['#15b201', '#0ea5e9', '#8b5cf6', '#f59e0b', '#ef4444'],
+                    borderWidth: 3, borderColor: '#fff', cutout: '70%'
+                }]
+            },
+            options: { ...commonOpts, plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 8, padding: 15, font: { size: 10, weight: '700' } } } } }
+        });
+    }
+
+    // 4. Line Chart: Trend
+    const ctxLine = document.getElementById('chart-leave-trend');
+    if (ctxLine) {
+        analyticsCharts.line = new Chart(ctxLine, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                datasets: [{
+                    data: [18, 22, 35, 28, 30, 25, 20, 15, 10, 18, 12, 15],
+                    borderColor: '#15b201', backgroundColor: 'rgba(21, 178, 1, 0.05)', fill: true, tension: 0.4, pointRadius: 3
+                }]
+            },
+            options: { ...commonOpts, scales: { y: { grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } } }
+        });
+    }
+
+    // 5. Populate Leaderboard & Icons
+    renderLeaveLeaderboard();
+    lcIcons(); 
+}
