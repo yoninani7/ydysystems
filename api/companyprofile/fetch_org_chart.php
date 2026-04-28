@@ -13,26 +13,21 @@ if (empty($_SESSION['user_id'])) {
 try {
     $pdo = get_pdo();
 
-    // Total active employees
-    $total = $pdo->query("SELECT COUNT(*) FROM employees WHERE status = 'Active'")->fetchColumn();
-
-    // Departments with headcount and position count
-    $deptSql = "
+    // Optimized query without JSON functions (compatible with older MySQL)
+    $orgSql = "
         SELECT 
             d.id,
             d.name,
-            COUNT(DISTINCT e.id) AS headcount,
-            COUNT(DISTINCT jp.id) AS position_count
-        FROM departments d
-        LEFT JOIN employees e ON d.id = e.department_id AND e.status = 'Active'
-        LEFT JOIN job_positions jp ON d.id = jp.department_id AND jp.status = 'Active'
+            (SELECT COUNT(*) FROM employees WHERE department_id = d.id AND status = 'Active') AS headcount,
+            (SELECT COUNT(*) FROM job_positions WHERE department_id = d.id AND status = 'Active' AND deleted_at IS NULL) AS position_count
+        FROM departments d 
         WHERE d.status = 'Active' AND d.deleted_at IS NULL
-        GROUP BY d.id
         ORDER BY d.name ASC
     ";
-    $departments = $pdo->query($deptSql)->fetchAll();
+    
+    $departments = $pdo->query($orgSql)->fetchAll();
 
-    // Job positions with headcounts
+    // Get job positions with employee counts in one query
     $jobSql = "
         SELECT 
             jp.department_id,
@@ -42,8 +37,12 @@ try {
         LEFT JOIN employees e ON jp.id = e.job_position_id AND e.status = 'Active'
         WHERE jp.status = 'Active' AND jp.deleted_at IS NULL
         GROUP BY jp.department_id, jp.id
+        ORDER BY jp.title ASC
     ";
     $jobs = $pdo->query($jobSql)->fetchAll();
+    
+    // Get total employees count
+    $total = $pdo->query("SELECT COUNT(*) FROM employees WHERE status = 'Active'")->fetchColumn();
 
     // Group jobs by department
     $jobsByDept = [];
@@ -59,6 +58,7 @@ try {
         'total' => (int)$total,
         'departments' => []
     ];
+    
     foreach ($departments as $dept) {
         $orgData['departments'][] = [
             'name' => $dept['name'],

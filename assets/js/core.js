@@ -309,7 +309,7 @@ function generateOrgChart() {
 
   Promise.all([
     fetchOrgChartData(),
-    new Promise(resolve => setTimeout(resolve, 2000))
+    new Promise(resolve => setTimeout(resolve, 1000))
   ])
     .then(() => {
       emptyState.style.display = 'none';
@@ -512,8 +512,7 @@ function openCompanyEditModal() {
   document.getElementById('edit_telegram').value = getValue('Telegram:') || getValue('Telegram');
   document.getElementById('edit_whatsapp').value = getValue('WhatsApp:') || getValue('WhatsApp');
   document.getElementById('edit_linkedin').value = getValue('LinkedIn:') || getValue('LinkedIn');
-
-  populateCompanyFields();
+ 
   disableCompanyEdit();
   document.getElementById('btn-enable-edit').style.display = 'inline-flex';
   document.getElementById('btn-save-company').style.display = 'none';
@@ -1512,13 +1511,38 @@ function saveNewEmployee() {
       } else {
         if (result.errors) {
           const fieldMap = {
-            'first_name': 'o-fname', 'middle_name': 'o-mname', 'last_name': 'o-lname',
-            'date_of_birth': 'o-dob', 'gender': 'o-gender',
-            'department_id': 'o-dept', 'branch_id': 'o-branch',
-            'job_position_id': 'o-pos', 'employment_type_id': 'o-etype',
-            'hire_date': 'o-hire', 'contract_end_date': 'o-end-date',
-            'salary': 'o-sal', 'emergency_phone': 'o-ephone'
-          };
+            'first_name': 'o-fname',
+            'middle_name': 'o-mname',
+            'last_name': 'o-lname',
+            'date_of_birth': 'o-dob',
+            'gender': 'o-gender',
+            'department_id': 'o-dept',
+            'branch_id': 'o-branch',
+            'job_position_id': 'o-pos',
+            'employment_type_id': 'o-etype',
+            'hire_date': 'o-hire',
+            'contract_end_date': 'o-end-date',
+            'salary': 'o-sal',
+            'emergency_phone': 'o-ephone',
+            'reports_to_id': 'o-reports',
+            'hours_per_week': 'o-hours',
+            'project_name': 'o-project',
+            'institution': 'o-institution',
+            'probation_days': 'o-probation_val',
+            'probation_period': 'o-probation',
+            'bank_account': 'o-acc',
+            'tin': 'o-tin',
+            'bank_name': 'o-bank',
+            'emergency_name': 'o-ename',
+            'emergency_relation': 'o-idno',
+            'personal_email': 'o-email',
+            'personal_phone': 'o-phone',
+            'permanent_address': 'o-addr',
+            'city': 'o-city',
+            'postal_code': 'o-zip',
+            'marital_status': 'o-marital',
+            'place_of_birth': 'o-pob'
+        };
           document.querySelectorAll('.field-error').forEach(el => el.classList.remove('field-error'));
           Object.keys(result.errors).forEach(field => {
             const inputId = fieldMap[field] || field;
@@ -1549,9 +1573,20 @@ function saveNewEmployee() {
 const inited = new Set();
 let pendingEmployeeVaultData = null;
 
+// Org chart caching
+let orgChartCache = null;
+let cacheTimestamp = 0;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 function fetchOrgChartData() {
   const container = document.getElementById('dept-tree-container');
   if (!container) return Promise.reject('Container not found');
+
+  // Check cache first
+  if (orgChartCache && Date.now() - cacheTimestamp < CACHE_DURATION) {
+    renderOrgChartFromData(orgChartCache);
+    return Promise.resolve(orgChartCache);
+  }
 
   container.innerHTML = '<div style="padding:40px; text-align:center;"><i data-lucide="loader-2" class="spin"></i> Loading structure...</div>';
   lcIcons(container);
@@ -1560,7 +1595,13 @@ function fetchOrgChartData() {
     .then(r => r.json())
     .then(res => {
       if (!res.success) throw new Error(res.message);
+      
+      // Cache the data
+      orgChartCache = res.data;
+      cacheTimestamp = Date.now();
+      
       renderOrgChartFromData(res.data);
+      return res.data;
     })
     .catch(err => {
       container.innerHTML = `<div style="padding:40px; text-align:center; color:var(--danger);">Error: ${err.message}</div>`;
@@ -1568,54 +1609,63 @@ function fetchOrgChartData() {
     });
 }
 
+// Clear cache when needed (call this after updating departments/positions)
+function clearOrgChartCache() {
+  orgChartCache = null;
+  cacheTimestamp = 0;
+}
+
 function renderOrgChartFromData(data) {
   const container = document.getElementById('dept-tree-container');
   const departments = data.departments;
 
-  let html = '';
-  departments.forEach(dept => {
+  // Build all HTML strings first to minimize DOM operations
+  const departmentHtml = departments.map(dept => {
     let submenuHtml = '';
     if (dept.jobs && dept.jobs.length > 0) {
-      submenuHtml = '<ul class="submenu-jobs" style="padding-top:20px;">';
-      dept.jobs.forEach(job => {
-        submenuHtml += `<li>
-                        <div class="oc-node oc-staff" style="width:160px; border-top:2px solid var(--primary-light);">
-                            <div class="oc-node-body" style="padding:12px; text-align:center; flex-direction:column;">
-                                <div class="oc-node-name" style="font-size:.75rem; font-weight:700;">${job.title}</div>
-                                <div class="oc-node-role" style="font-size:.6rem; margin-top:4px;">${job.count} employees</div>
-                            </div>
-                        </div>
-                    </li>`;
-      });
-      submenuHtml += '</ul>';
+      const jobsHtml = dept.jobs.map(job => 
+        `<li>
+          <div class="oc-node oc-staff" style="width:160px; border-top:2px solid var(--primary-light);">
+            <div class="oc-node-body" style="padding:12px; text-align:center; flex-direction:column;">
+              <div class="oc-node-name" style="font-size:.75rem; font-weight:700;">${job.title}</div>
+              <div class="oc-node-role" style="font-size:.6rem; margin-top:4px;">${job.count} employees</div>
+            </div>
+          </div>
+        </li>`
+      ).join('');
+      submenuHtml = `<ul class="submenu-jobs" style="padding-top:20px;">${jobsHtml}</ul>`;
     }
 
-    html += `<li>
-                <div class="oc-node oc-mgr">
-                    <div class="oc-node-header">
-                        <span class="oc-id">${dept.name.toUpperCase()}</span>
-                        <span class="badge badge-primary" style="font-size:8px;">${dept.headcount} EMP</span>
-                    </div>
-                    <div class="oc-node-body">
-                        <div class="oc-node-avatar" style="background:var(--primary-light);color:var(--primary);">
-                            <i data-lucide="users" size="20"></i>
-                        </div>
-                        <div class="oc-node-info">
-                            <div class="oc-node-name">${dept.name}</div>
-                            <div class="oc-node-role">Department</div>
-                        </div>
-                    </div>
-                    <div class="oc-node-footer">${dept.position_count} Positions</div>
-                </div>
-                ${submenuHtml}
-            </li>`;
-  });
+    return `<li>
+      <div class="oc-node oc-mgr">
+        <div class="oc-node-header">
+          <span class="oc-id">${dept.name.toUpperCase()}</span>
+          <span class="badge badge-primary" style="font-size:8px;">${dept.headcount} EMP</span>
+        </div>
+        <div class="oc-node-body">
+          <div class="oc-node-avatar" style="background:var(--primary-light);color:var(--primary);">
+            <i data-lucide="users" size="20"></i>
+          </div>
+          <div class="oc-node-info">
+            <div class="oc-node-name">${dept.name}</div>
+            <div class="oc-node-role">Department</div>
+          </div>
+        </div>
+        <div class="oc-node-footer">${dept.position_count} Positions</div>
+      </div>
+      ${submenuHtml}
+    </li>`;
+  }).join('');
 
-  container.innerHTML = html;
+  // Single DOM update
+  container.innerHTML = `<ul>${departmentHtml}</ul>`;
+  
+  // Update badges in batch
   const totalBadge = document.getElementById('oc-total-badge');
-  if (totalBadge) totalBadge.textContent = `${data.total} TOTAL`;
   const deptCountFooter = document.getElementById('oc-dept-count');
+  if (totalBadge) totalBadge.textContent = `${data.total} TOTAL`;
   if (deptCountFooter) deptCountFooter.textContent = `${departments.length} Departments`;
+  
   lcIcons(container);
 }
 
@@ -2805,7 +2855,7 @@ function updateEmploymentFields(type) {
       <div style="display: flex; gap: 10px; align-items: center;">
         <input type="number" id="o-probation_val" class="form-ctrl master-req" placeholder="e.g. 90" value="60" style="width: 100px;">
         <span style="font-size: 0.75rem; color: var(--muted);">Total days from hire date</span>
-        <input type="hidden" id="o-probation" value="">
+        <input type="hidden" id="o-probation" name="probation_period" value="">
       </div>
     </div>`;
 
@@ -3106,13 +3156,14 @@ window.selectAsItemWithValue = function (inputId, dropId, displayText, value) {
 
   let hiddenId = inputId + '_id';
   let hiddenEl = document.getElementById(hiddenId);
-  if (!hiddenEl) {
+if (!hiddenEl) {
     hiddenEl = document.createElement('input');
     hiddenEl.type = 'hidden';
     hiddenEl.id = hiddenId;
+    hiddenEl.name = hiddenId;    // ADD THIS LINE
     inputEl.parentNode.appendChild(hiddenEl);
-  }
-  hiddenEl.value = value;
+}
+hiddenEl.value = value;
 
   const dropContainer = document.getElementById(dropId);
   if (dropContainer) dropContainer.classList.remove('active');

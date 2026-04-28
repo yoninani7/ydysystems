@@ -21,7 +21,7 @@ function check($val) {
         <p class="db-hero-sub">Corporate Registry</p>
       </div>
       <img src="assets/img/bgt.png" class="db-hero-center-img" alt="Banner">
-      <button class="btn-glass-pro-slim"><i data-lucide="edit" size="14"></i><span>Update records</span></button>
+      <button class="btn-glass-pro-slim" onclick="openCompanyEditModal()"><i data-lucide="edit" size="14"></i><span>Update records</span></button>
     </header>
 
     <div class="profile-main-grid" style="grid-template-columns: repeat(3, 1fr); gap:16px;"> 
@@ -127,7 +127,7 @@ function check($val) {
   </div> 
   <!-- COMPANY PROFILE UPDATE MODAL (RESPONSIVE & THEME-ONLY) -->
 <div class="modal-overlay" id="modal-edit-company" onclick="closeCompanyModal(event)">
-  <div class="modal-box" style="max-width: 980px; width: 95%; border-radius: 16px; overflow: hidden;">
+  <div class="modal-box" style="max-width: 1400px; width: 98%; border-radius: 16px; overflow: hidden;">
     <div class="modal-header">
       <div>
         <div style="font-size:1.1rem; font-weight:800; letter-spacing: -0.02em;">Update Company Profile</div>

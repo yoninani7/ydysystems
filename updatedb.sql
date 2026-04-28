@@ -129,7 +129,7 @@ CREATE TABLE employees (
     branch_id                 INT          NULL,
     hire_date                 DATE,
     contract_end_date         DATE         NULL,
-    hours_per_week            INT          NULL,
+    hours_per_week            DECIMAL(5,2)   NULL,
     probation_period          VARCHAR(50),
     project_name              VARCHAR(200) NULL,
     reports_to_id             INT          NULL,

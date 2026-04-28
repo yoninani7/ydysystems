@@ -198,6 +198,14 @@ try {
         $stmt->execute([$data['job_position_id']]);
         if (!$stmt->fetch()) $errors['job_position_id'] = 'Selected job position does not exist.';
     }
+    if ($data['job_position_id'] && $data['department_id']) {
+    $checkPosDept = $pdo->prepare("SELECT department_id FROM job_positions WHERE id = ?");
+    $checkPosDept->execute([$data['job_position_id']]);
+    $posDept = $checkPosDept->fetchColumn();
+    if ($posDept && $posDept != $data['department_id']) {
+        $errors['job_position_id'] = 'The selected job position does not belong to the chosen department.';
+    }
+}
 
     // Dynamic fields
     $hireDate = trim($_POST['hire_date'] ?? '');
@@ -231,9 +239,9 @@ try {
     }
 
     $hours = trim($_POST['hours_per_week'] ?? '');
-    if ($hours !== '') {
-        $data['hours_per_week'] = (int)$hours;
-    }
+        if ($hours !== '') {
+            $data['hours_per_week'] = (float)$hours;  // preserve decimal values
+        }
 
     $data['project_name'] = trim($_POST['project_name'] ?? '') ?: null;
     $data['institution'] = trim($_POST['institution'] ?? '') ?: null;
