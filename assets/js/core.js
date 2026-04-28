@@ -311,10 +311,17 @@ function generateOrgChart() {
     fetchOrgChartData(),
     new Promise(resolve => setTimeout(resolve, 1000))
   ])
-    .then(() => {
-      emptyState.style.display = 'none';
-      blueprint.style.display = 'block';
-      if (controlsWrapper) controlsWrapper.style.display = 'block';
+     .then(() => {
+        emptyState.style.display = 'none';
+        blueprint.style.display = 'block';
+        if (controlsWrapper) controlsWrapper.style.display = 'block';
+
+        // Center the chart after it becomes visible
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                blueprint.scrollLeft = (blueprint.scrollWidth - blueprint.clientWidth) / 2;
+            });
+        });
     })
     .catch(err => {
       showNotification('Error', 'Could not load chart: ' + (err.message || err), 'error');
@@ -327,7 +334,154 @@ function generateOrgChart() {
       lcIcons(btnIconRight);
     });
 }
+function exportOrgChartPDF() {
+    const treeRoot = document.getElementById('oc-tree-root');
+    if (!treeRoot || document.getElementById('oc-blueprint-area').style.display === 'none') {
+        showNotification('Error', 'Please generate chart first.', 'error');
+        return;
+    }
 
+    const clone = treeRoot.cloneNode(true);
+
+    const chartCSS = `
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            background: #fff;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            padding: 50px;
+        }
+
+        /* 1. RESET BOX MODEL FOR VERTICAL LINES */
+        .oc-tree ul {
+            display: block;
+            position: relative;
+            padding-left: 40px; /* Space for the vertical line */
+            margin: 0;
+        }
+
+        /* 2. THE VERTICAL LINE (SPINE) */
+        /* This draws a line from the parent down to the last child */
+        .oc-tree ul::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #cbd5e1;
+        }
+
+        /* Stop the spine at the middle of the last child node */
+        .oc-tree li:last-child > ul::before,
+        .oc-tree li:last-child::after {
+            display: none;
+        }
+
+        .oc-tree li {
+            list-style: none;
+            position: relative;
+            padding: 15px 0;
+            display: block;
+        }
+
+        /* 3. THE HORIZONTAL LINE (ARM) */
+        /* Connects the vertical spine to the left side of the node */
+        .oc-tree li::before {
+            content: "";
+            position: absolute;
+            left: -40px;
+            top: 50px; /* Aligns with the middle of the node header area */
+            width: 40px;
+            height: 2px;
+            background: #cbd5e1;
+        }
+
+        /* Special case: hide lines for the very top root element */
+        .oc-tree > li::before { display: none !important; }
+        .oc-tree > li { padding-left: 0 !important; }
+        .oc-tree > li > ul { margin-left: 0; padding-left: 40px; }
+
+        /* Fix for nested spines: Ensure the spine starts below the parent node */
+        .oc-tree li > ul {
+            margin-top: -10px;
+            margin-left: 20px; /* Indent level */
+        }
+
+        /* 4. EXACT THEME STYLING (Same as your UI) */
+        .oc-node {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            width: 320px;
+            display: block;
+            box-shadow: 0 1px 3px rgba(0,0,0,.07);
+            overflow: hidden;
+            page-break-inside: avoid;
+            position: relative;
+            z-index: 2;
+        }
+
+        .oc-node-header {
+            padding: 8px 12px;
+            background: #fafafa;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .oc-id { font-size: 9px; font-weight: 800; color: #64748b; font-family: 'JetBrains Mono'; }
+        .oc-node-body { padding: 15px; display: flex; align-items: center; gap: 12px; text-align: left; }
+        .oc-node-avatar {
+            width: 42px; height: 42px; border-radius: 10px;
+            background: #f1fcf0; color: #15b201;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: .8rem;
+        }
+
+        .oc-node-name { font-size: .85rem; font-weight: 800; color: #0f172a; white-space: nowrap; }
+        .oc-node-role { font-size: .65rem; color: #64748b; font-weight: 600; text-transform: uppercase; margin-top: 2px; }
+        
+        .oc-node-footer {
+            padding: 6px 12px; background: #f8fafc; font-size: 9px; font-weight: 700;
+            color: #64748b; border-top: 1px solid #f1f5f9; text-transform: uppercase;
+        }
+
+        .oc-mgr { border-top: 4px solid #15b201 !important; }
+        .oc-staff { border-top: 4px solid #cbd5e1 !important; width: 260px; }
+        
+        /* Hide existing horizontal-only pseudo elements from the original clone */
+        .oc-tree li::after, .oc-tree ul::after { border: none !important; content: none !important; }
+
+        @media print {
+            @page { size: portrait; margin: 10mm; }
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+    `;
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    printWindow.document.write(`
+        <html>
+        <head>
+            <style>${chartCSS}</style>
+        </head>
+        <body>
+            <div class="oc-tree">${clone.innerHTML}</div>
+            <script>
+                window.onload = () => {
+                    setTimeout(() => {
+                        window.print();
+                        window.close();
+                    }, 500);
+                };
+            <\/script>
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+}
 // ── VAULT MATRIX ──
 function initVaultMatrix() {
   const container = document.getElementById('vault-matrix-container');
@@ -476,14 +630,19 @@ function openDeptModal() {
 }
 
 function openCompanyEditModal() {
-  const getValue = (labelText) => {
-    const entries = document.querySelectorAll('.data-entry');
-    for (let entry of entries) {
-      const label = entry.querySelector('.de-label')?.textContent.trim();
-      if (label === labelText) return entry.querySelector('.de-value')?.textContent.trim() || '';
+ const getValue = (labelText) => {
+  const entries = document.querySelectorAll('.data-entry');
+  for (let entry of entries) {
+    const label = entry.querySelector('.de-label')?.textContent.trim();
+    if (label === labelText) {
+      // Try .de-value first, then .badge, then empty string
+      return entry.querySelector('.de-value')?.textContent.trim()
+          || entry.querySelector('.badge')?.textContent.trim()
+          || '';
     }
-    return '';
-  };
+  }
+  return '';
+};
 
   document.getElementById('edit_legal_name').value = getValue('Legal Name');
   document.getElementById('edit_trading_name').value = getValue('Trading Name');
@@ -1573,20 +1732,13 @@ function saveNewEmployee() {
 const inited = new Set();
 let pendingEmployeeVaultData = null;
 
-// Org chart caching
-let orgChartCache = null;
-let cacheTimestamp = 0;
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+ 
 
 function fetchOrgChartData() {
   const container = document.getElementById('dept-tree-container');
   if (!container) return Promise.reject('Container not found');
 
-  // Check cache first
-  if (orgChartCache && Date.now() - cacheTimestamp < CACHE_DURATION) {
-    renderOrgChartFromData(orgChartCache);
-    return Promise.resolve(orgChartCache);
-  }
+ 
 
   container.innerHTML = '<div style="padding:40px; text-align:center;"><i data-lucide="loader-2" class="spin"></i> Loading structure...</div>';
   lcIcons(container);
@@ -1595,11 +1747,7 @@ function fetchOrgChartData() {
     .then(r => r.json())
     .then(res => {
       if (!res.success) throw new Error(res.message);
-      
-      // Cache the data
-      orgChartCache = res.data;
-      cacheTimestamp = Date.now();
-      
+       
       renderOrgChartFromData(res.data);
       return res.data;
     })
@@ -1607,13 +1755,7 @@ function fetchOrgChartData() {
       container.innerHTML = `<div style="padding:40px; text-align:center; color:var(--danger);">Error: ${err.message}</div>`;
       throw err;
     });
-}
-
-// Clear cache when needed (call this after updating departments/positions)
-function clearOrgChartCache() {
-  orgChartCache = null;
-  cacheTimestamp = 0;
-}
+} 
 
 function renderOrgChartFromData(data) {
   const container = document.getElementById('dept-tree-container');
@@ -1667,6 +1809,13 @@ function renderOrgChartFromData(data) {
   if (deptCountFooter) deptCountFooter.textContent = `${departments.length} Departments`;
   
   lcIcons(container);
+  // Center the chart horizontally in the viewport
+const blueprint = document.getElementById('oc-blueprint-area');
+if (blueprint && blueprint.style.display !== 'none') {
+    setTimeout(() => {
+        blueprint.scrollLeft = (blueprint.scrollWidth - blueprint.clientWidth) / 2;
+    }, 50);
+}
 }
 
 function initPage(id) {
