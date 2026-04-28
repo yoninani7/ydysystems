@@ -289,24 +289,7 @@ table.tbl tr:hover td:last-child{background:#fcfdfe!important}
 .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--primary);background:#fff}
 .form-group textarea{resize:vertical;min-height:80px}
 input[type="checkbox"]{accent-color:var(--primary);width:15px;height:15px;cursor:pointer}
-.oc-blueprint {
-    width: 100%;
-    background-color: #f8fafc;
-    background-image: radial-gradient(#e2e8f0 1.5px, transparent 1.5px);
-    background-size: 30px 30px;
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 40px 20px 20px;
-    overflow: auto;
-    display: flex;                  /* changed from block */
-    justify-content: center;        /* center horizontally */
-    position: relative;
-    box-shadow: inset 0 0 40px rgba(0,0,0,.02);
-    min-height: 500px;
-    align-items: flex-start;
-    cursor: grab;
-    user-select: none;
-}
+.oc-blueprint{width:100%;background-color:#f8fafc;background-image:radial-gradient(#e2e8f0 1.5px,transparent 1.5px);background-size:30px 30px;border:1px solid var(--border);border-radius:16px;padding:40px 20px 20px;overflow:auto;justify-content:center;position:relative;box-shadow:inset 0 0 40px rgba(0,0,0,.02);min-height:500px;align-items:flex-start;cursor:grab;user-select:none;-webkit-overflow-scrolling: touch;display: block; text-align: center;}
 .oc-blueprint:active{cursor:grabbing}
 
 /* Mobile specific layout (Screens smaller than 768px) */
