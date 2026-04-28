@@ -1969,62 +1969,14 @@ function initPage(id) {
         lcIcons(listContainer);
         pendingEmployeeVaultData = null;
       }
-      break;
-    case 'job-vacancies':
-      initServerPaginatedTable('tbl-vacancies', 'api/talent/fetch_vacancies.php', {
-        columns: [
-          { key: 'title', label: 'Position' },
-          { key: 'dept', label: 'Department' },
-          { key: 'branch', label: 'Branch' },
-          { key: 'type', label: 'Type' },
-          { key: 'posted', label: 'Posted' },
-          { key: 'deadline', label: 'Deadline' },
-          {
-            key: 'status', label: 'Status',
-            render: (v) => {
-              const s = v.toLowerCase();
-              if (s === 'open') return b('success', 'Open');
-              if (s === 'closed') return b('danger', 'Closed');
-              if (s === 'filled') return b('neutral', 'Filled');
-              if (s === 'on hold') return b('warning', 'On Hold');
-              return b('info', v);
-            }
-          },
-          { key: 'updated_by_name', label: 'Last Updated By' },
-          {
-            key: '_', label: 'Actions',
-            render: () => `<div class="flex-row">
-                <button class="btn btn-xs btn-secondary" title="View Details"><i data-lucide="eye" size="10"></i></button>
-                <button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;"><i data-lucide="trash-2" size="10"></i></button>
-              </div>`
-          }
-        ],
-        perPage: 15, searchPlaceholder: 'Search positions, departments...'
-      });
-      break;
+      break; 
+case 'job-vacancies':
+    renderJobVacancies();
+    break;
     case 'candidates':
-      initServerPaginatedTable('tbl-candidates', 'api/talent/fetch_candidates.php', {
-        columns: [
-          { key: 'name', label: 'Candidate' },
-          { key: 'position', label: 'Applied For' },
-          { key: 'applied', label: 'Applied Date' },
-          {
-            key: 'stage', label: 'Stage',
-            render: (v) => {
-              const s = v.toLowerCase();
-              return s === 'hired' ? b('success', 'Hired') : s === 'rejected' ? b('danger', 'Rejected') : s === 'interview' ? b('warning', 'Interview') : s === 'offer' ? b('primary', 'Offer Made') : s === 'screening' ? b('info', 'Screening') : b('neutral', v);
-            }
-          },
-          { key: 'updated_by_name', label: 'Last Updated By' },
-          {
-            key: '_', label: 'Actions',
-            render: () => `<div class="flex-row"><button class="btn btn-xs btn-secondary" title="Download CV"><i data-lucide="download" size="10"></i></button></div>`
-          }
-        ],
-        perPage: 15, searchPlaceholder: 'Search candidates...'
-      });
-      break;
-    case 'interview-tracker':
+    renderApplicantList();
+    break;
+      case 'interview-tracker':
       initServerPaginatedTable('tbl-interviews', 'api/talent/fetch_interviews.php', {
         columns: [
           { key: 'candidate', label: 'Candidate' },
@@ -2049,34 +2001,11 @@ function initPage(id) {
         perPage: 15, searchPlaceholder: 'Search interviews...'
       });
       break;
+    
     case 'internship':
-      initServerPaginatedTable('tbl-internship', 'api/talent/fetch_internships.php', {
-        columns: [
-          { key: 'id_code', label: 'Intern ID' },
-          { key: 'name', label: 'Full Name' },
-          { key: 'uni', label: 'Institution' },
-          { key: 'dept', label: 'Assigned Dept' },
-          { key: 'mentor', label: 'Mentor' },
-          { key: 'start', label: 'Start Date' },
-          { key: 'end', label: 'End Date' },
-          {
-            key: 'eval', label: 'Evaluation',
-            render: (v) => (!v || v === '0.00') ? '<span style="color:var(--muted)">Pending</span>' : b('primary', parseFloat(v).toFixed(0) + '%')
-          },
-          {
-            key: 'status', label: 'Status',
-            render: (v) => v === 'Active' ? b('success', 'Active') : v === 'Completed' ? b('neutral', 'Completed') : v === 'Terminated' ? b('danger', 'Terminated') : b('info', v)
-          },
-          { key: 'updated_by_name', label: 'Last Updated By' },
-          {
-            key: '_', label: 'Actions',
-            render: () => `<div class="flex-row"><button class="btn btn-xs btn-secondary" title="Evaluation Form"><i data-lucide="clipboard-check" size="10"></i></button><button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;"><i data-lucide="trash-2" size="10"></i></button></div>`
-          }
-        ],
-        perPage: 15, searchPlaceholder: 'Search interns...'
-      });
-      break;
-    case 'daily-attendance':
+    renderInternshipManagement();
+    break;    
+      case 'daily-attendance':
       initServerPaginatedTable('tbl-attendance', 'api/attendance/fetch_daily.php', {
         columns: [
           { key: 'name', label: 'Employee' },
@@ -5779,4 +5708,375 @@ function submitInitiateSeparation(btn) {
         // Refresh main table
         if(typeof renderSeparations === 'function') renderSeparations();
     }, 1500);
+}
+
+function renderJobVacancies() {
+    const target = document.getElementById('vacancies-table-target');
+    if (!target) return;
+
+    const data = [
+        { id: '01', title: 'Senior Software Engineer', dept: 'Engineering', branch: 'Main Office', type: 'Full-Time', slots: 2, range: '₱80,000 - ₱120,000', deadline: '2025-05-31', status: 'Open' },
+        { id: '02', title: 'HR Business Partner', dept: 'Human Resources', branch: 'Main Office', type: 'Full-Time', slots: 1, range: '₱55,000 - ₱75,000', deadline: '2025-04-30', status: 'Open' },
+        { id: '03', title: 'Marketing Coordinator', dept: 'Marketing', branch: 'North Branch', type: 'Full-Time', slots: 1, range: '₱35,000 - ₱50,000', deadline: '2025-04-15', status: 'Filled' },
+        { id: '04', title: 'Data Analyst', dept: 'Finance', branch: 'Main Office', type: 'Full-Time', slots: 1, range: '₱60,000 - ₱85,000', deadline: '2025-05-15', status: 'Open' },
+        { id: '05', title: 'Customer Support Agent', dept: 'Customer Service', branch: 'South Branch', type: 'Part-Time', slots: 3, range: '₱20,000 - ₱28,000', deadline: '2025-04-20', status: 'Open' },
+        { id: '06', title: 'UI/UX Designer', dept: 'Product', branch: 'Main Office', type: 'Full-Time', slots: 1, range: '₱55,000 - ₱80,000', deadline: '2025-04-10', status: 'On Hold' }
+    ];
+
+    target.innerHTML = `
+        <div class="table-wrap">
+            <table class="tbl">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">#</th>
+                        <th>JOB TITLE</th>
+                        <th>DEPARTMENT</th>
+                        <th>BRANCH</th>
+                        <th>TYPE</th>
+                        <th style="text-align:center;">SLOTS</th>
+                        <th>SALARY RANGE</th>
+                        <th>DEADLINE</th>
+                        <th>STATUS</th>
+                        <th style="text-align:right;">ACTIONS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${data.map(r => {
+                        const stColors = {
+                            'Open': { bg: '#f0fdf4', text: '#15b201' },
+                            'Filled': { bg: '#f0f9ff', text: '#0ea5e9' },
+                            'On Hold': { bg: '#fffbeb', text: '#f59e0b' }
+                        };
+                        const s = stColors[r.status] || { bg: '#f1f5f9', text: '#64748b' };
+
+                        return `
+                        <tr style="height: 54px;"> <!-- Fixed Row Height -->
+                            <td style="color: #94a3b8; font-family: 'JetBrains Mono'; font-size: 11px;">${r.id}</td>
+                            <td><b style="color: #1e293b; font-weight: 800;">${r.title}</b></td>
+                            <td style="color: #475569;">${r.dept}</td>
+                            <td style="color: #64748b;">${r.branch}</td>
+                            <td>
+                                <span style="background: #f8fafc; border: 1px solid #e2e8f0; color: #64748b; padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 700; white-space: nowrap;">
+                                    ${r.type}
+                                </span>
+                            </td>
+                            <td style="text-align: center; font-weight: 700;">${r.slots}</td>
+                            <td style="color: #475569; font-family: 'JetBrains Mono'; font-size: 11px;">${r.range}</td>
+                            <td style="color: #94a3b8; font-size: 11px;">${r.deadline}</td>
+                            <td>
+                                <span class="badge" style="background: ${s.bg}; color: ${s.text}; border: 1px solid ${s.bg}; padding: 3px 12px; border-radius: 12px; font-size: 10px;">
+                                    ${r.status}
+                                </span>
+                            </td>
+                            <td>
+                                <!-- FORCE HORIZONTAL LAYOUT -->
+                                <div style="display: flex; gap: 4px; justify-content: flex-end; align-items: center; flex-wrap: nowrap;">
+                                    <button class="btn btn-xs btn-secondary" style="padding: 4px; min-width: 30px;"><i data-lucide="eye" size="14"></i></button>
+                                    <button class="btn btn-xs btn-secondary" style="padding: 4px; min-width: 30px;"><i data-lucide="edit-2" size="14"></i></button>
+                                    <button class="btn btn-xs" style="background:#fee2e2; color:#dc2626; border:none; padding: 4px; min-width: 30px;"><i data-lucide="trash-2" size="14"></i></button>
+                                </div>
+                            </td>
+                        </tr>`;
+                    }).join('')}
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer" style="padding: 12px 20px; background: #fff; border-top: 1px solid #f1f5f9; border-radius: 0 0 16px 16px;">
+             <span style="font-size: 11px; font-weight: 700; color: #94a3b8;">${data.length} records found</span>
+        </div>
+    `;
+    lcIcons(target);
+}
+
+function filterVacanciesTable(val) {
+    const q = val.toLowerCase();
+    document.querySelectorAll('#vacancies-table-target tbody tr').forEach(row => {
+        row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+}
+function renderApplicantList() {
+    const target = document.getElementById('applicant-table-target');
+    if (!target) return;
+
+    const data = [
+        { id: '01', name: 'Maria Santos', email: 'm.santos@email.com', pos: 'Senior Software Engineer', src: 'LinkedIn', date: '2025-03-05', stage: 'Interview', rating: 4 },
+        { id: '02', name: 'Jose Reyes', email: 'j.reyes@email.com', pos: 'Data Analyst', src: 'Indeed', date: '2025-03-08', stage: 'Screening', rating: 4 },
+        { id: '03', name: 'Ana Cruz', email: 'a.cruz@email.com', pos: 'HR Business Partner', src: 'Referral', date: '2025-03-10', stage: 'Offer', rating: 5 },
+        { id: '04', name: 'Mark Dela Torre', email: 'm.delatorre@email.com', pos: 'Sales Executive', src: 'Company Website', date: '2025-03-12', stage: 'Applied', rating: 0 },
+        { id: '05', name: 'Sofia Lim', email: 's.lim@email.com', pos: 'UI/UX Designer', src: 'LinkedIn', date: '2025-03-01', stage: 'Assessment', rating: 4 },
+        { id: '06', name: 'Carlos Garcia', email: 'c.garcia@email.com', pos: 'DevOps Engineer', src: 'Job Fair', date: '2025-02-28', stage: 'Rejected', rating: 3 },
+        { id: '07', name: 'Liza Mendoza', email: 'l.mendoza@email.com', pos: 'Junior Accountant', src: 'Indeed', date: '2025-03-14', stage: 'Interview', rating: 3 }
+    ];
+
+    target.innerHTML = `
+        <div class="table-wrap">
+            <table class="tbl">
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">#</th>
+                        <th>NAME</th>
+                        <th>APPLIED POSITION</th>
+                        <th>SOURCE</th>
+                        <th>APPLIED DATE</th>
+                        <th>STAGE</th>
+                        <th>RATING</th>
+                        <th style="text-align:right;">ACTIONS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${data.map(r => {
+                        // Stage logic
+                        const stMap = {
+                            'Interview': { bg: '#fffbeb', text: '#f59e0b' },
+                            'Screening': { bg: '#ecfeff', text: '#0ea5e9' },
+                            'Offer': { bg: '#f0fdf4', text: '#15b201' },
+                            'Applied': { bg: '#f5f3ff', text: '#8b5cf6' },
+                            'Assessment': { bg: '#eff6ff', text: '#3b82f6' },
+                            'Rejected': { bg: '#fee2e2', text: '#ef4444' }
+                        };
+                        const s = stMap[r.stage] || { bg: '#f1f5f9', text: '#64748b' };
+                        
+                        // Star logic
+                        let stars = '';
+                        if(r.rating === 0) {
+                            stars = '<span style="color:#cbd5e1; font-size:11px;">—</span>';
+                        } else {
+                            for(let i=1; i<=5; i++) {
+                                stars += `<i data-lucide="star" size="12" style="fill:${i <= r.rating ? '#f59e0b' : 'none'}; color:#f59e0b; margin-right:2px;"></i>`;
+                            }
+                        }
+
+                        return `
+                        <tr>
+                            <td style="color: #94a3b8; font-family: 'JetBrains Mono'; font-size: 11px;">${r.id}</td>
+                            <td>
+                                <div style="line-height: 1.3">
+                                    <div style="font-weight: 800; color: #1e293b; font-size: 13px;">${r.name}</div>
+                                    <div style="font-size: 11px; color: #94a3b8; font-weight: 500;">${r.email}</div>
+                                </div>
+                            </td>
+                            <td style="color: #475569; font-weight: 500;">${r.pos}</td>
+                            <td>
+                                <span style="background: #f8fafc; border: 1px solid #e2e8f0; color: #94a3b8; padding: 3px 10px; border-radius: 6px; font-size: 10px; font-weight: 700;">
+                                    ${r.src}
+                                </span>
+                            </td>
+                            <td style="color: #64748b; font-size: 12px;">${r.date}</td>
+                            <td>
+                                <span style="background: ${s.bg}; color: ${s.text}; padding: 4px 14px; border-radius: 20px; font-size: 10px; font-weight: 800;">
+                                    ${r.stage}
+                                </span>
+                            </td>
+                            <td><div class="flex-row" style="gap:0">${stars}</div></td>
+                            <td>
+                                <div style="display: flex; gap: 4px; justify-content: flex-end; align-items: center; border-left: 1px solid #f1f5f9; padding-left: 15px;">
+                                    <button class="btn btn-xs btn-secondary" style="padding: 4px; min-width: 34px; background:#fff;"><i data-lucide="edit-3" size="14"></i></button>
+                                    <button class="btn btn-xs" style="background:#f1fcf0; color:#15b201; border:1px solid #dcfce7; padding: 4px; min-width: 34px;"><i data-lucide="move-right" size="14"></i></button>
+                                    <button class="btn btn-xs" style="background:#fee2e2; color:#dc2626; border:none; padding: 4px; min-width: 34px;"><i data-lucide="trash-2" size="14"></i></button>
+                                </div>
+                            </td>
+                        </tr>`;
+                    }).join('')}
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer" style="padding: 12px 24px; background: #fff; border-top: 1px solid #f1f5f9; border-radius: 0 0 16px 16px; display: flex; justify-content: space-between; align-items: center;">
+             <span style="font-size: 11px; font-weight: 700; color: #94a3b8;">${data.length} records</span>
+             <div class="pagination-btns">
+                <button class="pg-btn" disabled>‹</button>
+                <button class="pg-btn active">1</button>
+                <button class="pg-btn" disabled>›</button>
+             </div>
+        </div>
+    `;
+    lcIcons(target);
+}
+
+function filterApplicantTable(val) {
+    const q = val.toLowerCase();
+    document.querySelectorAll('#applicant-table-target tbody tr').forEach(row => {
+        row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+}
+
+function renderInterviewTracker() {
+    const target = document.getElementById('interview-table-target');
+    if (!target) return;
+
+    const data = [
+        { id: '01', name: 'Maria Santos', pos: 'Senior Software Engineer', date: '2025-03-25', time: '10:00', mode: 'In-Person', interviewer: 'Robert Cruz', round: '1st Round', score: '8/10', result: 'Passed' },
+        { id: '02', name: 'Jose Reyes', pos: 'Data Analyst', date: '2025-03-26', time: '14:00', mode: 'Video Call', interviewer: 'Diana Soriano', round: 'HR Interview', score: '—', result: 'Pending' },
+        { id: '03', name: 'Ana Cruz', pos: 'HR Business Partner', date: '2025-03-20', time: '09:00', mode: 'In-Person', interviewer: 'Ben Santos', round: 'Final Round', score: '9/10', result: 'Passed' },
+        { id: '04', name: 'Sofia Lim', pos: 'UI/UX Designer', date: '2025-03-27', time: '11:00', mode: 'Video Call', interviewer: 'Mark Tan', round: '1st Round', score: '7/10', result: 'Passed' },
+        { id: '05', name: 'Carlos Garcia', pos: 'DevOps Engineer', date: '2025-03-15', time: '10:00', mode: 'In-Person', interviewer: 'Robert Cruz', round: 'Technical Test', score: '4/10', result: 'Failed' },
+        { id: '06', name: 'Liza Mendoza', pos: 'Junior Accountant', date: '2025-03-28', time: '13:00', mode: 'Phone Call', interviewer: 'Diana Soriano', round: '1st Round', score: '—', result: 'Pending' },
+        { id: '07', name: 'Donna Pascual', pos: 'Legal Counsel', date: '2025-03-22', time: '15:00', mode: 'In-Person', interviewer: 'CEO Office', round: 'Final Round', score: '10/10', result: 'Passed' }
+    ];
+
+    target.innerHTML = `
+        <div class="table-wrap">
+            <table class="tbl">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">#</th>
+                        <th>CANDIDATE</th>
+                        <th>POSITION</th>
+                        <th>DATE & TIME</th>
+                        <th>MODE</th>
+                        <th>INTERVIEWER</th>
+                        <th>ROUND</th>
+                        <th>SCORE</th>
+                        <th>RESULT</th>
+                        <th style="text-align:right;">ACTIONS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${data.map(r => {
+                        // Result logic
+                        const resMap = {
+                            'Passed': { bg: '#f0fdf4', text: '#15b201' },
+                            'Failed': { bg: '#fee2e2', text: '#ef4444' },
+                            'Pending': { bg: '#fffbeb', text: '#f59e0b' }
+                        };
+                        const s = resMap[r.result] || { bg: '#f1f5f9', text: '#64748b' };
+
+                        return `
+                        <tr>
+                            <td style="color: #94a3b8; font-family: 'JetBrains Mono'; font-size: 11px;">${r.id}</td>
+                            <td><b style="color: #1e293b; font-weight: 800;">${r.name}</b></td>
+                            <td style="color: #475569; font-weight: 500;">${r.pos}</td>
+                            <td>
+                                <div style="line-height: 1.4">
+                                    <div style="font-weight: 800; color: #1e293b; font-size: 13px;">${r.date}</div>
+                                    <div style="font-size: 11px; color: #94a3b8; font-weight: 500;">${r.time}</div>
+                                </div>
+                            </td>
+                            <td>
+                                <span style="background: #f8fafc; border: 1px solid #e2e8f0; color: #94a3b8; padding: 3px 10px; border-radius: 6px; font-size: 10px; font-weight: 700;">
+                                    ${r.mode}
+                                </span>
+                            </td>
+                            <td style="color: #475569;">${r.interviewer}</td>
+                            <td style="color: #94a3b8; font-size: 12px;">${r.round}</td>
+                            <td><b style="color: #1e293b; font-size: 14px;">${r.score}</b></td>
+                            <td>
+                                <span style="background: ${s.bg}; color: ${s.text}; padding: 4px 14px; border-radius: 20px; font-size: 10px; font-weight: 800; border: 1px solid ${s.bg};">
+                                    ${r.result}
+                                </span>
+                            </td>
+                            <td>
+                                <div style="display: flex; gap: 6px; justify-content: flex-end;">
+                                    <button class="icon-btn" style="width:34px; height:34px; background:#fff;"><i data-lucide="edit-3" size="14"></i></button>
+                                    <button class="icon-btn" style="width:34px; height:34px; color: #ef4444; background: #fee2e2; border:none;"><i data-lucide="trash-2" size="14"></i></button>
+                                </div>
+                            </td>
+                        </tr>`;
+                    }).join('')}
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer" style="padding: 12px 24px; background: #fff; border-top: 1px solid #f1f5f9; border-radius: 0 0 16px 16px;">
+             <span style="font-size: 11px; font-weight: 700; color: #94a3b8;">${data.length} records found</span>
+        </div>
+    `;
+    lcIcons(target);
+}
+
+function filterInterviewTable(val) {
+    const q = val.toLowerCase();
+    document.querySelectorAll('#interview-table-target tbody tr').forEach(row => {
+        row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+}
+function renderInternshipManagement() {
+    const target = document.getElementById('internship-table-target');
+    if (!target) return;
+
+    const data = [
+        { code: 'INT-2025-001', name: 'Kevin Delos Santos', school: 'De La Salle University', course: 'BS Computer Science', dept: 'Engineering', mentor: 'Robert Cruz', start: '2025-01-13', end: '2025-04-13', score: 88, status: 'Active' },
+        { code: 'INT-2025-002', name: 'Patricia Gomez', school: 'Ateneo de Manila University', course: 'BS Psychology', dept: 'Human Resources', mentor: 'Diana Soriano', start: '2025-01-13', end: '2025-04-13', score: 72, status: 'Active' },
+        { code: 'INT-2025-003', name: 'Andrei Flores', school: 'University of the Philippines', course: 'BS Accountancy', dept: 'Finance', mentor: 'Ben Santos', start: '2025-01-06', end: '2025-04-06', score: 91, status: 'Active' },
+        { code: 'INT-2025-004', name: 'Jasmine Uy', school: 'Far Eastern University', course: 'BS Marketing Management', dept: 'Marketing', mentor: 'Mark Tan', start: '2024-10-07', end: '2025-01-07', score: 85, status: 'Completed' },
+        { code: 'INT-2025-005', name: 'Lance Domingo', school: 'Mapua University', course: 'BS Information Technology', dept: 'Engineering', mentor: 'Robert Cruz', start: '2025-01-13', end: '2025-04-13', score: null, status: 'Active' },
+        { code: 'INT-2025-006', name: 'Ella Tan', school: 'University of Santo Tomas', course: 'BS Commerce', dept: 'Sales', mentor: 'Lisa Ramos', start: '2025-01-20', end: '2025-04-20', score: null, status: 'Active' },
+        { code: 'INT-2025-007', name: 'Renz Panganiban', school: 'Polytechnic University', course: 'BS Industrial Engineering', dept: 'Operations', mentor: 'Carlos Lim', start: '2024-11-04', end: '2025-02-04', score: 78, status: 'Completed' }
+    ];
+
+    target.innerHTML = `
+        <div class="table-wrap">
+            <table class="tbl">
+                <thead>
+                    <tr>
+                        <th style="width: 120px;">CODE</th>
+                        <th>NAME</th>
+                        <th>INSTITUTION</th>
+                        <th>COURSE</th>
+                        <th>DEPARTMENT</th>
+                        <th>MENTOR</th>
+                        <th>PERIOD</th>
+                        <th>EVAL SCORE</th>
+                        <th>STATUS</th>
+                        <th style="text-align:right;">ACTIONS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${data.map(r => {
+                        const statusCol = r.status === 'Active' ? { bg: '#f0fdf4', text: '#15b201' } : { bg: '#f0f9ff', text: '#0ea5e9' };
+                        
+                        // Score Bar logic
+                        let scoreHtml = '<span style="color:#94a3b8; font-size:11px;">Pending</span>';
+                        if (r.score) {
+                            const barColor = r.score >= 85 ? '#15b201' : '#f59e0b';
+                            scoreHtml = `
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <div style="width: 40px; height: 5px; background: #f1f5f9; border-radius: 10px; overflow: hidden;">
+                                        <div style="width: ${r.score}%; height: 100%; background: ${barColor}; border-radius: 10px;"></div>
+                                    </div>
+                                    <b style="color: ${barColor}; font-size: 12px;">${r.score}</b>
+                                </div>`;
+                        }
+
+                        return `
+                        <tr style="height: 60px;">
+                            <td style="color: #94a3b8; font-family: 'JetBrains Mono'; font-size: 11px;">${r.code}</td>
+                            <td><b style="color: #1e293b; font-weight: 800; font-size: 13px;">${r.name}</b></td>
+                            <td style="color: #475569; font-size: 12px; max-width: 160px;">${r.school}</td>
+                            <td style="color: #64748b; font-size: 12px;">${r.course}</td>
+                            <td style="color: #475569;">${r.dept}</td>
+                            <td style="color: #475569;">${r.mentor}</td>
+                            <td>
+                                <div style="line-height: 1.3">
+                                    <div style="font-weight: 700; color: #64748b; font-size: 11px;">${r.start}</div>
+                                    <div style="font-size: 10px; color: #94a3b8;">to ${r.end}</div>
+                                </div>
+                            </td>
+                            <td>${scoreHtml}</td>
+                            <td>
+                                <span class="badge" style="background: ${statusCol.bg}; color: ${statusCol.text}; border: 1px solid ${statusCol.bg}; padding: 4px 12px; border-radius: 10px; font-size: 10px; font-weight: 800;">
+                                    ${r.status}
+                                </span>
+                            </td>
+                            <td>
+                                <div style="display: flex; gap: 6px; justify-content: flex-end;">
+                                    <button class="btn btn-xs btn-secondary" style="padding: 4px; min-width: 34px; background:#fff;"><i data-lucide="edit-3" size="14"></i></button>
+                                    <button class="btn btn-xs" style="background:#fee2e2; color:#dc2626; border:none; padding: 4px; min-width: 34px;"><i data-lucide="trash-2" size="14"></i></button>
+                                </div>
+                            </td>
+                        </tr>`;
+                    }).join('')}
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer" style="padding: 14px 24px; background: #fff; border-top: 1px solid #f1f5f9; border-radius: 0 0 16px 16px;">
+             <span style="font-size: 11px; font-weight: 700; color: #94a3b8;">Showing ${data.length} interns</span>
+        </div>
+    `;
+    lcIcons(target);
+}
+
+function filterInternTable(val) {
+    const q = val.toLowerCase();
+    document.querySelectorAll('#internship-table-target tbody tr').forEach(row => {
+        row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
 }
