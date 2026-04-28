@@ -1620,24 +1620,24 @@ function renderOrgChartFromData(data) {
 }
 
 function initPage(id) {
-   if (id === 'transfers') {
-      renderDepartmentTransfers();
-      return;
+  if (id === 'transfers') {
+    renderDepartmentTransfers();
+    return;
   }
   if (id === 'leave-analytics') {
-        initLeaveAnalytics();
-        return; 
-    }
+    initLeaveAnalytics();
+    return;
+  }
   if (inited.has(id)) return;
   inited.add(id);
 
   switch (id) {
     case 'attendance-reports':
-    // Initially empty or can call generateAttendanceReport() if you want it pre-loaded
-    break;
+      // Initially empty or can call generateAttendanceReport() if you want it pre-loaded
+      break;
     case 'shift-management':
-    renderShifts(); // Default view
-    break;
+      renderShifts(); // Default view
+      break;
     case 'dashboard': initDashboard(); break;
     case 'org-chart': initOrgChart(); break;
     case 'departments':
@@ -2161,23 +2161,23 @@ function initPage(id) {
         perPage: 15, searchPlaceholder: 'Search reports by department...'
       });
       break;
-   case 'leave-policy':
-    renderLeaveTypes();
-    break;
+    case 'leave-policy':
+      renderLeaveTypes();
+      break;
     case 'leave-types': initLeaveTypesCards(); break;
     case 'leave-requests':
-    renderLeaveRequests('All');
-    break;
+      renderLeaveRequests('All');
+      break;
     case 'leave-entitlement':
-    renderLeaveEntitlements();
-    break;
-    case 'leave-calendar': 
-    document.getElementById('cal-splash-screen').style.display = 'block';
-    document.getElementById('cal-real-content').style.display = 'none';
-    document.getElementById('calendar-main-card').style.alignItems = 'center';
-    lcIcons(document.getElementById('cal-splash-screen'));
-    break;
-      case 'medical-claims':
+      renderLeaveEntitlements();
+      break;
+    case 'leave-calendar':
+      document.getElementById('cal-splash-screen').style.display = 'block';
+      document.getElementById('cal-real-content').style.display = 'none';
+      document.getElementById('calendar-main-card').style.alignItems = 'center';
+      lcIcons(document.getElementById('cal-splash-screen'));
+      break;
+    case 'medical-claims':
       initServerPaginatedTable('tbl-medical', 'api/benefits/fetch_medical_claims.php', {
         columns: [
           { key: 'id', label: 'Claim ID' },
@@ -2363,61 +2363,13 @@ function initPage(id) {
     case 'disciplinary-actions':
       renderDisciplinaryTable();
       break;
-      case 'resignations':
-      initServerPaginatedTable('tbl-resignations', 'api/compliance/fetch_resignations.php', {
-        columns: [
-          { key: 'emp', label: 'Employee' },
-          { key: 'dept', label: 'Department' },
-          { key: 'type', label: 'Reason' },
-          { key: 'filed', label: 'Filed' },
-          { key: 'assigned', label: 'Assigned To', render: (v) => v ? v : '<span style="color:var(--muted)">Unassigned</span>' },
-          {
-            key: 'priority', label: 'Priority',
-            render: (v) => {
-              if (v === 'High') return b('danger', 'High');
-              if (v === 'Medium') return b('warning', 'Medium');
-              return b('neutral', v);
-            }
-          },
-          {
-            key: 'status', label: 'Status',
-            render: (v) => {
-              if (v === 'Resolved') return b('success', 'Resolved');
-              if (v === 'Pending') return b('warning', 'Pending');
-              if (v === 'Under Review') return b('info', 'Under Review');
-              return b('neutral', v);
-            }
-          },
-          { key: 'updated_by_name', label: 'Last Updated By' },
-          {
-            key: '_', label: 'Actions',
-            render: () => `<div class="flex-row"><button class="btn btn-xs btn-primary" title="Process Separation"><i data-lucide="user-minus" size="10"></i></button></div>`
-          }
-        ],
-        perPage: 15, searchPlaceholder: 'Search resignations...'
-      });
-      break;
-    case 'termination':
-      initServerPaginatedTable('tbl-termination', 'api/compliance/fetch_separations.php', {
-        columns: [
-          { key: 'emp', label: 'Employee' },
-          { key: 'dept', label: 'Department' },
-          { key: 'type', label: 'Separation Type' },
-          { key: 'notice', label: 'Notice Date' },
-          { key: 'last_day', label: 'Last Working Day' },
-          { key: 'clearance', label: 'Clearance', render: (v) => v === 'Done' ? b('success', 'Done') : b('warning', 'Pending') },
-          { key: 'settlement', label: 'Final Settlement', render: (v) => v ? 'ETB ' + parseFloat(v).toLocaleString(undefined, { minimumFractionDigits: 2 }) : b('neutral', 'TBD') },
-          { key: 'status', label: 'Status', render: (v) => v === 'Complete' ? b('success', 'Complete') : b('warning', 'In Progress') },
-          { key: 'updated_by_name', label: 'Last Updated By' },
-          {
-            key: '_', label: 'Actions',
-            render: () => `<div class="flex-row"><button class="btn btn-xs btn-secondary" title="View Dossier"><i data-lucide="folder" size="10"></i></button><button class="btn btn-xs btn-primary" title="Print Certificate"><i data-lucide="printer" size="10"></i></button></div>`
-          }
-        ],
-        perPage: 15, searchPlaceholder: 'Search terminations...'
-      });
-      break;
-    case 'roles-permissions': initRoles(); break;
+    case 'resignations':
+      renderResignations('All');  
+      break; 
+case 'termination':
+    renderSeparations();
+    break;
+      case 'roles-permissions': initRoles(); break;
     case 'exit-clearance':
       const chk = v => v == 1 ? b('success', '✓') : '<span style="color:var(--muted)">—</span>';
       initServerPaginatedTable('tbl-clearance', 'api/compliance/fetch_clearance.php', {
@@ -5508,19 +5460,24 @@ function submitDisciplinaryAction(btn) {
         }
     }, 1200);
 }
-function renderResignations(filter) {
+function renderResignations(filter, el = null) {
     const target = document.getElementById('resignation-table-target');
     if (!target) return;
 
-    // Handle Tab Active State
+    // 1. Handle Tab Highlighting safely
     document.querySelectorAll('.res-tab').forEach(btn => {
         btn.classList.remove('active');
         btn.style.background = 'transparent';
         btn.style.color = '#64748b';
     });
-    event.currentTarget.classList.add('active');
-    event.currentTarget.style.background = '#15b201';
-    event.currentTarget.style.color = '#fff';
+
+    // If 'el' is passed (clicked), use it. Otherwise, find the 'All' button by ID.
+    const activeTab = el || document.getElementById('tab-all');
+    if (activeTab) {
+        activeTab.classList.add('active');
+        activeTab.style.background = '#15b201';
+        activeTab.style.color = '#fff';
+    }
 
     const rawData = [
         { ref: '2001', name: 'Samuel Girma', dept: 'Sales', cat: 'Resignation', type: 'Personal', date: '2026-03-28', assigned: 'Meseret Tadesse', priority: 'High', status: 'Under Review' },
@@ -5600,4 +5557,226 @@ function renderResignations(filter) {
         </div>
     `;
     lcIcons(target);
+}
+
+function submitResignationLog(btn) {
+    const originalHtml = btn.innerHTML;
+    
+    // Validation
+    const required = ['res-input-emp', 'res-input-cat', 'res-input-reason', 'res-filed-date'];
+    let valid = true;
+    required.forEach(id => {
+        const el = document.getElementById(id);
+        if(!el.value.trim()) {
+            el.classList.add('field-error');
+            valid = false;
+        } else {
+            el.classList.remove('field-error');
+        }
+    });
+
+    if(!valid) {
+        showNotification('Required Fields', 'Please fill in all mandatory fields (*).', 'warning');
+        return;
+    }
+
+    // Processing UI
+    btn.disabled = true;
+    btn.innerHTML = `<i data-lucide="loader-2" class="spin" size="18"></i> Saving...`;
+    lcIcons(btn);
+
+    setTimeout(() => {
+        showNotification('Record Saved', 'The case has been successfully logged and assigned.', 'success');
+        closeModal('modal-log-resignation');
+        
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+        lcIcons(btn);
+
+        // Refresh the table view instantly
+        if(typeof renderResignations === 'function') renderResignations('All');
+    }, 1200);
+}
+
+// Logic to filter the search box on the main page
+function filterResignationTable(val) {
+    const q = val.toLowerCase();
+    document.querySelectorAll('#resignation-table-target tbody tr').forEach(row => {
+        row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+}
+function renderSeparations() {
+    const target = document.getElementById('separation-table-target');
+    if (!target) return;
+
+    const data = [
+        { ref: '3001', name: 'Samuel Girma', dept: 'Sales', type: 'Resignation', notice: '2026-03-28', last: '2026-04-25', clearance: 'In Progress', settlement: '—', status: 'In Progress' },
+        { ref: '3002', name: 'Biniam Negash', dept: 'IT', type: 'Involuntary', notice: '2026-03-02', last: '2026-03-15', clearance: 'Done', settlement: 'ETB 42,000', status: 'Complete' },
+        { ref: '3003', name: 'Tigist Alemu', dept: 'Finance', type: 'Resignation', notice: '2026-04-05', last: '2026-05-05', clearance: 'Pending', settlement: '—', status: 'In Progress' },
+        { ref: '3004', name: 'Hana Tesfaye', dept: 'Marketing', type: 'End of Contract', notice: '2026-03-01', last: '2026-03-31', clearance: 'Done', settlement: 'ETB 15,000', status: 'Complete' },
+        { ref: '3005', name: 'Yared Mengistu', dept: 'Operations', type: 'Retirement', notice: '2026-02-15', last: '2026-04-30', clearance: 'In Progress', settlement: 'ETB 120,000', status: 'In Progress' }
+    ];
+
+    target.innerHTML = `
+        <div class="card" style="border-radius: 16px; border: 1px solid #f1f5f9; box-shadow: var(--shadow);">
+            <div class="table-wrap">
+                <table class="tbl">
+                    <thead>
+                        <tr>
+                            <th style="padding: 18px 24px;">REF #</th>
+                            <th>EMPLOYEE</th>
+                            <th>DEPARTMENT</th>
+                            <th>EXIT TYPE</th>
+                            <th>NOTICE DATE</th>
+                            <th>LAST WORKING DAY</th>
+                            <th>CLEARANCE</th>
+                            <th>SETTLEMENT</th>
+                            <th>STATUS</th>
+                            <th style="text-align:right; padding-right: 24px;">ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.map(r => {
+                            // Define badge colors for Exit Type
+                            const typeColors = {
+                                'Resignation': { bg: '#fffbeb', text: '#f59e0b', border: '#fef3c7' },
+                                'Involuntary': { bg: '#fee2e2', text: '#ef4444', border: '#fecaca' },
+                                'End of Contract': { bg: '#fffbeb', text: '#f59e0b', border: '#fef3c7' },
+                                'Retirement': { bg: '#ecfeff', text: '#06b6d4', border: '#cffafe' }
+                            };
+                            const typeCfg = typeColors[r.type];
+
+                            // Define pill colors for Clearance and Status
+                            const getPill = (val) => {
+                                if (val === 'Done' || val === 'Complete') return { bg: '#f0fdf4', text: '#15b201' };
+                                if (val === 'In Progress') return { bg: '#fffbeb', text: '#f59e0b' };
+                                if (val === 'Pending') return { bg: '#fffbeb', text: '#f59e0b' };
+                                return { bg: '#f1f5f9', text: '#64748b' };
+                            };
+                            const clPill = getPill(r.clearance);
+                            const stPill = getPill(r.status);
+
+                            return `
+                            <tr>
+                                <td style="padding: 18px 24px; color: #94a3b8; font-family: 'JetBrains Mono'; font-size: 11px;">#${r.ref}</td>
+                                <td><b style="color: #1e293b; font-weight: 800;">${r.name}</b></td>
+                                <td style="color: #64748b; font-weight: 500;">${r.dept}</td>
+                                <td>
+                                    <span style="background: ${typeCfg.bg}; color: ${typeCfg.text}; border: 1px solid ${typeCfg.border}; padding: 3px 12px; border-radius: 6px; font-size: 10px; font-weight: 800;">
+                                        ${r.type}
+                                    </span>
+                                </td>
+                                <td style="color: #64748b; font-size: 13px;">${r.notice}</td>
+                                <td style="color: #1e293b; font-weight: 800; font-size: 13px;">${r.last}</td>
+                                <td>
+                                    <span style="background: ${clPill.bg}; color: ${clPill.text}; padding: 4px 14px; border-radius: 20px; font-size: 10px; font-weight: 800;">
+                                        ${r.clearance}
+                                    </span>
+                                </td>
+                                <td style="color: #64748b; font-size: 13px;">${r.settlement}</td>
+                                <td>
+                                    <span style="background: ${stPill.bg}; color: ${stPill.text}; padding: 4px 14px; border-radius: 20px; font-size: 10px; font-weight: 800;">
+                                        ${r.status}
+                                    </span>
+                                </td>
+                                <td style="text-align:right; padding-right: 24px;">
+                                    <button class="btn btn-xs btn-secondary" style="background:#f8fafc; border: 1px solid #e2e8f0; padding:4px 16px; border-radius:8px; font-weight:700">View</button>
+                                </td>
+                            </tr>`;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer" style="padding: 12px 24px; background: #fff; border-top: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; border-radius: 0 0 16px 16px;">
+                 <span style="font-size: 11px; font-weight: 700; color: #94a3b8;">5 records</span>
+                 <div class="pagination-btns">
+                    <button class="pg-btn" disabled>‹</button>
+                    <button class="pg-btn active">1</button>
+                    <button class="pg-btn" disabled>›</button>
+                 </div>
+            </div>
+        </div>
+    `;
+    lcIcons(target);
+}
+
+function filterSeparationTable(val) {
+    const q = val.toLowerCase();
+    document.querySelectorAll('#separation-table-target tbody tr').forEach(row => {
+        row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+}
+/**
+ * Switches between wizard steps (1, 2, 3) for Initiate Separation
+ */
+function switchSepStep(step) {
+    // 1. Hide all content and footers
+    document.querySelectorAll('.sep-step-content, [id^="sep-footer-"]').forEach(el => el.style.display = 'none');
+    
+    // 2. Show target step content and footer
+    document.getElementById(`sep-step-${step}-content`).style.display = 'block';
+    document.getElementById(`sep-footer-${step}`).style.display = 'flex';
+
+    // 3. Update Progress Line
+    const progressLine = document.getElementById('sep-progress-line');
+    if (step === 1) progressLine.style.width = '0%';
+    else if (step === 2) progressLine.style.width = '50%';
+    else if (step === 3) progressLine.style.width = '100%';
+
+    // 4. Update Circle Indicators
+    for (let i = 1; i <= 3; i++) {
+        const ind = document.getElementById(`sep-ind-${i}`);
+        const num = ind.querySelector('.sep-step-num');
+        const label = ind.querySelector('div:last-child');
+
+        if (i <= step) {
+            num.style.background = '#15b201';
+            num.style.color = '#fff';
+            num.style.borderColor = '#15b201';
+            label.style.color = '#15b201';
+        } else {
+            num.style.background = '#f1f5f9';
+            num.style.color = '#94a3b8';
+            num.style.borderColor = '#e2e8f0';
+            label.style.color = '#94a3b8';
+        }
+    }
+    
+    // Refresh Icons for the new step
+    lcIcons();
+}
+
+/**
+ * Handles the final submission of the wizard
+ */
+function submitInitiateSeparation(btn) {
+    const originalHtml = btn.innerHTML;
+    
+    // Simple Validation
+    const emp = document.getElementById('sep-input-emp').value;
+    const type = document.getElementById('sep-input-type').value;
+    if(!emp || !type) {
+        showNotification('Missing Data', 'Please ensure Step 1 is completed.', 'warning');
+        switchSepStep(1);
+        return;
+    }
+
+    // Processing UI
+    btn.disabled = true;
+    btn.innerHTML = `<i data-lucide="loader-2" class="spin" size="18"></i> Processing...`;
+    lcIcons(btn);
+
+    setTimeout(() => {
+        showNotification('Separation Initiated', 'Workflow and clearance checklist created.', 'success');
+        closeModal('modal-initiate-separation');
+        
+        // Reset wizard for next use
+        switchSepStep(1);
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+        lcIcons(btn);
+
+        // Refresh main table
+        if(typeof renderSeparations === 'function') renderSeparations();
+    }, 1500);
 }
