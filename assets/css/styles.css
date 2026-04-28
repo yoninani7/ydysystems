@@ -1503,3 +1503,10 @@ input:disabled, input[disabled] {
     text-overflow: ellipsis;
     max-width: 100%;
 }
+/* Style for disabled inputs to match the image's light grey look */
+input:disabled {
+    background: #f8fafc !important;
+    color: #64748b !important;
+    cursor: not-allowed;
+    border-color: #e2e8f0 !important;
+}

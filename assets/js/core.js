@@ -1620,6 +1620,10 @@ function renderOrgChartFromData(data) {
 }
 
 function initPage(id) {
+   if (id === 'transfers') {
+      renderDepartmentTransfers();
+      return;
+  }
   if (id === 'leave-analytics') {
         initLeaveAnalytics();
         return; 
@@ -2350,92 +2354,16 @@ function initPage(id) {
       });
       break;
     case 'Promote/Demote':
-      initServerPaginatedTable('tbl-Promote/Demote', 'api/movement/fetch_promotions.php', {
-        columns: [
-          { key: 'emp', label: 'Employee' },
-          { key: 'type', label: 'Type', render: (v) => v === 'Promotion' ? b('success', v) : b('warning', v) },
-          { key: 'from_pos', label: 'Prev Position' },
-          { key: 'to_pos', label: 'Current Position' },
-          { key: 'dept', label: 'Dept' },
-          { key: 'sal_from', label: 'Old Salary', render: (v) => v ? 'ETB ' + parseFloat(v).toLocaleString() : '—' },
-          { key: 'sal_to', label: 'New Salary', render: (v) => v ? 'ETB ' + parseFloat(v).toLocaleString() : '—' },
-          { key: 'eff_date', label: 'Effective' },
-          {
-            key: 'status', label: 'Status',
-            render: (v) => {
-              if (v === 'Approved') return statusBadge.approved;
-              if (v === 'Pending') return statusBadge.pending;
-              if (v === 'Rejected') return statusBadge.rejected;
-              return b('info', v);
-            }
-          },
-          { key: 'updated_by_name', label: 'Last Updated By' },
-          {
-            key: '_', label: 'Actions',
-            render: () => `<div class="flex-row"><button class="btn btn-xs btn-secondary"><i data-lucide="eye" size="10"></i></button><button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;"><i data-lucide="trash-2" size="10"></i></button></div>`
-          }
-        ],
-        perPage: 15, searchPlaceholder: 'Search promotions...'
-      });
+      renderPromoteDemoteTable();
       break;
     case 'transfers':
-      initServerPaginatedTable('tbl-transfers-dept', 'api/movement/fetch_transfers.php', {
-        columns: [
-          { key: 'emp', label: 'Employee' },
-          { key: 'from_dept', label: 'From Department' },
-          { key: 'to_dept', label: 'To Department' },
-          { key: 'from_branch', label: 'From Branch' },
-          { key: 'to_branch', label: 'To Branch' },
-          { key: 'req_date', label: 'Requested' },
-          { key: 'eff_date', label: 'Effective' },
-          {
-            key: 'status', label: 'Status',
-            render: (v) => {
-              if (v === 'Approved') return statusBadge.approved;
-              if (v === 'Pending') return statusBadge.pending;
-              if (v === 'Rejected') return statusBadge.rejected;
-              return b('info', v);
-            }
-          },
-          { key: 'updated_by_name', label: 'Last Updated By' },
-          {
-            key: '_', label: 'Actions',
-            render: () => `<div class="flex-row"><button class="btn btn-xs btn-secondary" title="View Details"><i data-lucide="eye" size="10"></i></button><button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;"><i data-lucide="trash-2" size="10"></i></button></div>`
-          }
-        ],
-        perPage: 15, searchPlaceholder: 'Search transfers...'
-      });
+      renderDepartmentTransfers();
       break;
     case 'attendance': buildMatrix(); break;
     case 'disciplinary-actions':
-      initServerPaginatedTable('tbl-disciplinary', 'api/compliance/fetch_disciplinary.php', {
-        columns: [
-          { key: 'emp', label: 'Employee' },
-          { key: 'dept', label: 'Department' },
-          {
-            key: 'type', label: 'Action Type',
-            render: (v) => {
-              if (v === 'Verbal Warning') return b('neutral', v);
-              if (v === 'Written Warning') return b('warning', v);
-              if (v === 'Final Warning') return b('danger', v);
-              if (v === 'Suspension') return b('danger', 'Suspended');
-              if (v === 'Demotion') return b('primary', v);
-              return b('neutral', v);
-            }
-          },
-          { key: 'incident', label: 'Incident Date' },
-          { key: 'issued', label: 'Issued Date' },
-          { key: 'issuer_name', label: 'Issued By', render: (v) => v ? v : '<span style="color:var(--muted)">System</span>' },
-          { key: 'updated_by_name', label: 'Last Updated By' },
-          {
-            key: '_', label: 'Actions',
-            render: () => `<div class="flex-row"><button class="btn btn-xs btn-secondary" title="View Details"><i data-lucide="eye" size="10"></i></button><button class="btn btn-xs" style="background:#fee2e2;color:#dc2626;border:none;padding:3px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;"><i data-lucide="trash-2" size="10"></i></button></div>`
-          }
-        ],
-        perPage: 15, searchPlaceholder: 'Search disciplinary records...'
-      });
+      renderDisciplinaryTable();
       break;
-    case 'resignations':
+      case 'resignations':
       initServerPaginatedTable('tbl-resignations', 'api/compliance/fetch_resignations.php', {
         columns: [
           { key: 'emp', label: 'Employee' },
@@ -5001,4 +4929,675 @@ function renderLeaveLeaderboard() {
         </div>
     `).join('');
 }
- 
+ /**
+ * Renders the Promote/Demote ledger with specific mock data instances.
+ */
+function renderPromoteDemoteTable() {
+    const container = document.getElementById('tbl-Promote/Demote');
+    if (!container) return;
+
+    // 1. Specific Mock Data representing all instances
+    const mockMovementData = [
+        { ref: '501', name: 'Abebe Bekele', type: 'Promotion', from: 'Mid Software Eng', to: 'Senior Software Eng', dept: 'Engineering', change: '7,000', pct: '25', effective: '2026-05-01', status: 'Processing' },
+        { ref: '502', name: 'Tigist Alemu', type: 'Promotion', from: 'HR Coordinator', to: 'HR Business Partner', dept: 'HR', change: '6,000', pct: '27', effective: '2026-04-15', status: 'Approved' },
+        { ref: '503', name: 'Samuel Girma', type: 'Promotion', from: 'Sales Rep', to: 'Senior Sales Exec', dept: 'Sales', change: '6,000', pct: '33', effective: '2026-04-01', status: 'Processing' },
+        { ref: '504', name: 'Hana Tesfaye', type: 'Demotion', from: 'Marketing Manager', to: 'Marketing Specialist', dept: 'Marketing', change: '8,000', pct: '25', effective: '2026-03-15', status: 'Approved' },
+        { ref: '505', name: 'Dawit Haile', type: 'Promotion', from: 'Operations Analyst', to: 'Operations Manager', dept: 'Operations', change: '10,000', pct: '50', effective: '2026-05-15', status: 'Pending' },
+        { ref: '506', name: 'Liya Worku', type: 'Promotion', from: 'Junior Data Analyst', to: 'Data Analyst', dept: 'IT', change: '5,000', pct: '31', effective: '2026-04-01', status: 'Approved' },
+        { ref: '507', name: 'Biniam Negash', type: 'Demotion', from: 'Senior IT Manager', to: 'IT Specialist', dept: 'IT', change: '10,000', pct: '26', effective: '2026-03-01', status: 'Approved' },
+        { ref: '508', name: 'Yared Mengistu', type: 'Promotion', from: 'Finance Analyst', to: 'Finance Manager', dept: 'Finance', change: '9,000', pct: '36', effective: '2026-06-01', status: 'Pending' }
+    ];
+
+    // 2. Build Table UI
+    container.innerHTML = `
+        <div class="card" style="animation: modalIn 0.3s ease; border-radius: 16px; border: 1px solid #f1f5f9;">
+            <div class="table-wrap">
+                <table class="tbl">
+                    <thead style="background: #f8fafc;">
+                        <tr>
+                            <th style="padding: 18px 24px;">REF</th>
+                            <th>EMPLOYEE</th>
+                            <th>TYPE</th>
+                            <th>FROM POSITION</th>
+                            <th>TO POSITION</th>
+                            <th>DEPARTMENT</th>
+                            <th>SALARY CHANGE</th>
+                            <th>EFFECTIVE</th>
+                            <th>STATUS</th>
+                            <th style="text-align:right; padding-right: 24px;">ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${mockMovementData.map(r => {
+                            const isPromo = r.type === 'Promotion';
+                            const statusCol = r.status === 'Approved' ? '#15b201' : (r.status === 'Processing' ? '#0ea5e9' : '#f59e0b');
+                            const statusBg = r.status === 'Approved' ? '#f0fdf4' : (r.status === 'Processing' ? '#f0f9ff' : '#fffbeb');
+                            const changeCol = isPromo ? '#15b201' : '#ef4444';
+                            
+                            return `
+                            <tr>
+                                <td style="padding: 18px 24px; color: #94a3b8; font-family: 'JetBrains Mono'; font-size: 11px;">#${r.ref}</td>
+                                <td><b style="color: ${r.name === 'Biniam Negash' ? '#15b201' : '#1e293b'}; font-weight: 800;">${r.name}</b></td>
+                                <td>
+                                    <span style="background: ${isPromo ? '#f0fdf4' : '#fef2f2'}; color: ${isPromo ? '#15b201' : '#ef4444'}; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 800; border: 1px solid ${isPromo ? '#dcfce7' : '#fee2e2'};">
+                                        ${r.type}
+                                    </span>
+                                </td>
+                                <td style="color: #64748b; font-size: 13px;">${r.from}</td>
+                                <td style="color: ${r.name === 'Biniam Negash' ? '#15b201' : '#1e293b'}; font-weight: 700; font-size: 13px;">${r.to}</td>
+                                <td style="color: ${r.name === 'Biniam Negash' ? '#15b201' : '#64748b'}; font-weight: 500;">${r.dept}</td>
+                                <td>
+                                    <div style="display:flex; align-items:center; gap:6px; color: ${changeCol}; font-weight: 800; font-size: 11px;">
+                                        <span>${isPromo ? '▲' : '▼'}</span>
+                                        <span>ETB ${r.change}</span>
+                                        <small style="opacity:0.6; font-weight: 600;">(${r.pct}%)</small>
+                                    </div>
+                                </td>
+                                <td style="color: #475569; font-weight: 600; font-size: 13px;">${r.effective}</td>
+                                <td>
+                                    <span style="background: ${statusBg}; color: ${statusCol}; border: 1px solid ${statusBg}; padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: 800;">
+                                        ${r.status}
+                                    </span>
+                                </td>
+                                <td style="text-align:right; padding-right: 24px;">
+                                    ${r.status === 'Pending' ? `
+                                        <div class="flex-row" style="gap:6px; justify-content: flex-end;">
+                                            <button class="btn btn-xs btn-success" style="background:#15b201; border-radius:8px; padding:4px 16px; font-weight:700" onclick="showNotification('System','Change Approved','success')">Approve</button>
+                                            <button class="btn btn-xs btn-danger" style="background:#ef4444; border-radius:8px; padding:4px 16px; font-weight:700" onclick="showNotification('System','Change Rejected','error')">Reject</button>
+                                        </div>
+                                    ` : `
+                                       <button class="btn btn-xs btn-secondary" onclick="viewMovementDetail(${mockMovementData.indexOf(r)})" style="background:#f8fafc; border: 1px solid #e2e8f0; padding:4px 16px; border-radius:8px; font-weight:700">View</button>
+                                    `}
+                                </td>
+                            </tr>`;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer" style="padding: 12px 24px; background: #fff; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; border-radius: 0 0 16px 16px;">
+                 <span style="font-size: 11px; font-weight: 700; color: #94a3b8;">${mockMovementData.length} records found</span>
+            </div>
+        </div>
+    `;
+
+    lcIcons(container);
+}
+
+/**
+ * Populates and opens the Movement Detail modal instantly
+ */
+function viewMovementDetail(index) {
+    // 1. Data Store (Include extra fields like salaries and reasons)
+    const store = [
+        { name: 'Abebe Bekele', type: 'Promotion', from: 'Mid Software Eng', to: 'Senior Software Eng', dept: 'Engineering', old: 'ETB 45,000', new: 'ETB 52,000', date: '2026-05-01', status: 'Processing', reason: 'Consistent high performance and leadership in the backend refactoring project.' },
+        { name: 'Tigist Alemu', type: 'Promotion', from: 'HR Coordinator', to: 'HR Business Partner', dept: 'HR', old: 'ETB 22,000', new: 'ETB 28,000', date: '2026-04-15', status: 'Approved', reason: 'Consistent high performance reviews. Ready for strategic HR role.' },
+        { name: 'Samuel Girma', type: 'Promotion', from: 'Sales Rep', to: 'Senior Sales Exec', dept: 'Sales', old: 'ETB 18,000', new: 'ETB 24,000', date: '2026-04-01', status: 'Processing', reason: 'Top performing sales agent for three consecutive quarters.' },
+        { name: 'Hana Tesfaye', type: 'Demotion', from: 'Marketing Manager', to: 'Marketing Specialist', dept: 'Marketing', old: 'ETB 32,000', new: 'ETB 24,000', date: '2026-03-15', status: 'Approved', reason: 'Role adjustment requested due to personal scheduling requirements.' }
+    ];
+
+    const data = store[index] || store[0]; // Fallback to first if index missing
+
+    // 2. Populate Modal Fields
+    document.getElementById('mv-modal-title').textContent = `${data.type} — ${data.name}`;
+    document.getElementById('mv-modal-sub').textContent = `${data.dept} · Effective ${data.date}`;
+    document.getElementById('mv-modal-type').textContent = data.type;
+    document.getElementById('mv-modal-status').textContent = data.status;
+    document.getElementById('mv-modal-from').textContent = data.from;
+    document.getElementById('mv-modal-to').textContent = data.to;
+    document.getElementById('mv-modal-sal-old').textContent = data.old;
+    document.getElementById('mv-modal-sal-new').textContent = data.new;
+    document.getElementById('mv-modal-date').textContent = data.date;
+    document.getElementById('mv-modal-dept').textContent = data.dept;
+    document.getElementById('mv-modal-reason').textContent = data.reason;
+
+    // 3. Open Modal
+    openModal('modal-view-movement');
+}
+function selectThemedItem(el, inputId) {
+    const val = el.textContent.trim();
+    const input = document.getElementById(inputId);
+    const container = el.closest('.as-combo-results');
+
+    // 1. Update the visible text in the filter box
+    if (input) {
+        input.value = val;
+    }
+
+    // 2. Remove the green highlight ('selected' class) from all items in this list
+    container.querySelectorAll('.as-res-item').forEach(item => {
+        item.classList.remove('selected');
+    });
+
+    // 3. Add the green highlight ('selected' class) to the one you just clicked
+    el.classList.add('selected');
+
+    // 4. Close the dropdown menu
+    container.classList.remove('active');
+}
+
+/**
+ * Switches between Step 1 and Step 2 in the Movement Wizard instantly
+ */
+function switchMvStep(step) {
+    const s1 = document.getElementById('mv-step-1-content');
+    const s2 = document.getElementById('mv-step-2-content');
+    const f1 = document.getElementById('mv-footer-1');
+    const f2 = document.getElementById('mv-footer-2');
+    const progressLine = document.getElementById('mv-progress-line');
+    const ind2 = document.getElementById('mv-ind-2');
+
+    if (step === 2) {
+        s1.style.display = 'none';
+        f1.style.display = 'none';
+        s2.style.display = 'block';
+        f2.style.display = 'flex';
+        progressLine.style.width = '100%';
+        
+        // Update Indicator 2
+        const num = ind2.querySelector('.mv-step-num');
+        num.style.background = '#15b201';
+        num.style.color = '#fff';
+        num.style.borderColor = '#15b201';
+        ind2.querySelector('div:last-child').style.color = '#15b201';
+    } else {
+        s1.style.display = 'block';
+        f1.style.display = 'flex';
+        s2.style.display = 'none';
+        f2.style.display = 'none';
+        progressLine.style.width = '0%';
+        
+        // Reset Indicator 2
+        const num = ind2.querySelector('.mv-step-num');
+        num.style.background = '#f1f5f9';
+        num.style.color = '#94a3b8';
+        num.style.borderColor = '#e2e8f0';
+        ind2.querySelector('div:last-child').style.color = '#94a3b8';
+    }
+    lcIcons();
+}
+
+/**
+ * Handles the final submission of the wizard
+ */
+function submitMovementRequest(btn) {
+    const originalHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<i data-lucide="loader-2" class="spin" size="18"></i> Submitting...`;
+    lcIcons(btn);
+
+    setTimeout(() => {
+        showNotification('Request Initiated', 'The position change has been sent for approval.', 'success');
+        closeModal('modal-initiate-movement');
+        
+        // Reset Wizard for next time
+        switchMvStep(1);
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+        lcIcons(btn);
+        
+        if (typeof renderPromoteDemoteTable === 'function') renderPromoteDemoteTable();
+    }, 1000);
+}
+
+
+/**
+ * Renders the Department Transfers  instantly
+ */ 
+function renderDepartmentTransfers() {
+    const target = document.getElementById('transfer-table-target');
+    if (!target) return;
+
+    // Full Dataset from the Image
+    const mockTransfers = [
+        { ref: '601', name: 'Abebe Bekele', from_d: 'Engineering', to_d: 'Product', from_b: 'HQ', to_b: 'HQ', req: '2026-04-01', eff: '2026-05-01', status: 'Pending' },
+        { ref: '602', name: 'Meron Alemu', from_d: 'Marketing', to_d: 'Sales', from_b: 'HQ', to_b: 'Adama', req: '2026-03-20', eff: '2026-04-15', status: 'Approved' },
+        { ref: '603', name: 'Kiros Tesfamichael', from_d: 'Operations', to_d: 'HR', from_b: 'HQ', to_b: 'HQ', req: '2026-04-05', eff: '2026-05-01', status: 'Pending' },
+        { ref: '604', name: 'Frehiwot Bekele', from_d: 'Finance', to_d: 'Operations', from_b: 'HQ', to_b: 'Dire Dawa', req: '2026-02-10', eff: '2026-03-01', status: 'Approved' },
+        { ref: '605', name: 'Naol Girma', from_d: 'IT', to_d: 'Engineering', from_b: 'HQ', to_b: 'HQ', req: '2026-04-10', eff: '2026-05-15', status: 'Pending' },
+        { ref: '606', name: 'Suleiman Ahmed', from_d: 'Sales', to_d: 'Customer Success', from_b: 'Adama', to_b: 'HQ', req: '2026-03-05', eff: '2026-03-20', status: 'Rejected' },
+        { ref: '607', name: 'Tigist Alemu', from_d: 'HR', to_d: 'HR', from_b: 'HQ', to_b: 'Hawassa', req: '2026-04-15', eff: '2026-06-01', status: 'Pending' },
+        { ref: '608', name: 'Rahel Demeke', from_d: 'Engineering', to_d: 'IT', from_b: 'HQ', to_b: 'HQ', req: '2026-03-01', eff: '2026-03-15', status: 'Approved' }
+    ];
+
+    target.innerHTML = `
+        <div class="card" style="border-radius: 12px; border: 1px solid #f1f5f9; box-shadow: var(--shadow);">
+            <div class="table-wrap">
+                <table class="tbl">
+                    <thead>
+                        <tr>
+                            <th style="padding: 16px 24px;">REF</th>
+                            <th>EMPLOYEE</th>
+                            <th>MOVEMENT</th>
+                            <th>BRANCH CHANGE</th>
+                            <th>REQUESTED</th>
+                            <th>EFFECTIVE</th>
+                            <th>STATUS</th>
+                            <th style="text-align:center; padding-right: 24px;">ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${mockTransfers.map(r => {
+                            const statusClass = r.status === 'Approved' ? 'badge-success' : (r.status === 'Rejected' ? 'badge-danger' : 'badge-warning');
+                            return `
+                            <tr>
+                                <td style="padding: 16px 24px; color: #94a3b8; font-family: 'JetBrains Mono'; font-size: 11px;">#${r.ref}</td>
+                                <td><b style="color: ${r.status === 'Pending' ? '#1e293b' : (r.status === 'Approved' ? '#15b201' : '#1e293b')}; font-weight: 800;">${r.name}</b></td>
+                                <td>
+                                    <div class="flex-row" style="gap: 8px;">
+                                        <span style="font-size: 10px; color: #94a3b8; background: #f8fafc; border: 1px solid #e2e8f0; padding: 2px 10px; border-radius: 8px; font-weight: 700;">${r.from_d}</span>
+                                        <i data-lucide="move-right" size="12" style="color: #cbd5e1;"></i>
+                                        <span style="font-size: 10px; color: #15b201; background: #f1fcf0; border: 1.5px solid #15b201; padding: 2px 10px; border-radius: 8px; font-weight: 800;">${r.to_d}</span>
+                                    </div>
+                                </td>
+                                <td style="font-size: 12px; color: #64748b; font-weight: 500;">
+                                    ${r.from_b === r.to_b ? 'Same branch' : `<span style="color:#1e293b; font-weight:700">${r.from_b}</span> → <span style="color:#15b201; font-weight:700">${r.to_b}</span>`}
+                                </td>
+                                <td style="color: #94a3b8; font-size: 12px;">${r.req}</td>
+                                <td style="font-weight: 700; color: ${r.status === 'Approved' ? '#15b201' : '#475569'};">${r.eff}</td>
+                                <td><span class="badge ${statusClass}" style="padding: 4px 12px; border-radius: 12px; font-weight: 800;">${r.status}</span></td>
+                                <td style="text-align:right; padding-right: 24px;">
+                                    ${r.status === 'Pending' ? `
+                                        <div class="flex-row" style="gap:6px; justify-content: flex-end;">
+                                            <button class="btn btn-xs btn-success" style="background:#15b201; padding:5px 12px; border-radius:8px; font-weight:700">Approve</button>
+                                            <button class="btn btn-xs btn-danger" style="background:#ef4444; padding:5px 12px; border-radius:8px; font-weight:700">Reject</button>
+                                        </div>
+                                    ` : `<button class="btn btn-xs btn-secondary" style="background:#f8fafc; border: 1px solid #e2e8f0; padding:5px 15px; border-radius:8px; font-weight:700; color:#64748b;">View</button>`}
+                                </td>
+                            </tr>`;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>`;
+    lcIcons(target);
+}
+
+// Simple filter logic for the search box
+function filterTransferTable(val) {
+    const q = val.toLowerCase();
+    document.querySelectorAll('#transfer-table-target tbody tr').forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(q) ? '' : 'none';
+    });
+}
+/**
+ * RENDERS THE PROMOTE / DEMOTE TABLE
+ */
+function renderPromoteDemoteTable() {
+    const container = document.getElementById('tbl-Promote/Demote');
+    if (!container) return;
+
+    const mockData = [
+        { ref: '501', name: 'Abebe Bekele', type: 'Promotion', from: 'Mid Software Eng', to: 'Senior Software Eng', change: '7,000', pct: '25', effective: '2026-05-01', status: 'Processing' },
+        { ref: '502', name: 'Tigist Alemu', type: 'Promotion', from: 'HR Coordinator', to: 'HR Business Partner', change: '6,000', pct: '27', effective: '2026-04-15', status: 'Approved' }
+    ];
+
+    container.innerHTML = `
+        <div class="card" style="border-radius: 16px; border: 1px solid #f1f5f9;">
+            <div class="table-wrap">
+                <table class="tbl">
+                    <thead style="background: #f8fafc;">
+                        <tr>
+                            <th style="padding: 18px 24px;">REF</th>
+                            <th>EMPLOYEE</th>
+                            <th>TYPE</th>
+                            <th>TO POSITION</th>
+                            <th>SALARY CHANGE</th>
+                            <th>STATUS</th>
+                            <th style="text-align:right; padding-right: 24px;">ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${mockData.map(r => `
+                            <tr>
+                                <td style="padding: 18px 24px; color: #94a3b8; font-family: 'JetBrains Mono'; font-size: 11px;">#${r.ref}</td>
+                                <td><b style="color: #1e293b; font-weight: 800;">${r.name}</b></td>
+                                <td><span class="badge ${r.type === 'Promotion' ? 'badge-success' : 'badge-danger'}">${r.type}</span></td>
+                                <td>${r.to}</td>
+                                <td style="color:#15b201; font-weight:800;">▲ ETB ${r.change}</td>
+                                <td><span class="badge badge-info">${r.status}</span></td>
+                                <td style="text-align:right; padding-right: 24px;">
+                                    <button class="btn btn-xs btn-secondary" onclick="viewMovementDetail(${mockData.indexOf(r)})">View</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>`;
+    lcIcons(container);
+}
+/**
+ * Switches between Step 1 and Step 2 in the Transfer Wizard
+ */
+function switchTrStep(step) {
+    const s1 = document.getElementById('tr-step-1-content');
+    const s2 = document.getElementById('tr-step-2-content');
+    const f1 = document.getElementById('tr-footer-1');
+    const f2 = document.getElementById('tr-footer-2');
+    const progressLine = document.getElementById('tr-progress-line');
+    const ind2 = document.getElementById('tr-ind-2');
+
+    if (step === 2) {
+        s1.style.display = 'none'; f1.style.display = 'none';
+        s2.style.display = 'block'; f2.style.display = 'flex';
+        progressLine.style.width = '100%';
+        
+        const num = ind2.querySelector('.tr-step-num');
+        num.style.background = '#15b201'; num.style.color = '#fff'; num.style.borderColor = '#15b201';
+        ind2.querySelector('div:last-child').style.color = '#15b201';
+    } else {
+        s1.style.display = 'block'; f1.style.display = 'flex';
+        s2.style.display = 'none'; f2.style.display = 'none';
+        progressLine.style.width = '0%';
+        
+        const num = ind2.querySelector('.tr-step-num');
+        num.style.background = '#f1f5f9'; num.style.color = '#94a3b8'; num.style.borderColor = '#e2e8f0';
+        ind2.querySelector('div:last-child').style.color = '#94a3b8';
+    }
+    lcIcons();
+}
+
+/**
+ * Handles the final submission for Department Transfer
+ */
+function submitTransferRequest(btn) {
+    const originalHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<i data-lucide="loader-2" class="spin" size="18"></i> Processing...`;
+    lcIcons(btn);
+
+    setTimeout(() => {
+        showNotification('Transfer Initiated', 'The departmental movement request has been filed.', 'success');
+        closeModal('modal-initiate-transfer');
+        
+        switchTrStep(1); // Reset wizard
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+        lcIcons(btn);
+        
+        if (typeof renderDepartmentTransfers === 'function') renderDepartmentTransfers();
+    }, 1000);
+}
+// Add or Update this specific logic in core.js
+function handleTransferEmployeeSelect(name, id) {
+    // Mock data simulation - in production, this would be a fetch call based on ID
+    const mockDetails = {
+        'Abebe Bekele': { dept: 'Engineering', branch: 'HQ' },
+        'Meron Alemu': { dept: 'Marketing', branch: 'HQ' },
+        'Kiros Tesfamichael': { dept: 'Operations', branch: 'HQ' }
+    };
+
+    const details = mockDetails[name] || { dept: 'Unknown', branch: 'Unknown' };
+    
+    document.getElementById('tr-curr-dept').value = details.dept;
+    document.getElementById('tr-curr-branch').value = details.branch;
+}
+
+// Ensure the dropdown item click triggers the detail update
+// You might need to modify your selectAsItemWithValue logic if it's shared 
+if (inputId === 'tr-input-emp') {
+    handleTransferEmployeeSelect(displayText, value);
+} 
+
+function submitTransferRequest(btn) {
+    const originalHtml = btn.innerHTML;
+    
+    // Simple Validation check
+    const requiredFields = ['tr-input-emp', 'tr-input-dept', 'tr-input-branch', 'tr-eff-date', 'tr-reason'];
+    let valid = true;
+    requiredFields.forEach(id => {
+        const el = document.getElementById(id);
+        if(!el.value.trim()) {
+            el.classList.add('field-error');
+            valid = false;
+        } else {
+            el.classList.remove('field-error');
+        }
+    });
+
+    if(!valid) {
+        showNotification('Required Fields', 'Please fill in all mandatory fields.', 'warning');
+        return;
+    }
+
+    // Processing UI
+    btn.disabled = true;
+    btn.innerHTML = `<i data-lucide="loader-2" class="spin" size="18"></i> Submitting...`;
+    lcIcons(btn);
+
+    setTimeout(() => {
+        showNotification('Transfer Initiated', 'The transfer request has been submitted successfully.', 'success');
+        closeModal('modal-initiate-transfer');
+        
+        // Reset button
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+        lcIcons(btn);
+
+        // Refresh table if the function exists
+        if(typeof renderDepartmentTransfers === 'function') renderDepartmentTransfers();
+    }, 1500);
+}
+function renderDisciplinaryTable() {
+    const target = document.getElementById('disciplinary-table-target');
+    if (!target) return;
+
+    const data = [
+        { ref: '1001', name: 'Abebe Bekele', dept: 'Engineering', type: 'Written Warning', incident: '2026-02-10', issued: '2026-02-12', issuer: 'Meseret Tadesse', level: 2 },
+        { ref: '1002', name: 'Tigist Alemu', dept: 'Finance', type: 'Verbal Warning', incident: '2026-03-05', issued: '2026-03-06', issuer: 'Yonas Mekasha', level: 1 },
+        { ref: '1003', name: 'Samuel Girma', dept: 'Sales', type: 'Final Warning', incident: '2026-01-18', issued: '2026-01-20', issuer: 'Meseret Tadesse', level: 3 },
+        { ref: '1004', name: 'Hana Tesfaye', dept: 'Marketing', type: 'Suspension', incident: '2026-03-22', issued: '2026-03-24', issuer: 'Meseret Tadesse', level: 4 },
+        { ref: '1005', name: 'Dawit Haile', dept: 'Operations', type: 'Verbal Warning', incident: '2026-03-30', issued: '2026-04-01', issuer: 'Yonas Mekasha', level: 1 },
+        { ref: '1006', name: 'Abebe Bekele', dept: 'Engineering', type: 'Final Warning', incident: '2026-03-15', issued: '2026-03-17', issuer: 'Meseret Tadesse', level: 3 },
+        { ref: '1007', name: 'Liya Worku', dept: 'HR', type: 'Written Warning', incident: '2026-04-02', issued: '2026-04-03', issuer: 'Meseret Tadesse', level: 2 }
+    ];
+
+    target.innerHTML = `
+        <div class="card" style="border-radius: 16px; border: 1px solid #f1f5f9; box-shadow: var(--shadow);">
+            <div class="table-wrap">
+                <table class="tbl">
+                    <thead>
+                        <tr>
+                            <th style="padding: 18px 24px;">CASE #</th>
+                            <th>EMPLOYEE</th>
+                            <th>DEPARTMENT</th>
+                            <th>ACTION TYPE</th>
+                            <th>INCIDENT DATE</th>
+                            <th>ISSUED DATE</th>
+                            <th>ISSUED BY</th>
+                            <th>SEVERITY</th>
+                            <th style="text-align:right; padding-right: 24px;">ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.map(r => {
+                            // Define Level Colors and Widths
+                            const levels = {
+                                1: { color: '#f59e0b', width: '25%', bg: '#fffbeb' }, // Yellow
+                                2: { color: '#f97316', width: '50%', bg: '#fff7ed' }, // Orange
+                                3: { color: '#ef4444', width: '75%', bg: '#fef2f2' }, // Red
+                                4: { color: '#8b5cf6', width: '100%', bg: '#f5f3ff' } // Purple
+                            };
+                            const cfg = levels[r.level];
+
+                            return `
+                            <tr>
+                                <td style="padding: 18px 24px; color: #94a3b8; font-family: 'JetBrains Mono'; font-size: 11px;">#${r.ref}</td>
+                                <td><b style="color: #1e293b; font-weight: 800;">${r.name}</b></td>
+                                <td style="color: #64748b; font-weight: 500;">${r.dept}</td>
+                                <td>
+                                    <span style="background: ${cfg.bg}; color: ${cfg.color}; border: 1px solid ${cfg.bg}; padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: 800; display: inline-block;">
+                                        ${r.type}
+                                    </span>
+                                </td>
+                                <td style="color: #64748b; font-size: 13px;">${r.incident}</td>
+                                <td style="color: #475569; font-weight: 600; font-size: 13px;">${r.issued}</td>
+                                <td style="color: #64748b;">${r.issuer}</td>
+                                <td>
+                                    <div style="display:flex; align-items:center; gap:10px;">
+                                        <div style="width: 50px; height: 6px; background: #f1f5f9; border-radius: 10px; overflow: hidden;">
+                                            <div style="width: ${cfg.width}; height: 100%; background: ${cfg.color}; border-radius: 10px;"></div>
+                                        </div>
+                                        <span style="font-size: 10px; font-weight: 800; color: ${cfg.color};">Level ${r.level}</span>
+                                    </div>
+                                </td>
+                                <td style="text-align:right; padding-right: 24px;">
+                                    <button class="btn btn-xs btn-secondary" style="background:#f8fafc; border: 1px solid #e2e8f0; padding:4px 16px; border-radius:8px; font-weight:700">View</button>
+                                </td>
+                            </tr>`;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>`;
+    lcIcons(target);
+}
+
+function filterDisciplinaryTable(val) {
+    const q = val.toLowerCase();
+    document.querySelectorAll('#disciplinary-table-target tbody tr').forEach(row => {
+        row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+}
+function submitDisciplinaryAction(btn) {
+    const originalHtml = btn.innerHTML;
+    
+    // 1. Mandatory Fields Validation
+    const fields = [
+        { id: 'disc-input-emp', label: 'Employee' },
+        { id: 'disc-input-type', label: 'Action Type' },
+        { id: 'disc-incident-date', label: 'Incident Date' },
+        { id: 'disc-description', label: 'Incident Description' }
+    ];
+
+    let isValid = true;
+    fields.forEach(f => {
+        const el = document.getElementById(f.id);
+        if (!el.value.trim()) {
+            el.classList.add('field-error');
+            isValid = false;
+        } else {
+            el.classList.remove('field-error');
+        }
+    });
+
+    if (!isValid) {
+        showNotification('Validation Error', 'Please complete all required fields (*).', 'warning');
+        return;
+    }
+
+    // 2. Loading State UI
+    btn.disabled = true;
+    btn.innerHTML = `<i data-lucide="loader-2" class="spin" size="18"></i> Processing...`;
+    lcIcons(btn);
+
+    // 3. Simulated Success
+    setTimeout(() => {
+        showNotification('Success', 'The disciplinary action has been recorded and filed.', 'success');
+        closeModal('modal-record-disciplinary');
+        
+        // Reset button
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+        lcIcons(btn);
+
+        // Refresh the table instantly
+        if (typeof renderDisciplinaryTable === 'function') {
+            renderDisciplinaryTable();
+        }
+    }, 1200);
+}
+function renderResignations(filter) {
+    const target = document.getElementById('resignation-table-target');
+    if (!target) return;
+
+    // Handle Tab Active State
+    document.querySelectorAll('.res-tab').forEach(btn => {
+        btn.classList.remove('active');
+        btn.style.background = 'transparent';
+        btn.style.color = '#64748b';
+    });
+    event.currentTarget.classList.add('active');
+    event.currentTarget.style.background = '#15b201';
+    event.currentTarget.style.color = '#fff';
+
+    const rawData = [
+        { ref: '2001', name: 'Samuel Girma', dept: 'Sales', cat: 'Resignation', type: 'Personal', date: '2026-03-28', assigned: 'Meseret Tadesse', priority: 'High', status: 'Under Review' },
+        { ref: '2002', name: 'Liya Worku', dept: 'HR', cat: 'Grievance', type: 'Harassment', date: '2026-03-15', assigned: 'Yonas Mekasha', priority: 'High', status: 'Pending' },
+        { ref: '2003', name: 'Biniam Negash', dept: 'IT', cat: 'Grievance', type: 'Unfair Treatment', date: '2026-02-20', assigned: 'Meseret Tadesse', priority: 'Medium', status: 'Resolved' },
+        { ref: '2004', name: 'Tigist Alemu', dept: 'Finance', cat: 'Resignation', type: 'Pay Dispute', date: '2026-04-05', assigned: 'Meseret Tadesse', priority: 'High', status: 'Pending' },
+        { ref: '2005', name: 'Amir Hassan', dept: 'Operations', cat: 'Grievance', type: 'Work Conditions', date: '2026-04-08', assigned: 'Yonas Mekasha', priority: 'Low', status: 'Pending' }
+    ];
+
+    const data = filter === 'All' ? rawData : rawData.filter(r => r.status === filter);
+
+    target.innerHTML = `
+        <div class="card" style="border-radius: 12px; border: 1px solid #f1f5f9; box-shadow: var(--shadow);">
+            <div class="table-wrap">
+                <table class="tbl">
+                    <thead>
+                        <tr>
+                            <th style="padding: 16px 24px;">REF #</th>
+                            <th>EMPLOYEE</th>
+                            <th>DEPARTMENT</th>
+                            <th>TYPE</th>
+                            <th>FILED DATE</th>
+                            <th>ASSIGNED TO</th>
+                            <th>PRIORITY</th>
+                            <th>STATUS</th>
+                            <th style="text-align:right; padding-right: 24px;">ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.map(r => {
+                            const priorityCol = r.priority === 'High' ? '#ef4444' : (r.priority === 'Medium' ? '#f59e0b' : '#15b201');
+                            const priorityBg = r.priority === 'High' ? '#fee2e2' : (r.priority === 'Medium' ? '#fffbeb' : '#f1fcf0');
+                            const statusCol = r.status === 'Under Review' ? '#0ea5e9' : (r.status === 'Resolved' ? '#15b201' : '#f59e0b');
+                            const statusBg = r.status === 'Under Review' ? '#f0f9ff' : (r.status === 'Resolved' ? '#f0fdf4' : '#fffbeb');
+
+                            return `
+                            <tr>
+                                <td style="padding: 18px 24px; color: #94a3b8; font-family: 'JetBrains Mono'; font-size: 11px;">#${r.ref}</td>
+                                <td><b style="color: #1e293b; font-weight: 800;">${r.name}</b></td>
+                                <td style="color: #64748b; font-weight: 500;">${r.dept}</td>
+                                <td>
+                                    <div class="flex-row" style="gap: 8px;">
+                                        <span style="font-size: 10px; color: #94a3b8; background: #f8fafc; border: 1px solid #e2e8f0; padding: 2px 8px; border-radius: 6px;">${r.cat}</span>
+                                        <span style="font-size: 13px; color: #1e293b; font-weight: 600;">${r.type}</span>
+                                    </div>
+                                </td>
+                                <td style="color: #64748b; font-size: 13px;">${r.date}</td>
+                                <td style="color: #475569; font-weight: 600;">${r.assigned}</td>
+                                <td>
+                                    <span style="background: ${priorityBg}; color: ${priorityCol}; padding: 3px 12px; border-radius: 6px; font-size: 10px; font-weight: 800; border: 1px solid ${priorityBg};">
+                                        ${r.priority}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span style="background: ${statusBg}; color: ${statusCol}; padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: 800; border: 1px solid ${statusBg};">
+                                        ${r.status}
+                                    </span>
+                                </td>
+                                <td style="text-align:right; padding-right: 24px;">
+                                    ${r.status !== 'Resolved' ? `
+                                        <button class="btn btn-xs btn-success" style="background:#15b201; border-radius:8px; padding:4px 16px; font-weight:700" onclick="showNotification('System','Case marked as resolved','success')">Resolve</button>
+                                    ` : `<span style="color: #cbd5e1; font-weight: 800;">—</span>`}
+                                </td>
+                            </tr>`;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer" style="padding: 12px 24px; background: #fff; border-top: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; border-radius: 0 0 12px 12px;">
+                 <span style="font-size: 11px; font-weight: 700; color: #94a3b8;">${data.length} records</span>
+                 <div class="pagination-btns">
+                    <button class="pg-btn" disabled>‹</button>
+                    <button class="pg-btn active">1</button>
+                    <button class="pg-btn" disabled>›</button>
+                 </div>
+            </div>
+        </div>
+    `;
+    lcIcons(target);
+}
