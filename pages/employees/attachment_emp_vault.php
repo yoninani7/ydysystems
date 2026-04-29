@@ -1,7 +1,3 @@
-<!-- ============================================================
-  FILE: pages/employees/attachment_emp_vault.php
-  PURPOSE: Per-employee document detail view
-============================================================ -->
 <?php $token = csrf_token(); ?>
 <meta name="csrf" content="<?php echo $token; ?>">
 
@@ -220,15 +216,13 @@
   <div style="display: flex; align-items: center; gap: 10px; overflow: hidden;">
     <i data-lucide="file-check" size="18" style="color: #22c55e; flex-shrink: 0;"></i>
     <span id="upload-preview-name" style="font-size:.85rem; font-weight:700; color:#166534; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 280px;"></span>
-
- 
   <!-- Right Side: Delete Button -->
   <button type="button" onclick="removeSelectedFile()" 
           style="background: transparent; border: none; cursor: pointer; color: #ef4444; padding: 4px; display: flex; align-items: center; flex-shrink: 0;right:0;">
     <i data-lucide="trash-2" size="18"></i>
   </button>
- </div>
 
+ </div>  
 </div>
     </div>
 
@@ -236,7 +230,7 @@
     <div class="modal-footer" style="background: #f8fafc;">
       <button onclick="closeUploadModal()" class="btn btn-secondary" style="padding: 8px 20px;">Cancel</button>
       <button id="btn-confirm-upload" onclick="confirmUpload()" class="btn btn-primary" style="padding: 8px 20px;" disabled>
-        <i data-lucide="check" size="14"></i> Commit Upload
+        <i data-lucide="check" size="14"></i> Upload document
       </button>
     </div>
 
