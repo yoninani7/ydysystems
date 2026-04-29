@@ -6516,8 +6516,47 @@ function downloadVaultZip(empId) {
     showNotification('Vault', 'No employee selected.', 'error');
     return;
   }
-  // Trigger download by navigating to the endpoint
-  window.location.href = `api/employees/download_vault_zip.php?emp_id=${encodeURIComponent(empId)}`;
+  const btn = document.getElementById('btn-download-zip');
+  const originalHtml = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = vaultLoader('Preparing zip…', 14);
+    lcIcons(btn);
+  }
+
+  fetch(`api/employees/download_vault_zip.php?emp_id=${encodeURIComponent(empId)}`)
+    .then(async res => {
+      if (!res.ok) {
+        // Try to read the error message from the server
+        let msg = await res.text();
+        if (res.status === 404 && msg.includes('No uploaded documents')) {
+          msg = 'This employee has no uploaded documents.';
+        }
+        throw new Error(msg || 'Download failed (' + res.status + ')');
+      }
+      return res.blob();
+    })
+    .then(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'vault_' + empId + '.zip';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showNotification('Vault', 'Zip downloaded successfully.', 'success');
+    })
+    .catch(err => {
+      showNotification('Vault', err.message, 'error');
+    })
+    .finally(() => {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+        lcIcons(btn);
+      }
+    });
 }
 
 // ── 4. openEmployeeVault() ────────────────────────────────────
@@ -6595,7 +6634,6 @@ function handleDropZone(event) {
 //  Sends the selected file to the server via FormData POST.
 //  Endpoint: api/employees/upload_vault_doc.php (create separately)
 function confirmUpload() {
-
   const overlay   = document.getElementById('upload-modal-overlay');
   const fileInput = document.getElementById('upload-file-input');
   const btn       = document.getElementById('btn-confirm-upload');
@@ -6621,9 +6659,13 @@ function confirmUpload() {
       closeUploadModal();
       if (res.success) {
         showNotification('Vault', 'Document uploaded successfully.', 'success');
-        // Reload the detail view to reflect the new upload
-        if (pendingEmployeeVaultData) {
-          loadEmployeeVaultDetail(pendingEmployeeVaultData.name, pendingEmployeeVaultData.id);
+        // Always reload using sessionStorage, even after a page refresh
+        const stored = sessionStorage.getItem('vaultEmp');
+        if (stored) {
+          try {
+            const emp = JSON.parse(stored);
+            loadEmployeeVaultDetail(emp.name, emp.id);
+          } catch(e) {}
         }
       } else {
         showNotification('Vault', res.message || 'Upload failed.', 'error');
@@ -6639,15 +6681,30 @@ function confirmUpload() {
       lcIcons(btn);
     });
 }
-
 // ── 11. viewVaultDocument() ─────────────────────────────────
 //  Opens an uploaded document in a new tab for preview.
 //  Endpoint: api/employees/view_vault_doc.php?emp_id=X&doc_type_id=Y
 function viewVaultDocument(empId, docTypeId) {
-  const url = `api/employees/view_vault_doc.php?emp_id=${encodeURIComponent(empId)}&doc_type_id=${docTypeId}`;
-  window.open(url, '_blank', 'noopener,noreferrer');
+  fetch(`api/employees/view_vault_doc.php?emp_id=${encodeURIComponent(empId)}&doc_type_id=${docTypeId}`)
+    .then(async res => {
+      if (!res.ok) {
+        let msg = await res.text();
+        if (msg.includes('Document not found') || msg.includes('File does not exist')) {
+          msg = 'The requested document could not be found. It may have been moved or deleted.';
+        }
+        throw new Error(msg || 'Document could not be loaded.');
+      }
+      return res.blob();
+    })
+    .then(blob => {
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank', 'noopener,noreferrer');
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    })
+    .catch(err => {
+      showNotification('Vault', err.message, 'error');
+    });
 }
-
  
 function vaultLoader(text = '', size = 24) {
   return `
