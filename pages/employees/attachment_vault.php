@@ -1,17 +1,33 @@
 <!-- ============================================================
   FILE: pages/employees/attachment_vault.php
-  PURPOSE: Main Attachment Vault matrix page — shows all active
-           employees in a scrollable compliance matrix table.
-  CHANGES FROM ORIGINAL:
-    - Added live stat cards fed by real API data (no more hardcoded values)
-    - Added search bar inline in the card header (no extra filter-bar div)
-    - Added per-row progress bar in the Fulfillment column
-    - Added category legend chips above the table
-    - Removed duplicate legend block in filter-bar
-    - Stats row now uses JS to update values after API load
+  PURPOSE: Main Attachment Vault matrix page
 ============================================================ -->
+<?php $token = csrf_token(); ?>
+<meta name="csrf" content="<?php echo $token; ?>">
 
-<div class="page" id="p-document-vault">
+<style>
+/* ── Strip out badges & noise ── */
+.vault-cat-chip, .badge-mandatory, .badge-optional, .doc-status { display: none !important; }
+
+/* ── Refined Matrix Slots ── */
+#vault-matrix-container .vault-slot {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    transition: all 0.2s ease;
+}
+#vault-matrix-container .vault-slot.filled {
+    background: var(--success-bg);
+    color: var(--success);
+    border: 1px solid rgba(22, 163, 74, 0.2);
+} 
+</style>
+
+<div class="page active" id="p-document-vault">
 
   <!-- ── Page Header ── -->
   <div class="page-header">
@@ -21,14 +37,13 @@
     </div>
   </div>
 
-  <!-- ── Live Stat Cards (values injected by initVaultMatrix()) ── -->
+  <!-- ── Live Stat Cards ── -->
   <div class="stats-row stats-4 mb-4">
     <div class="stat-card" style="border-left:4px solid var(--primary);">
       <div class="stat-label">Compliance Rate</div>
-      <!-- id="v-stat-rate" will be updated once the API responds -->
       <div class="stat-value" id="v-stat-rate">—</div>
     </div>
-    <div class="stat-card" style="border-left:4px solid var(--danger);">
+    <div class="stat-card" style="border-left:4px solid var(--warning);">
       <div class="stat-label">Missing Files</div>
       <div class="stat-value" id="v-stat-missing">—</div>
     </div>
@@ -45,31 +60,23 @@
   <!-- ── Main Card ── -->
   <div class="card">
 
-    <!-- Card header: title left, category legend chips right -->
-    <div class="filter-bar" style="padding:16px 20px; border-bottom:1px solid var(--border); gap:12px;">
+    <!-- Card Header / Toolbar -->
+    <div class="filter-bar" style="padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border);">
       <div>
-        <div style="font-size:.8rem; font-weight:800; color:var(--text);">Document Compliance Matrix</div>
-        <div style="font-size:.68rem; color:var(--muted);">Click any slot to see details. Click "Open Folder" to manage individual documents.</div>
+        <div style="font-size: 0.95rem; font-weight: 800; color: var(--text);">Document Compliance Matrix</div>
+        <div style="font-size: 0.75rem; color: var(--muted); margin-top: 4px;">Click any status slot to manage individual documents.</div>
       </div>
 
-      <!-- Category legend chips — one colour per doc category -->
-      <div class="ml-auto flex-row" style="gap:6px; flex-wrap:wrap; align-items:center;">
-        <span style="font-size:.65rem; font-weight:700; color:var(--muted); white-space:nowrap;">CATEGORIES:</span>
-        <span class="vault-cat-chip cat-legal">Legal</span>
-        <span class="vault-cat-chip cat-identity">Identity</span>
-        <span class="vault-cat-chip cat-education">Education</span>
-        <span class="vault-cat-chip cat-history">History</span>
-        <span class="vault-cat-chip cat-professional">Professional</span>
-        <span class="vault-cat-chip cat-compliance">Compliance</span>
-        <span class="vault-cat-chip cat-tax">Tax</span>
-        <!-- Status legend -->
-        <span style="font-size:.65rem; font-weight:700; color:var(--muted); white-space:nowrap; margin-left:8px;">STATUS:</span>
-        <span style="font-size:.65rem; display:flex; align-items:center; gap:4px;">
-          <span style="width:10px; height:10px; border-radius:3px; background:var(--success); display:inline-block;"></span>Uploaded
-        </span>
-        <span style="font-size:.65rem; display:flex; align-items:center; gap:4px;">
-          <span style="width:10px; height:10px; border-radius:3px; background:#fff5f5; border:1px dashed #e57373; display:inline-block;"></span>Missing
-        </span>
+      <!-- Clean Minimal Legend -->
+      <div style="display: flex; gap: 20px; align-items: center; font-size: 0.72rem; font-weight: 700; color: var(--muted);">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="width: 10px; height: 10px; border-radius: 4px; background: var(--success);"></div>
+          <span>Verified</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="width: 10px; height: 10px; border-radius: 4px; background: #f8fafc; border: 1px dashed #cbd5e1;"></div>
+          <span>Missing</span>
+        </div>
       </div>
     </div>
 
