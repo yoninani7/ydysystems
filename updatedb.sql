@@ -1069,9 +1069,15 @@ SELECT
     CONCAT(e.first_name, ' ', e.last_name) AS full_name,
     (SELECT COUNT(*) FROM document_types WHERE is_mandatory = 1) AS total_required,
     COUNT(ed.id) AS total_uploaded,
-    ROUND((COUNT(ed.id) / (SELECT COUNT(*) FROM document_types WHERE is_mandatory = 1)) * 100, 2) AS compliance_percentage
+    ROUND(
+        (
+            COUNT(CASE WHEN dt.is_mandatory = 1 THEN ed.id ELSE NULL END) 
+            / (SELECT COUNT(*) FROM document_types WHERE is_mandatory = 1)
+        ) * 100, 2
+    ) AS compliance_percentage
 FROM employees e
 LEFT JOIN employee_documents ed ON e.id = ed.employee_id
+LEFT JOIN document_types dt ON ed.document_type_id = dt.id
 WHERE e.deleted_at IS NULL
 GROUP BY e.id;
 

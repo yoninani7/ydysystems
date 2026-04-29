@@ -304,7 +304,7 @@ function generateOrgChart() {
 
   generateBtn.disabled = true;
   const originalIconHtml = btnIconRight.innerHTML;
-  btnIconRight.innerHTML = `<i data-lucide="loader-2" class="spin" size="16"></i>`;
+  btnIconRight.innerHTML = vaultLoader('', 18);
   lcIcons(btnIconRight);
 
   Promise.all([
@@ -482,49 +482,7 @@ function exportOrgChartPDF() {
     `);
     printWindow.document.close();
 }
-// ── VAULT MATRIX ──
-function initVaultMatrix() {
-  const container = document.getElementById('vault-matrix-container');
-  if (!container || container.dataset.built) return;
-
-  fetch('api/employees/fetch_vault_matrix.php?limit=1')
-    .then(r => r.json())
-    .then(res => {
-      if (!res.success) throw new Error(res.message);
-
-      const cols = [{ key: 'name', label: 'Employee' }];
-      res.docTypes.forEach(doc => {
-        cols.push({
-          key: 'doc_' + doc.id,
-          label: doc.code,
-          render: (val) => val
-            ? `<div class="vault-slot filled" title="Uploaded"><i data-lucide="check" size="10"></i></div>`
-            : `<div class="vault-slot expired" title="Missing"><i data-lucide="alert-circle" size="10"></i></div>`
-        });
-      });
-      cols.push({ key: 'progress', label: 'Fulfillment', render: v => `<span style="font-size:.7rem;font-weight:800;color:var(--primary);">${v}%</span>` });
-      cols.push({
-        key: 'updated_by_name',
-        label: 'Last Updated By',
-        render: (v) => v ? v : '<span style="color:var(--muted); font-style:italic;">—</span>'
-      });
-      cols.push({
-        key: '_',
-        label: 'Actions',
-        render: (v, row) => `<button class="btn btn-xs btn-secondary" onclick="openEmployeeVault('${row.name}', '${row.empId}')">Open Folder</button>`
-      });
-
-      initServerPaginatedTable('vault-matrix-container', 'api/employees/fetch_vault_matrix.php', {
-        columns: cols,
-        perPage: 15,
-        searchPlaceholder: 'Search employees...'
-      });
-    })
-    .catch(err => {
-      container.innerHTML = `<div style="padding:40px; text-align:center; color:var(--danger);">Error: ${err.message}</div>`;
-    });
-}
-
+ 
 // ── DASHBOARD CHART ──
 function initDashboard() {
   if (inited.has('dashboard-main-chart')) return;
@@ -2130,46 +2088,31 @@ function initPage(id) {
       break;
     case 'document-vault': initVaultMatrix(); break;
     case 'employee-vault':
-      if (pendingEmployeeVaultData) {
-        const { name, id } = pendingEmployeeVaultData;
-        document.getElementById('v-emp-name').textContent = name;
-        document.getElementById('v-emp-id').textContent = id + " • Personnel Archive";
-        const listContainer = document.getElementById('vault-docs-list');
-        listContainer.innerHTML = '';
-        let uploadCount = 0;
-
-        VAULT_SCHEMA.forEach(doc => {
-          const isUploaded = Math.random() > 0.4;
-          if (isUploaded) uploadCount++;
-
-          const row = document.createElement('div');
-          row.className = 'doc-row';
-          row.innerHTML = `
-            <div class="doc-icon-box ${isUploaded ? 'uploaded' : 'missing'}">
-              <i data-lucide="${isUploaded ? 'file-check' : 'file-question-mark'}" size="18"></i>
-            </div>
-            <div class="doc-meta">
-              <div class="doc-name">${doc.name}</div>
-              <div class="doc-cat">${doc.cat}</div>
-            </div>
-            <div class="doc-status">${isUploaded ? '<span class="badge badge-success" style="font-size:10px">Verified</span>' : '<span class="badge badge-neutral" style="font-size:10px; opacity:0.7;">Pending</span>'}</div>
-            <div class="doc-actions">${isUploaded ? `
-              <button class="btn btn-secondary btn-xs" title="View" onclick="showNotification('Vault','Opening file...','info')"><i data-lucide="eye" size="14"></i> View</button>
-              <button class="btn btn-secondary btn-xs" title="Update" style="min-width:34px;"><i data-lucide="refresh-cw" size="14"></i></button>` : `
-              <button class="btn btn-primary btn-xs btn-upload-pro" onclick="showNotification('Vault','Ready for upload','info')"><i data-lucide="plus" size="14"></i> Add Document</button>`}
-            </div>`;
-          listContainer.appendChild(row);
-        });
-
-        const total = VAULT_SCHEMA.length;
-        document.getElementById('v-count-upload').textContent = uploadCount;
-        document.getElementById('v-count-missing').textContent = total - uploadCount;
-        document.getElementById('v-compliance-percent').textContent = Math.round((uploadCount / total) * 100) + "%";
-        lcIcons(listContainer);
-        pendingEmployeeVaultData = null;
-      }
-      break; 
-case 'job-vacancies':
+    var stored = sessionStorage.getItem('vaultEmp');
+    if (stored) {
+        try {
+            var emp = JSON.parse(stored);
+            loadEmployeeVaultDetail(emp.name, emp.id);
+        } catch(e) {
+            // if JSON.parse fails, show the fallback
+            showVaultFallback();
+        }
+    } else {
+        showVaultFallback();
+    }
+    function showVaultFallback() {
+        var container = document.getElementById('vault-docs-list');
+        if (container) {
+            container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);">' +
+                '<i data-lucide="folder-open" size="32"></i>' +
+                '<div style="margin-top:12px;">No employee selected.<br>' +
+                '<a href="javascript:goPage(\'document-vault\')" style="color:var(--primary);">Back to Vault Matrix</a></div>' +
+                '</div>';
+            lcIcons(container);
+        }
+    }
+    break;
+    case 'job-vacancies':
     renderJobVacancies();
     break;
     case 'candidates':
@@ -2965,24 +2908,39 @@ function cycleStatus(el) {
 }
 
 // Document Vault
+ 
+// ── 1. VAULT_SCHEMA ──────────────────────────────────────────
+//  Defines the 12 standard document types.
+//  is_mandatory drives the "Mandatory" / "Optional" badge.
+//  cat is used for the colour-coded category chip.
 const VAULT_SCHEMA = [
-  { id: 'contract', name: 'Signed Employment Contract', cat: 'Legal' },
-  { id: 'cv', name: 'Curriculum Vitae (CV)', cat: 'Identity' },
-  { id: 'academic', name: 'Academic Credentials', cat: 'Education' },
-  { id: 'clearance', name: 'Clearance / Release Letter', cat: 'History' },
-  { id: 'experience', name: 'Experience Letters', cat: 'History' },
-  { id: 'coc', name: 'Certificate of Competence (COC)', cat: 'Professional' },
-  { id: 'guarantor', name: 'Guarantor Form & ID', cat: 'Legal' },
-  { id: 'nda', name: 'Confidentiality / NDA Agreement', cat: 'Compliance' },
-  { id: 'handbook', name: 'Acknowledgments', cat: 'Compliance' },
-  { id: 'national_id', name: 'National ID / Passport Copy', cat: 'Identity' },
-  { id: 'tin', name: 'TIN Certification Document', cat: 'Tax' },
-  { id: 'medical', name: 'Health & Fitness Clearance', cat: 'Compliance' }
+  { id: 1,  code: 'contract',   name: 'Signed Employment Contract',      cat: 'Legal',        is_mandatory: true  },
+  { id: 2,  code: 'cv',         name: 'Curriculum Vitae (CV)',            cat: 'Identity',     is_mandatory: true  },
+  { id: 3,  code: 'academic',   name: 'Academic Credentials',             cat: 'Education',    is_mandatory: true  },
+  { id: 4,  code: 'clearance',  name: 'Clearance / Release Letter',       cat: 'History',      is_mandatory: true  },
+  { id: 5,  code: 'experience', name: 'Experience Letters',               cat: 'History',      is_mandatory: false },
+  { id: 6,  code: 'coc',        name: 'Certificate of Competence (COC)',  cat: 'Professional', is_mandatory: false },
+  { id: 7,  code: 'guarantor',  name: 'Guarantor Form & ID',              cat: 'Legal',        is_mandatory: true  },
+  { id: 8,  code: 'nda',        name: 'Confidentiality / NDA Agreement',  cat: 'Compliance',   is_mandatory: true  },
+  { id: 9,  code: 'handbook',   name: 'Acknowledgments',                  cat: 'Compliance',   is_mandatory: true  },
+  { id: 10, code: 'national_id',name: 'National ID / Passport Copy',      cat: 'Identity',     is_mandatory: true  },
+  { id: 11, code: 'tin',        name: 'TIN Certification Document',        cat: 'Tax',          is_mandatory: true  },
+  { id: 12, code: 'medical',    name: 'Health & Fitness Clearance',       cat: 'Compliance',   is_mandatory: true  },
 ];
 
+// Category → CSS class map for colour chips
+const CAT_CLASS_MAP = {
+  'Legal':        'cat-legal',
+  'Identity':     'cat-identity',
+  'Education':    'cat-education',
+  'History':      'cat-history',
+  'Professional': 'cat-professional',
+  'Compliance':   'cat-compliance',
+  'Tax':          'cat-tax',
+};
 function openEmployeeVault(name, id) {
-  pendingEmployeeVaultData = { name, id };
-  goPage('employee-vault');
+  sessionStorage.setItem('vaultEmp', JSON.stringify({ name, id }));
+  window.location.href = 'dashboard.php?page=employee-vault';
 }
 
 function updateEmploymentFields(type) {
@@ -6279,4 +6237,428 @@ function filterInternTable(val) {
     document.querySelectorAll('#internship-table-target tbody tr').forEach(row => {
         row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
     });
+}
+// ============================================================
+//  VAULT MODULE — paste these functions into core.js
+//  Replace the following existing blocks:
+//    1. The VAULT_SCHEMA const (around line 2993)
+//    2. The initVaultMatrix() function (around line 332)
+//    3. The 'employee-vault' case inside the page-switch (around line 1925)
+//    4. The openEmployeeVault() function (around line 3009)
+//  All other core.js code remains untouched.
+// ============================================================
+
+
+// ── 2. initVaultMatrix() ─────────────────────────────────────
+//  Builds the server-paginated compliance matrix table.
+//  Also computes and injects live stat card values.
+function initVaultMatrix() {
+  const container = document.getElementById('vault-matrix-container');
+  if (!container || container.dataset.built) return;
+
+  container.innerHTML = vaultLoader('Loading compliance matrix…', 28);
+  lcIcons(container); 
+
+  // First, fetch one page of data to get docTypes + totals for stats
+  fetch('api/employees/fetch_vault_matrix.php?limit=25&page=1')
+    .then(r => r.json())
+    .then(res => {
+      if (!res.success) throw new Error(res.message);
+
+      // ── Compute stat card values from first page ──────────
+      const allData  = res.data;
+      const total    = res.pagination.total;            // total employees
+      const docCount = VAULT_SCHEMA.length;             // 12
+
+      // Employees with 100% compliance
+      const compliant    = allData.filter(r => r.progress >= 100).length;
+      const nonCompliant = allData.filter(r => r.progress <  100).length;
+
+      // Total missing files across first page (extrapolate for display)
+      const missingPerPage = allData.reduce((acc, r) => {
+        return acc + VAULT_SCHEMA.filter(d => !r['doc_' + d.id]).length;
+      }, 0);
+      const avgMissing = allData.length ? missingPerPage / allData.length : 0;
+      const estMissing = Math.round(avgMissing * total);
+
+      // Average compliance rate across first page
+      const avgRate = allData.length
+        ? Math.round(allData.reduce((a, r) => a + r.progress, 0) / allData.length)
+        : 0;
+
+      // Inject into stat cards
+      const statRate        = document.getElementById('v-stat-rate');
+      const statMissing     = document.getElementById('v-stat-missing');
+      const statNonCompliant= document.getElementById('v-stat-non-compliant');
+      const statCompliant   = document.getElementById('v-stat-compliant');
+      if (statRate)         statRate.textContent         = avgRate + '%';
+      if (statMissing)      statMissing.textContent      = estMissing;
+      if (statNonCompliant) statNonCompliant.textContent = nonCompliant;
+      if (statCompliant)    statCompliant.textContent    = compliant;
+
+      // ── Build column definitions ──────────────────────────
+      const cols = [
+        // Employee name column
+        { key: 'name', label: 'Employee', render: v =>
+            `<span style="font-weight:700; font-size:.8rem;">${v}</span>` },
+      ];
+
+      // One column per document type (uses code as short label)
+      res.docTypes.forEach(doc => {
+        const catClass = CAT_CLASS_MAP[doc.category] || '';
+        cols.push({
+          key:   'doc_' + doc.id,
+          // Full name on hover, short code as visible label
+          label: `<span title="${doc.name}" style="cursor:default;">${doc.code}</span>`,
+          render: (val, row) => {
+            const fileName = row['doc_' + doc.id + '_name'] || '';
+            const isMandatory = doc.is_mandatory;
+            if (val) {
+              // Uploaded: green slot with file name as tooltip
+              return `<div class="vault-slot filled"
+                           title="${doc.name}${fileName ? ': ' + fileName : ''}"
+                           style="position:relative;">
+                        <i data-lucide="check" size="10"></i>
+                      </div>`;
+            } else {
+              // Missing: red-dashed slot — click opens upload modal
+              return `<div class="vault-slot expired"
+                           title="${isMandatory ? '⚠ Mandatory' : 'Optional'}: ${doc.name}"
+                           onclick="openUploadModal(${doc.id}, '${doc.name}', '${row.empId}')"
+                           style="cursor:pointer;">
+                        <i data-lucide="plus" size="10"></i>
+                      </div>`;
+            }
+          }
+        });
+      });
+
+      // Fulfillment column with mini progress bar
+      cols.push({
+        key: 'progress',
+        label: 'Fulfillment',
+        render: v => {
+          const pct   = parseFloat(v) || 0;
+          const color = pct >= 100 ? '' : pct >= 60 ? 'warn' : 'danger';
+          return `<div class="vault-progress-wrap">
+                    <div class="vault-progress-bar">
+                      <div class="vault-progress-fill ${color}" style="width:${pct}%"></div>
+                    </div>
+                    <span style="font-size:.7rem; font-weight:800; color:var(--primary); min-width:34px;">${pct}%</span>
+                  </div>`;
+        }
+      });
+
+      // Last updated by
+      cols.push({
+        key: 'updated_by',
+        label: 'Last Updated By',
+        render: v => v
+          ? `<span style="font-size:.72rem;">${v}</span>`
+          : `<span style="color:var(--muted); font-style:italic; font-size:.72rem;">—</span>`
+      });
+
+      // Actions column
+      cols.push({
+        key: '_',
+        label: 'Actions',
+        render: (v, row) =>
+          `<button class="btn btn-xs btn-secondary"
+                   onclick="openEmployeeVault('${row.name}', '${row.empId}')">
+             <i data-lucide="folder-open" size="12"></i> Open Folder
+           </button>`
+      });
+
+      // ── Mount server-paginated table ──────────────────────
+      initServerPaginatedTable('vault-matrix-container', 'api/employees/fetch_vault_matrix.php', {
+        columns: cols,
+        perPage: 15,
+        searchPlaceholder: 'Search employees…',
+      });
+    })
+    .catch(err => {
+      container.innerHTML =
+        `<div style="padding:40px; text-align:center; color:var(--danger);">
+           <i data-lucide="alert-triangle" size="28"></i>
+           <div style="margin-top:8px;">Error loading vault: ${err.message}</div>
+         </div>`;
+      lcIcons(container);
+    });
+}
+
+// ── 3. loadEmployeeVaultDetail() ──────────────────────────────
+//  Fetches real document data for a single employee and renders
+//  the per-row document list in attachment_emp_vault.php. 
+function loadEmployeeVaultDetail(name, empId) {
+  // Set header text immediately (feels instant)
+  document.getElementById('v-emp-name').textContent = name;
+  document.getElementById('v-emp-id').textContent   = empId + ' • Personnel Archive';
+
+  // Store empId on Download Zip button for the click handler
+  const dlBtn = document.getElementById('btn-download-zip');
+  if (dlBtn) dlBtn.dataset.empId = empId;
+  dlBtn.onclick = function() { downloadVaultZip(empId); };
+  const listContainer = document.getElementById('vault-docs-list');
+  if (!listContainer) return;
+
+  // Show loading spinner
+  showVaultLoader(listContainer, 'Loading documents…', 24);
+  lcIcons(listContainer);
+
+  // Fetch real data for this employee
+  fetch(`api/employees/fetch_vault_matrix.php?limit=1&search=${encodeURIComponent(name)}`)
+    .then(r => r.json())
+    .then(res => {
+      if (!res.success) throw new Error(res.message);
+
+      // Match by empId in case names collide
+      const emp = res.data.find(e => e.empId === empId) || res.data[0];
+      if (!emp) throw new Error('Employee data not found.');
+
+      listContainer.innerHTML = '';
+      let uploadCount = 0, mandatoryDone = 0, mandatoryMiss = 0, optionalDone = 0;
+
+      // Build one row per document type
+      VAULT_SCHEMA.forEach(doc => {
+        const isUploaded  = !!emp['doc_' + doc.id];
+        const fileName    = emp['doc_' + doc.id + '_name'] || '';
+        const uploadDate  = emp['doc_' + doc.id + '_date'] || '';
+        const catClass    = CAT_CLASS_MAP[doc.cat] || '';
+
+        if (isUploaded) {
+          uploadCount++;
+          doc.is_mandatory ? mandatoryDone++ : optionalDone++;
+        } else {
+          if (doc.is_mandatory) mandatoryMiss++;
+        }
+
+        const row = document.createElement('div');
+        row.className = 'doc-row';
+        row.dataset.docName = doc.name.toLowerCase(); // used by filterVaultDocs()
+
+        row.innerHTML = `
+          <!-- Column 1: status icon box -->
+          <div class="doc-icon-box ${isUploaded ? 'uploaded' : 'missing'}">
+            <i data-lucide="${isUploaded ? 'file-check' : 'file-question'}" size="18"></i>
+          </div>
+
+          <!-- Column 2: document name + category + mandatory badge -->
+          <div class="doc-meta">
+            <div class="doc-name">${doc.name}</div>
+            <div style="display:flex; gap:4px; margin-top:3px; flex-wrap:wrap;">
+              <span class="vault-cat-chip ${catClass}">${doc.cat}</span>
+              <span class="${doc.is_mandatory ? 'badge-mandatory' : 'badge-optional'}">
+                ${doc.is_mandatory ? 'Mandatory' : 'Optional'}
+              </span>
+            </div>
+          </div>
+
+          <!-- Column 3: file name + upload date (only if uploaded) -->
+          <div class="doc-file-info">
+            ${isUploaded
+              ? `<div class="doc-file-name" title="${fileName}">${fileName || 'Uploaded'}</div>
+                 <div class="doc-file-date">${uploadDate ? uploadDate.slice(0, 10) : ''}</div>`
+              : `<div class="doc-file-date" style="color:var(--danger);">Not uploaded</div>`
+            }
+          </div>
+
+          <!-- Column 4: status badge -->
+          <div class="doc-status">
+            ${isUploaded
+              ? `<span class="badge badge-success" style="font-size:10px;">Verified</span>`
+              : `<span class="badge badge-neutral" style="font-size:10px; opacity:.7;">Pending</span>`
+            }
+          </div>
+
+          <!-- Column 5: action buttons -->
+          <div class="doc-actions">
+            ${isUploaded
+              ? `<button class="btn btn-secondary btn-xs" title="View document"
+                         onclick="viewVaultDocument('${empId}', ${doc.id})">
+                   <i data-lucide="eye" size="14"></i> View
+                 </button>
+                 <button class="btn btn-secondary btn-xs" title="Replace document"
+                         onclick="openUploadModal(${doc.id}, '${doc.name}', '${empId}')">
+                   <i data-lucide="refresh-cw" size="14"></i>
+                 </button>`
+              : `<button class="btn btn-primary btn-xs btn-upload-pro"
+                         onclick="openUploadModal(${doc.id}, '${doc.name}', '${empId}')">
+                   <i data-lucide="plus" size="14"></i> Add Document
+                 </button>`
+            }
+          </div>`;
+
+        listContainer.appendChild(row);
+      });
+
+      // Update sidebar counters
+      document.getElementById('v-count-upload').textContent         = uploadCount;
+      document.getElementById('v-count-missing').textContent        = VAULT_SCHEMA.length - uploadCount;
+      document.getElementById('v-compliance-percent').textContent   = emp.progress + '%';
+      document.getElementById('v-count-mandatory-done').textContent = mandatoryDone;
+      document.getElementById('v-count-mandatory-miss').textContent = mandatoryMiss;
+      document.getElementById('v-count-optional-done').textContent  = optionalDone;
+
+      lcIcons(listContainer);
+    })
+    .catch(err => {
+      listContainer.innerHTML =
+        `<div style="padding:40px; text-align:center; color:var(--danger);">
+           <i data-lucide="alert-triangle" size="28"></i>
+           <div style="margin-top:8px;">${err.message}</div>
+         </div>`;
+      lcIcons(listContainer);
+    });
+}
+
+function downloadVaultZip(empId) {
+  if (!empId) {
+    showNotification('Vault', 'No employee selected.', 'error');
+    return;
+  }
+  // Trigger download by navigating to the endpoint
+  window.location.href = `api/employees/download_vault_zip.php?emp_id=${encodeURIComponent(empId)}`;
+}
+
+// ── 4. openEmployeeVault() ────────────────────────────────────
+//  Entry point called by "Open Folder" button in the matrix.
+//  Stores data then navigates to the employee vault page.
+function openEmployeeVault(name, id) {
+  // Save to sessionStorage so it survives a page refresh
+  sessionStorage.setItem('vaultEmp', JSON.stringify({ name: name, id: id }));
+  // Navigate to the employee vault page using the existing AJAX navigation
+  goPage('employee-vault');
+}
+// ── 5. filterVaultDocs() ──────────────────────────────────────
+//  Client-side instant filter on the doc list by document name.
+//  Called by the search input in attachment_emp_vault.php.
+function filterVaultDocs(query) {
+  const q    = query.toLowerCase().trim();
+  const rows = document.querySelectorAll('#vault-docs-list .doc-row');
+  rows.forEach(row => {
+    const name = row.dataset.docName || '';
+    row.style.display = (!q || name.includes(q)) ? '' : 'none';
+  });
+}
+
+// ── 6. openUploadModal() ──────────────────────────────────────
+//  Shows the upload modal for a specific document type + employee.
+//  Sets up hidden state so confirmUpload() knows what to POST.
+function openUploadModal(docTypeId, docTypeName, empId) {
+  const overlay = document.getElementById('upload-modal-overlay');
+  if (!overlay) return;
+
+  // Store context on the modal
+  overlay.dataset.docTypeId = docTypeId;
+  overlay.dataset.empId     = empId;
+
+  document.getElementById('upload-modal-doc-name').textContent = docTypeName;
+  document.getElementById('upload-file-preview').style.display = 'none';
+  document.getElementById('upload-file-input').value           = '';
+  document.getElementById('btn-confirm-upload').disabled       = true;
+
+  overlay.style.display = 'flex';
+}
+
+// ── 7. closeUploadModal() ────────────────────────────────────
+function closeUploadModal() {
+  const overlay = document.getElementById('upload-modal-overlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
+// ── 8. onFileSelected() ──────────────────────────────────────
+//  Called when user picks a file via the file input.
+function onFileSelected(input) {
+  const file = input.files[0];
+  if (!file) return;
+  document.getElementById('upload-preview-name').textContent  = file.name;
+  document.getElementById('upload-file-preview').style.display = '';
+  document.getElementById('btn-confirm-upload').disabled       = false;
+}
+
+// ── 9. handleDropZone() ──────────────────────────────────────
+//  Drag-and-drop support for the upload modal.
+function handleDropZone(event) {
+  event.preventDefault();
+  event.currentTarget.style.borderColor = 'var(--border)';
+  const file = event.dataTransfer.files[0];
+  if (!file) return;
+  const input = document.getElementById('upload-file-input');
+  // Create a DataTransfer to assign to the file input
+  const dt = new DataTransfer();
+  dt.items.add(file);
+  input.files = dt.files;
+  onFileSelected(input);
+}
+
+// ── 10. confirmUpload() ──────────────────────────────────────
+//  Sends the selected file to the server via FormData POST.
+//  Endpoint: api/employees/upload_vault_doc.php (create separately)
+function confirmUpload() {
+
+  const overlay   = document.getElementById('upload-modal-overlay');
+  const fileInput = document.getElementById('upload-file-input');
+  const btn       = document.getElementById('btn-confirm-upload');
+
+  if (!fileInput.files.length) return;
+
+  const formData = new FormData();
+  formData.append('file',           fileInput.files[0]);
+  formData.append('doc_type_id',    overlay.dataset.docTypeId);
+  formData.append('employee_id',    overlay.dataset.empId);
+  formData.append('csrf_token',     document.querySelector('meta[name="csrf"]')?.content || '');
+
+  btn.disabled   = true;
+  btn.innerHTML  = '<i data-lucide="loader" size="14" style="animation:spin 1s linear infinite;"></i> Uploading…';
+  lcIcons(btn);
+
+  fetch('api/employees/upload_vault_doc.php', {
+    method: 'POST',
+    body:   formData,
+  })
+    .then(r => r.json())
+    .then(res => {
+      closeUploadModal();
+      if (res.success) {
+        showNotification('Vault', 'Document uploaded successfully.', 'success');
+        // Reload the detail view to reflect the new upload
+        if (pendingEmployeeVaultData) {
+          loadEmployeeVaultDetail(pendingEmployeeVaultData.name, pendingEmployeeVaultData.id);
+        }
+      } else {
+        showNotification('Vault', res.message || 'Upload failed.', 'error');
+      }
+    })
+    .catch(() => {
+      closeUploadModal();
+      showNotification('Vault', 'Network error. Please try again.', 'error');
+    })
+    .finally(() => {
+      btn.disabled  = false;
+      btn.innerHTML = '<i data-lucide="upload" size="14"></i> Upload';
+      lcIcons(btn);
+    });
+}
+
+// ── 11. viewVaultDocument() ─────────────────────────────────
+//  Opens an uploaded document in a new tab for preview.
+//  Endpoint: api/employees/view_vault_doc.php?emp_id=X&doc_type_id=Y
+function viewVaultDocument(empId, docTypeId) {
+  const url = `api/employees/view_vault_doc.php?emp_id=${encodeURIComponent(empId)}&doc_type_id=${docTypeId}`;
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+ 
+function vaultLoader(text = '', size = 24) {
+  return `
+    <div class="vault-loader">
+      <i data-lucide="loader" size="${size}" style="animation:spin 1s linear infinite;"></i>
+      ${text ? `<p>${text}</p>` : ''}
+    </div>`;
+}
+ 
+function showVaultLoader(container, text, size) {
+  if (!container) return;
+  container.innerHTML = vaultLoader(text, size);
+  lcIcons(container);
 }
