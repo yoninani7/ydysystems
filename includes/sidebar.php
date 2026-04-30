@@ -136,16 +136,26 @@
       </div>
     </div>
 
-    <div class="nav-group">
-      <div class="nav-trigger" onclick="toggleNav(this,'m-perf')">
-        <div class="nav-trigger-left"><div class="nav-icon"><i data-lucide="trending-up" size="15"></i></div><span>Performance</span></div>
-        <i data-lucide="chevron-right" size="13" class="chevron"></i>
-      </div>
-      <div class="submenu" id="m-perf"> 
-        <div class="sub-link" onclick="goPage('performance-reviews',this)"><span class="sub-dot"></span><span>Performance Reviews</span></div>
-        <div class="sub-link" onclick="goPage('360-feedback',this)"><span class="sub-dot"></span><span>360° Feedback</span></div>  
-      </div>
+ <div class="nav-group">
+  <div class="nav-trigger" onclick="toggleNav(this,'m-perf')">
+    <div class="nav-trigger-left">
+      <div class="nav-icon"><i data-lucide="trending-up" size="15"></i></div>
+      <span>Performance</span>
     </div>
+    <i data-lucide="chevron-right" size="13" class="chevron"></i>
+  </div>
+  <div class="submenu" id="m-perf">
+    <div class="sub-link" onclick="goPage('performance-reviews',this)">
+      <span class="sub-dot"></span><span>Performance Reviews</span>
+    </div>
+    <div class="sub-link" onclick="goPage('360-feedback',this)">
+      <span class="sub-dot"></span><span>360° Feedback</span>
+    </div>
+    <div class="sub-link" onclick="goPage('goals-development',this)">
+      <span class="sub-dot"></span><span>Goals & Development</span>
+    </div>
+  </div>
+</div>
 
     <div class="nav-label">Analytics & System</div>
     <div class="nav-group">

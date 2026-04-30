@@ -45,13 +45,14 @@ $allowed_pages = [
     'training-schedule'   => 'pages/training_dev/training_schedule.php',
     'performance-reviews' => 'pages/performance/performance_reviews.php',
     '360-feedback'        => 'pages/performance/360_feedback.php',
+    'goals-development'   => 'pages/performance/goals_development.php',
     'hr-analytics'        => 'pages/reports_analytics/hr_analytics.php',
     'custom-reports'      => 'pages/reports_analytics/custom_reports.php',
     'user-management'     => 'pages/system_admin/user_management.php',
     'roles-permissions'   => 'pages/system_admin/roles_permission.php',
     'audit-logs'          => 'pages/system_admin/audit_logs.php',
 ];
-
+    
 $page = $_GET['page'] ?? 'dashboard';
 if (!isset($allowed_pages[$page])) {
     $page = 'dashboard';

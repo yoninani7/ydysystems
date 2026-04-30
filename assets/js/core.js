@@ -6719,3 +6719,48 @@ function showVaultLoader(container, text, size) {
   container.innerHTML = vaultLoader(text, size);
   lcIcons(container);
 }
+/* --- 360 FEEDBACK LOGIC --- */
+function openStartFeedbackModal() {
+    openModal('modal-send-feedback');
+}
+
+function openFeedbackForm(id) {
+    // Populate form data if needed here...
+    openModal('modal-feedback-response');
+}
+
+function submitSendFeedback() {
+    if (!document.getElementById('fbk-employee').value) {
+        showNotification('Selection Required', 'Please select an employee.', 'warning');
+        return;
+    }
+    closeModal('modal-send-feedback');
+    setTimeout(() => openModal('modal-feedback-response'), 400);
+}
+
+function submitFeedbackResponse() {
+    showNotification('Submitted', 'Feedback has been sent anonymously.', 'success');
+    closeModal('modal-feedback-response');
+}
+
+/* --- GOALS LOGIC --- */
+function openCreateGoalModal() {
+    openModal('modal-create-goal');
+}
+
+function submitCreateGoal() {
+    const t = document.getElementById('goal-title').value;
+    if (!t) { showNotification('Required', 'Goal title cannot be empty', 'warning'); return; }
+    showNotification('Success', 'Career goal has been set.', 'success');
+    closeModal('modal-create-goal');
+}
+
+/* --- PERFORMANCE LOGIC --- */
+function openReviewDetail(reviewId) {
+    const review = reviewsData.find(r => r.id === reviewId);
+    if (!review) return;
+
+    document.getElementById('modal-review-title').textContent = `Review: ${review.employee}`;
+    // You can add more population logic here matching your existing de-value patterns
+    openModal('modal-review-detail');
+}

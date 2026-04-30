@@ -1824,3 +1824,22 @@ input:disabled {
   background: none; border: none; color: var(--muted); cursor: pointer; font-size: 12px; padding: 4px;
 }
 .search-pro-wrap input:not(:placeholder-shown) + .search-pro-clear { display: block !important; }
+/* FORCE MODAL VISIBILITY WHEN OPEN CLASS IS PRESENT */
+.modal-overlay.open {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 2100; /* Higher than sidebar */
+}
+
+/* Ensure the modal box is visible inside the overlay */
+.modal-overlay.open .modal-box {
+    display: block !important;
+}
+
+/* Standardize modal header titles to match your high-end theme */
+.modal-header .page-title {
+    margin: 0;
+    color: var(--text);
+    font-weight: 800;
+}
