@@ -895,21 +895,55 @@ function openJobModal() {
   openModal('modal-add-job-position');
   document.getElementById('job-title').value = '';
   document.getElementById('as-input-job-dept').value = '';
-  const existingHidden = document.getElementById('as-input-job-dept_id');
-  if (existingHidden) existingHidden.remove();
+  // reset parent dropdown
+  const parentInput = document.getElementById('as-input-job-parent');
+  parentInput.value = '';
+  parentInput.disabled = true;
+  parentInput.placeholder = 'Select department first...';
+  const parentDrop = document.getElementById('as-drop-job-parent');
+  if (parentDrop) parentDrop.innerHTML = '';
+  const existingParentHidden = document.getElementById('as-input-job-parent_id');
+  if (existingParentHidden) existingParentHidden.remove();
+  const existingDeptHidden = document.getElementById('as-input-job-dept_id');
+  if (existingDeptHidden) existingDeptHidden.remove();
   document.getElementById('job-status').value = 'Active';
   enforceDropdownOnBlur('as-input-job-dept');
+  enforceDropdownOnBlur('as-input-job-parent');
+  // In openJobModal, after enforceDropdownOnBlur('as-input-job-parent'):
+const deptInputAdd = document.getElementById('as-input-job-dept');
+deptInputAdd.addEventListener('change', () => {
+  const dpt = document.getElementById('as-input-job-dept_id')?.value;
+  const p = document.getElementById('as-input-job-parent');
+  if (dpt) {
+    p.disabled = false;
+    p.dataset.departmentId = dpt;
+    p.value = '';
+    const pDrop = document.getElementById('as-drop-job-parent');
+    if (pDrop) pDrop.innerHTML = '';
+    // remove hidden
+    const h = document.getElementById('as-input-job-parent_id');
+    if (h) h.remove();
+  } else {
+    p.disabled = true;
+    p.value = '';
+  }
+});
 }
+
 function saveJobPosition() {
   const titleEl = document.getElementById('job-title');
   const deptId = document.getElementById('as-input-job-dept_id')?.value || '';
   const status = document.getElementById('job-status').value || 'Active';
   const csrfToken = document.getElementById('job_csrf_token')?.value || '';
   const btn = document.getElementById('btn-save-job');
+  // read parent id
+  const parentId = document.getElementById('as-input-job-parent_id')?.value || '';
 
   titleEl.classList.remove('field-error');
   const deptInput = document.getElementById('as-input-job-dept');
   deptInput.classList.remove('field-error');
+  const parentInput = document.getElementById('as-input-job-parent');
+  parentInput.classList.remove('field-error');
 
   if (!titleEl.value.trim()) {
     titleEl.classList.add('field-error');
@@ -931,6 +965,7 @@ function saveJobPosition() {
     job_title: titleEl.value.trim(),
     job_dept_id: deptId,
     job_status: status,
+    parent_id: parentId,   // NEW
     csrf_token: csrfToken
   };
 
@@ -958,7 +993,27 @@ function saveJobPosition() {
       lcIcons(btn);
     });
 }
-
+async function loadParentDropdown(deptId, currentJobId, inputEl, dropContainer) {
+  if (!dropContainer) return;
+  dropContainer.innerHTML = '<div class="as-res-item" style="color:var(--muted);">Loading...</div>';
+  // Use job_positions dropdown for this department, then filter out current job
+  const url = `api/1common/fetch_dropdown.php?type=job_positions&department_id=${deptId}`;
+  try {
+    const res = await fetch(url);
+    const result = await res.json();
+    if (result.success && result.data) {
+      // Exclude current job to prevent self‑parenting
+      const filtered = result.data.filter(item => item.value != currentJobId);
+      renderDropdownItems(dropContainer, filtered, inputEl.value);
+      // If user has selected a valid parent that exists, set hidden
+      // (the dropdown click will be handled by global delegation)
+    } else {
+      dropContainer.innerHTML = '<div class="as-res-item" style="color:var(--muted);">No positions in this department</div>';
+    }
+  } catch (err) {
+    dropContainer.innerHTML = '<div class="as-res-item" style="color:var(--danger);">Error loading</div>';
+  }
+}
 async function openEditJobModal(title, deptName, jobId) {
   document.getElementById('edit_job_id').value = jobId;
   document.getElementById('edit-job-title').value = title;
@@ -967,35 +1022,65 @@ async function openEditJobModal(title, deptName, jobId) {
   deptInput.value = deptName;
   deptInput.classList.remove('field-error');
 
-  let hidden = document.getElementById('as-input-edit-job-dept_id');
-  if (!hidden) {
-    hidden = document.createElement('input');
-    hidden.type = 'hidden';
-    hidden.id = 'as-input-edit-job-dept_id';
-    deptInput.parentNode.appendChild(hidden);
+  let deptHidden = document.getElementById('as-input-edit-job-dept_id');
+  if (!deptHidden) {
+    deptHidden = document.createElement('input');
+    deptHidden.type = 'hidden';
+    deptHidden.id = 'as-input-edit-job-dept_id';
+    deptInput.parentNode.appendChild(deptHidden);
   }
 
-  const cacheKey = 'departments:';
-  let departments = dropdownCache[cacheKey];
+  // Load departments for the departement dropdown
+  const deptCacheKey = 'departments:';
+  let departments = dropdownCache[deptCacheKey];
   if (!departments) {
     try {
       const response = await fetch('api/1common/fetch_dropdown.php?type=departments');
       const result = await response.json();
       if (result.success && result.data) {
         departments = result.data;
-        dropdownCache[cacheKey] = departments;
+        dropdownCache[deptCacheKey] = departments;
       }
     } catch (err) { /* ignore */ }
   }
-
   if (departments) {
     const d = departments.find(item => item.label === deptName);
-    hidden.value = d ? d.value : '';
+    deptHidden.value = d ? d.value : '';
     const dropContainer = document.getElementById('as-drop-edit-job-dept');
     if (dropContainer) renderDropdownItems(dropContainer, departments, deptName);
   }
 
+  // ── NEW: Load parent positions for the same department ──
+  const parentInput = document.getElementById('as-input-edit-job-parent');
+  const parentDrop = document.getElementById('as-drop-edit-job-parent');
+  // remove old hidden
+  const oldParentHidden = document.getElementById('as-input-edit-job-parent_id');
+  if (oldParentHidden) oldParentHidden.remove();
+
+  if (deptHidden.value) {
+    parentInput.disabled = false;
+    parentInput.placeholder = 'Type to search...';
+    await loadParentDropdown(deptHidden.value, jobId, parentInput, parentDrop);
+  } else {
+    parentInput.value = '';
+    parentInput.disabled = true;
+    parentInput.placeholder = 'Select department first...';
+    if (parentDrop) parentDrop.innerHTML = '';
+  }
+// reload parent when department changes
+deptInput.addEventListener('change', async () => {
+  const newDeptId = document.getElementById('as-input-edit-job-dept_id')?.value;
+  if (newDeptId) {
+    parentInput.disabled = false;
+    await loadParentDropdown(newDeptId, jobId, parentInput, parentDrop);
+  } else {
+    parentInput.disabled = true;
+    parentInput.value = '';
+  }
+});
   enforceDropdownOnBlur('as-input-edit-job-dept');
+  enforceDropdownOnBlur('as-input-edit-job-parent');
+
   openModal('modal-edit-job-position');
 }
 
@@ -1008,6 +1093,9 @@ function updateJobPosition() {
   const deptId = document.getElementById('as-input-edit-job-dept_id')?.value || '';
   const deptText = deptInput.value.trim();
   const btn = document.getElementById('btn-update-job');
+  const csrfToken = document.getElementById('edit_job_csrf_token').value;
+  // read parent id
+  const parentId = document.getElementById('as-input-edit-job-parent_id')?.value || '';
 
   titleEl.classList.remove('field-error');
   deptInput.classList.remove('field-error');
@@ -1038,7 +1126,8 @@ function updateJobPosition() {
     job_title: titleEl.value.trim(),
     job_dept_id: deptId,
     job_status: document.getElementById('edit-job-status').value,
-    csrf_token: document.getElementById('edit_job_csrf_token').value
+    parent_id: parentId,    // NEW
+    csrf_token: csrfToken
   };
 
   fetch('api/companyprofile/update_job_position.php', {
@@ -3303,6 +3392,57 @@ function showAsDrop(dropdownId) {
   const dropContainer = document.getElementById(dropdownId);
   let inputId = dropdownId.replace('as-drop-', 'as-input-');
   let inputEl = document.getElementById(inputId);
+  // Special handling for parent position dropdowns
+if (dropdownId === 'as-drop-job-parent' || dropdownId === 'as-drop-edit-job-parent') {
+    const parentInput = document.getElementById(inputId);
+    let deptId = parentInput?.dataset.departmentId;
+    if (!deptId) {
+        // try to get from add-dept or edit-dept hidden
+        const deptHiddenId = dropdownId.includes('edit') ? 'as-input-edit-job-dept_id' : 'as-input-job-dept_id';
+        const deptHidden = document.getElementById(deptHiddenId);
+        deptId = deptHidden?.value;
+    }
+    if (!deptId) {
+        dropContainer.innerHTML = '<div class="as-res-item" style="color:var(--warning);">Please select a department first</div>';
+        dropContainer.classList.add('active');
+        return;
+    }
+    // set department id on the input for further filters
+    if (parentInput) parentInput.dataset.departmentId = deptId;
+    const searchTerm = inputEl?.value || '';
+    const cacheKey = `job_positions:${deptId}`;
+    if (dropdownCache[cacheKey]) {
+        let items = dropdownCache[cacheKey];
+        // filter out current job if editing
+        if (dropdownId === 'as-drop-edit-job-parent') {
+            const editJobId = document.getElementById('edit_job_id')?.value;
+            if (editJobId) items = items.filter(item => item.value != editJobId);
+        }
+        renderDropdownItems(dropContainer, items, inputEl.value);
+        dropContainer.classList.add('active');
+        return;
+    }
+    // else fetch
+    const url = `api/1common/fetch_dropdown.php?type=job_positions&department_id=${deptId}`;
+    fetch(url)
+        .then(r => r.json())
+        .then(res => {
+            if (res.success && res.data) {
+                let items = res.data;
+                if (dropdownId === 'as-drop-edit-job-parent') {
+                    const editJobId = document.getElementById('edit_job_id')?.value;
+                    if (editJobId) items = items.filter(item => item.value != editJobId);
+                }
+                dropdownCache[cacheKey] = items;
+                renderDropdownItems(dropContainer, items, inputEl.value);
+            } else {
+                dropContainer.innerHTML = '<div class="as-res-item" style="color:var(--muted);">No positions in this department</div>';
+            }
+        })
+        .catch(() => dropContainer.innerHTML = '<div class="as-res-item" style="color:var(--danger);">Error loading</div>');
+    dropContainer.classList.add('active');
+    return;
+} 
 
   if (!inputEl && dropContainer) {
     inputEl = dropContainer.closest('.as-combo-container')?.querySelector('input');
@@ -3351,6 +3491,7 @@ function showAsDrop(dropdownId) {
   }
 
   const searchTerm = inputEl?.value || '';
+  
   populateAsDrop(dropdownId, type, searchTerm, inputEl.value);
 }
 

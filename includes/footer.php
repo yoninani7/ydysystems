@@ -77,6 +77,20 @@
             <div class="as-combo-results" id="as-drop-job-dept"></div>
           </div>
         </div>
+<!-- Add this right after the Department block -->
+<div class="form-group" style="position:relative;grid-column:span 2;">
+  <label>Parent Position (optional)</label>
+  <div class="as-combo-container">
+    <input type="text" id="as-input-job-parent" 
+           data-dropdown-type="job_positions"
+           placeholder="Select department first..." 
+           onfocus="showAsDrop('as-drop-job-parent')" 
+           oninput="filterAsDrop('as-input-job-parent','as-drop-job-parent')"
+           autocomplete="off"
+           disabled>
+    <div class="as-combo-results" id="as-drop-job-parent"></div>
+  </div>
+</div>
 
         <!-- Status (Static Dropdown) -->
       <div class="form-group" style="grid-column:span 2;">
@@ -299,7 +313,20 @@
             <div class="as-combo-results" id="as-drop-edit-job-dept"></div>
           </div>
         </div>
-
+<!-- Same block inside modal-edit-job-position -->
+<div class="form-group" style="position:relative;grid-column:span 2;">
+  <label>Parent Position (optional)</label>
+  <div class="as-combo-container">
+    <input type="text" id="as-input-edit-job-parent" 
+           data-dropdown-type="job_positions"
+           placeholder="Select department first..." 
+           onfocus="showAsDrop('as-drop-edit-job-parent')" 
+           oninput="filterAsDrop('as-input-edit-job-parent','as-drop-edit-job-parent')"
+           autocomplete="off"
+           disabled>
+    <div class="as-combo-results" id="as-drop-edit-job-parent"></div>
+  </div>
+</div>
         <!-- Status -->
         <div class="form-group" style="grid-column:span 2;">
           <label>Status</label>
