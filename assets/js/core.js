@@ -1717,65 +1717,63 @@ function fetchOrgChartData() {
 
 function renderOrgChartFromData(data) {
   const container = document.getElementById('dept-tree-container');
-  const departments = data.departments;
-
-  // Build all HTML strings first to minimize DOM operations
-  const departmentHtml = departments.map(dept => {
-    let submenuHtml = '';
-    if (dept.jobs && dept.jobs.length > 0) {
-      const jobsHtml = dept.jobs.map(job => 
-        `<li>
-          <div class="oc-node oc-staff" style="width:160px; border-top:2px solid var(--primary-light);">
-            <div class="oc-node-body" style="padding:12px; text-align:center; flex-direction:column;">
-              <div class="oc-node-name" style="font-size:.75rem; font-weight:700;">${job.title}</div>
-              <div class="oc-node-role" style="font-size:.6rem; margin-top:4px;">${job.count} employees</div>
-            </div>
-          </div>
-        </li>`
-      ).join('');
-      submenuHtml = `<ul class="submenu-jobs" style="padding-top:20px;">${jobsHtml}</ul>`;
-    }
-
-    return `<li>
-      <div class="oc-node oc-mgr">
-        <div class="oc-node-header">
-          <span class="oc-id">${dept.name.toUpperCase()}</span>
-          <span class="badge badge-primary" style="font-size:8px;">${dept.headcount} EMP</span>
-        </div>
-        <div class="oc-node-body">
-          <div class="oc-node-avatar" style="background:var(--primary-light);color:var(--primary);">
-            <i data-lucide="users" size="20"></i>
-          </div>
-          <div class="oc-node-info">
-            <div class="oc-node-name">${dept.name}</div>
-            <div class="oc-node-role">Department</div>
-          </div>
-        </div>
-        <div class="oc-node-footer">${dept.position_count} Positions</div>
-      </div>
-      ${submenuHtml}
-    </li>`;
-  }).join('');
-
-  // Single DOM update
-  container.innerHTML = `<ul>${departmentHtml}</ul>`;
-  
-  // Update badges in batch
   const totalBadge = document.getElementById('oc-total-badge');
   const deptCountFooter = document.getElementById('oc-dept-count');
-  if (totalBadge) totalBadge.textContent = `${data.total} TOTAL`;
-  if (deptCountFooter) deptCountFooter.textContent = `${departments.length} Departments`;
-  
-  lcIcons(container);
-  // Center the chart horizontally in the viewport
-const blueprint = document.getElementById('oc-blueprint-area');
-if (blueprint && blueprint.style.display !== 'none') {
-    setTimeout(() => {
-        blueprint.scrollLeft = (blueprint.scrollWidth - blueprint.clientWidth) / 2;
-    }, 50);
-}
-}
 
+  if (totalBadge) totalBadge.textContent = `${data.total} TOTAL`;
+  if (deptCountFooter) deptCountFooter.textContent = `${data.departments.length} Departments`;
+
+  const departments = data.departments;
+
+  // Recursively render job position subtree
+  const renderJobTree = (jobs) => {
+    if (!jobs || jobs.length === 0) return '';
+    return `<ul>
+      ${jobs.map(job => `
+        <li>
+          <div class="oc-node oc-staff" style="width:200px;">
+            <div class="oc-node-body" style="flex-direction:column; align-items:flex-start; padding:12px;">
+              <div class="oc-node-name" style="font-weight:800; color:var(--text); font-size:.8rem;">${job.title}</div>
+              <div class="oc-node-role" style="font-size:.65rem; margin-top:4px;">${job.headcount} employees</div>
+            </div>
+          </div>
+          ${renderJobTree(job.children)}
+        </li>
+      `).join('')}
+    </ul>`;
+  };
+
+  const departmentHtml = departments.map(dept => `<li>
+    <div class="oc-node oc-mgr">
+      <div class="oc-node-header">
+        <span class="oc-id">${dept.name.toUpperCase()}</span>
+        <span class="badge badge-primary" style="font-size:8px;">${dept.headcount} EMP</span>
+      </div>
+      <div class="oc-node-body">
+        <div class="oc-node-avatar" style="background:var(--primary-light);color:var(--primary);">
+          <i data-lucide="users" size="20"></i>
+        </div>
+        <div class="oc-node-info">
+          <div class="oc-node-name">${dept.name}</div>
+          <div class="oc-node-role">Department</div>
+        </div>
+      </div>
+      <div class="oc-node-footer">${dept.jobs.length} Job(s)</div>
+    </div>
+    ${renderJobTree(dept.jobs)}
+  </li>`).join('');
+
+  container.innerHTML = `<ul>${departmentHtml}</ul>`;
+  lcIcons(container);
+
+  // Center the chart after it becomes visible
+  const blueprint = document.getElementById('oc-blueprint-area');
+  if (blueprint && blueprint.style.display !== 'none') {
+    setTimeout(() => {
+      blueprint.scrollLeft = (blueprint.scrollWidth - blueprint.clientWidth) / 2;
+    }, 50);
+  }
+}
 function initPage(id) {
   if (id === 'transfers') {
     renderDepartmentTransfers();

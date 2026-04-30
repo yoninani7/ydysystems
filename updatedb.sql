@@ -94,12 +94,14 @@ CREATE TABLE job_positions (
     department_id INT           NULL,
     headcount     INT           DEFAULT 0,
     status        ENUM('Active','Inactive') DEFAULT 'Active',
+    parent_id     INT           NULL,            -- hierarchy
     created_at    TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
     deleted_at    TIMESTAMP     NULL DEFAULT NULL,
     updated_at    TIMESTAMP     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    updated_by    INT          NULL,
+    updated_by    INT           NULL,
     FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL,
-    FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL
+    FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL,
+    FOREIGN KEY (parent_id) REFERENCES job_positions(id) ON DELETE SET NULL   -- NEW
 );
 
 -- ------------------------------------------------------------

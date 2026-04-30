@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+
 define('IS_API', true);
 require_once '../../config.php';
 header('Content-Type: application/json');
@@ -13,62 +14,80 @@ if (empty($_SESSION['user_id'])) {
 try {
     $pdo = get_pdo();
 
-    // Optimized query without JSON functions (compatible with older MySQL)
-    $orgSql = "
-        SELECT 
-            d.id,
-            d.name,
-            (SELECT COUNT(*) FROM employees WHERE department_id = d.id AND status = 'Active') AS headcount,
-            (SELECT COUNT(*) FROM job_positions WHERE department_id = d.id AND status = 'Active' AND deleted_at IS NULL) AS position_count
-        FROM departments d 
-        WHERE d.status = 'Active' AND d.deleted_at IS NULL
-        ORDER BY d.name ASC
-    ";
-    
-    $departments = $pdo->query($orgSql)->fetchAll();
+    // 1. Fetch Departments
+    $deptSql = "SELECT id, name FROM departments WHERE status = 'Active' AND deleted_at IS NULL ORDER BY name";
+    $departments = $pdo->query($deptSql)->fetchAll(PDO::FETCH_ASSOC);
 
-    // Get job positions with employee counts in one query
+    // 2. Fetch all Job Positions (Global list)
     $jobSql = "
-        SELECT 
-            jp.department_id,
-            jp.title,
-            COUNT(e.id) AS employee_count
+        SELECT jp.id, jp.title, jp.department_id, jp.parent_id,
+               COUNT(e.id) AS headcount
         FROM job_positions jp
-        LEFT JOIN employees e ON jp.id = e.job_position_id AND e.status = 'Active'
+        LEFT JOIN employees e ON e.job_position_id = jp.id AND e.status = 'Active'
         WHERE jp.status = 'Active' AND jp.deleted_at IS NULL
-        GROUP BY jp.department_id, jp.id
-        ORDER BY jp.title ASC
+        GROUP BY jp.id
     ";
-    $jobs = $pdo->query($jobSql)->fetchAll();
-    
-    // Get total employees count
+    $allJobs = $pdo->query($jobSql)->fetchAll(PDO::FETCH_ASSOC);
+
+    // 3. Build ONE global map for the entire company[cite: 7]
+    $allJobsMap = [];
+    foreach ($allJobs as $job) {
+        $job['headcount'] = (int)$job['headcount'];
+        $job['children'] = [];
+        $allJobsMap[$job['id']] = $job;
+    }
+
+    // 4. Link children to parents globally (Cross-department support)[cite: 7]
+    $rootNodes = [];
+    foreach ($allJobsMap as $id => &$job) {
+        $parentId = $job['parent_id'];
+        // Logic: If it has a parent and that parent exists in our map, attach it
+        if (!empty($parentId) && $parentId != $id && isset($allJobsMap[$parentId])) {
+            $allJobsMap[$parentId]['children'][] = &$job;
+        } else {
+            // Otherwise, it's a top-level node for its branch
+            $rootNodes[] = &$job;
+        }
+    }
+    unset($job); // Clean up reference
+
+    // 5. Total company headcount
     $total = $pdo->query("SELECT COUNT(*) FROM employees WHERE status = 'Active'")->fetchColumn();
 
-    // Group jobs by department
-    $jobsByDept = [];
-    foreach ($jobs as $job) {
-        $jobsByDept[$job['department_id']][] = [
-            'title' => $job['title'],
-            'count' => (int)$job['employee_count']
-        ];
-    }
-
-    // Build response
-    $orgData = [
-        'total' => (int)$total,
-        'departments' => []
-    ];
-    
+    // 6. Final Assembly: Filter the global roots into their respective departments
+    $finalDepartments = [];
     foreach ($departments as $dept) {
-        $orgData['departments'][] = [
+        $deptId = $dept['id'];
+        
+        // Find which root nodes belong to this department
+        $deptRoots = array_filter($rootNodes, function($node) use ($deptId) {
+            return (int)$node['department_id'] === (int)$deptId;
+        });
+
+        // Calculate total department headcount (including nested children)
+        $deptTotal = 0;
+        foreach ($allJobs as $j) {
+            if ((int)$j['department_id'] === (int)$deptId) {
+                $deptTotal += (int)$j['headcount'];
+            }
+        }
+
+        $finalDepartments[] = [
+            'id' => $deptId,
             'name' => $dept['name'],
-            'headcount' => (int)$dept['headcount'],
-            'position_count' => (int)$dept['position_count'],
-            'jobs' => $jobsByDept[$dept['id']] ?? []
+            'headcount' => $deptTotal,
+            'jobs' => array_values($deptRoots) // Reset array keys for JSON
         ];
     }
 
-    echo json_encode(['success' => true, 'data' => $orgData]);
+    echo json_encode([
+        'success' => true, 
+        'data' => [
+            'total' => (int)$total,
+            'departments' => $finalDepartments
+        ]
+    ]);
+
 } catch (Exception $e) {
     http_response_code(500);
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);

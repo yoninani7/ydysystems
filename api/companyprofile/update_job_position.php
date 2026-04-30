@@ -30,6 +30,7 @@ $job_id     = !empty($_POST['job_id']) ? (int)$_POST['job_id'] : null;
 $job_title  = trim($_POST['job_title'] ?? '');
 $dept_id    = !empty($_POST['job_dept_id']) ? (int)$_POST['job_dept_id'] : null;
 $status     = trim($_POST['job_status'] ?? 'Active');
+$parent_id  = !empty($_POST['parent_id']) ? (int)$_POST['parent_id'] : null;   // NEW
 
 // 5. Validation
 if (!$job_id) {
@@ -65,16 +66,43 @@ try {
         exit;
     }
 
-    // Update
+    // --- NEW: Prevent circular reference ---
+    if ($parent_id !== null) {
+        // Parent must exist and be active
+        $checkParent = $pdo->prepare("SELECT id FROM job_positions WHERE id = ? AND status = 'Active' AND deleted_at IS NULL");
+        $checkParent->execute([$parent_id]);
+        if (!$checkParent->fetch()) {
+            $pdo->rollBack();
+            http_response_code(422);
+            echo json_encode(['success' => false, 'message' => 'Parent position not found or inactive.']);
+            exit;
+        }
+
+        // Cycle detection (requires wouldCreateCycle in config.php)
+        if (function_exists('wouldCreateCycle') && wouldCreateCycle($pdo, $job_id, $parent_id)) {
+            $pdo->rollBack();
+            http_response_code(422);
+            echo json_encode([
+                'success' => false,
+                'message' => 'This parent would create a circular reference. Please choose a different parent.'
+            ]);
+            exit;
+        }
+    }
+    // --- end cycle check ---
+
+    // Update (including parent_id)
     $sql = "UPDATE job_positions 
-            SET title = :title, department_id = :dept_id, status = :status, updated_at = NOW()
+            SET title = :title, department_id = :dept_id, status = :status, 
+                parent_id = :parent_id, updated_at = NOW()
             WHERE id = :job_id";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
-        ':title'   => $job_title,
-        ':dept_id' => $dept_id,
-        ':status'  => $status,
-        ':job_id'  => $job_id
+        ':title'     => $job_title,
+        ':dept_id'   => $dept_id,
+        ':status'    => $status,
+        ':parent_id' => $parent_id,     // NEW
+        ':job_id'    => $job_id
     ]);
 
     // Audit Log
@@ -102,7 +130,7 @@ try {
     }
     http_response_code(500);
     echo json_encode([
-        'success' => false, 
+        'success' => false,
         'message' => 'System error: ' . $e->getMessage()
     ]);
 }

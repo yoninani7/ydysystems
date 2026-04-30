@@ -129,7 +129,47 @@ function clean(string $value): string
 {
     return htmlspecialchars(trim($value), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
+/**
+ * Checks if setting $childId's parent to $newParentId would create a loop.
+ * @param PDO   $pdo         Open database connection
+ * @param int   $childId     ID of the position to update
+ * @param int   $newParentId Candidate parent ID
+ * @return bool True if a cycle would be created (illegal)
+ */
+function wouldCreateCycle(PDO $pdo, int $childId, int $newParentId): bool
+{
+    // Self‑reference is always a cycle
+    if ($childId === $newParentId) {
+        return true;
+    }
 
+    // Walk up the chain starting from the proposed parent
+    $current = $newParentId;
+    $visited = []; // safety for corrupted data
+
+    while ($current) {
+        // Stop if we've already seen this ID (shouldn't happen with clean data)
+        if (in_array($current, $visited, true)) {
+            return true;
+        }
+        $visited[] = $current;
+
+        // If we reach the child itself, it's a loop
+        if ($current === $childId) {
+            return true;
+        }
+
+        // Move one level up
+        $stmt = $pdo->prepare(
+            "SELECT parent_id FROM job_positions WHERE id = ? AND deleted_at IS NULL"
+        );
+        $stmt->execute([$current]);
+        $row = $stmt->fetch();
+        $current = $row ? (int)$row['parent_id'] : 0;
+    }
+
+    return false; // no cycle found
+}
 // ── Inactivity Modal ──────────────────────────────────────────────────────────
 /**
  * Outputs the inactivity modal HTML + JS.
